@@ -1,8 +1,6 @@
-use serde::ser::Error;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub enum EventError {
     InvalidCoordinates,
     InvalidName,

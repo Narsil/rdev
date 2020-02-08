@@ -17,7 +17,7 @@ fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 
-static mut global_callback: Callback = default_callback;
+static mut GLOBAL_CALLBACK: Callback = default_callback;
 
 // pub struct EventIterator {
 //     display: *mut xlib::Display,
@@ -36,7 +36,7 @@ static mut global_callback: Callback = default_callback;
 
 pub fn listen(callback: Callback) {
     unsafe {
-        global_callback = callback;
+        GLOBAL_CALLBACK = callback;
         // Open displays
         let dpy_control = xlib::XOpenDisplay(null());
         let dpy_data = xlib::XOpenDisplay(null());
@@ -156,7 +156,7 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
     if let Some(event_type) = option_type {
         let time = SystemTime::now();
         let event = Event::new(event_type, time, None).unwrap();
-        global_callback(event);
+        GLOBAL_CALLBACK(event);
     }
 
     xrecord::XRecordFreeData(raw_data);

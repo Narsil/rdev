@@ -3,6 +3,8 @@ pub use crate::rdev::{Event, EventType};
 
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "macos")]
+pub use crate::macos::listen;
 
 #[cfg(target_os = "linux")]
 mod linux;
