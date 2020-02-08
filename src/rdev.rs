@@ -15,7 +15,7 @@ pub enum EventType {
     ButtonPress { code: u8 },
     ButtonRelease { code: u8 },
     MouseMove { x: u64, y: u64 },
-    Wheel { delta_x: u64, delta_y: u64 },
+    Wheel { delta_x: i64, delta_y: i64 },
 }
 
 #[derive(Debug)]

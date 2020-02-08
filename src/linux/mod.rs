@@ -120,11 +120,35 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
     let option_type = match xdatum.xtype as i32 {
         xlib::KeyPress => Some(EventType::KeyPress { code: xdatum.code }),
         xlib::KeyRelease => Some(EventType::KeyRelease { code: xdatum.code }),
-        xlib::ButtonPress => Some(EventType::ButtonPress { code: xdatum.code }),
-        xlib::ButtonRelease => Some(EventType::ButtonRelease { code: xdatum.code }),
+        // Xlib does not implement wheel events left and right afaik.
+        // But MacOS does, so we need to acknowledge the larger event space.
+        xlib::ButtonPress => {
+            if xdatum.code == 4 {
+                Some(EventType::Wheel {
+                    delta_y: -1,
+                    delta_x: 0,
+                })
+            } else if xdatum.code == 5 {
+                Some(EventType::Wheel {
+                    delta_y: 1,
+                    delta_x: 0,
+                })
+            } else {
+                Some(EventType::ButtonPress { code: xdatum.code })
+            }
+        }
+        xlib::ButtonRelease => {
+            if xdatum.code == 4 {
+                None
+            } else if xdatum.code == 5 {
+                None
+            } else {
+                Some(EventType::ButtonRelease { code: xdatum.code })
+            }
+        }
         xlib::MotionNotify => Some(EventType::MouseMove {
-            x: xdatum.x,
-            y: x.datum.y,
+            x: xdatum.x as u64,
+            y: xdatum.y as u64,
         }),
         _ => None,
     };
