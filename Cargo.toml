@@ -13,3 +13,10 @@ serde_json = "1.0"
 [target.'cfg(target_os = "macos")'.dependencies]
 core-graphics = "0.19.0"
 cocoa = "0.20"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "linux")'.dependencies.x11]
+version = "2.18"
+features = ["xlib", "xrecord"]
