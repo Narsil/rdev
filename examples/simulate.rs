@@ -2,7 +2,7 @@ use rdev::{simulate, EventType, SimulateError};
 use std::{thread, time};
 
 fn send(event_type: &EventType) {
-    let delay = time::Duration::from_millis(10);
+    let delay = time::Duration::from_millis(20);
     match simulate(event_type) {
         Ok(()) => (),
         Err(SimulateError) => {

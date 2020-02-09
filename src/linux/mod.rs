@@ -166,7 +166,8 @@ fn convert_native(
     event_type: &EventType,
     display: *mut xlib::Display,
     window: xlib::Window,
-) -> Result<xlib::XEvent, ()> {
+    root: xlib::Window,
+) -> Result<Option<xlib::XEvent>, ()> {
     match event_type {
         EventType::KeyPress { code } => {
             let key = xlib::XKeyEvent {
@@ -186,7 +187,7 @@ fn convert_native(
                 keycode: *code as u32,
                 same_screen: 0,
             };
-            Ok(xlib::XEvent { key })
+            Ok(Some(xlib::XEvent { key }))
         }
         EventType::KeyRelease { code } => {
             let key = xlib::XKeyEvent {
@@ -206,7 +207,7 @@ fn convert_native(
                 keycode: *code as u32,
                 same_screen: 0,
             };
-            Ok(xlib::XEvent { key })
+            Ok(Some(xlib::XEvent { key }))
         }
         EventType::ButtonPress { code } => {
             let button = xlib::XButtonEvent {
@@ -226,7 +227,7 @@ fn convert_native(
                 button: *code as u32,
                 same_screen: 0,
             };
-            Ok(xlib::XEvent { button })
+            Ok(Some(xlib::XEvent { button }))
         }
         EventType::ButtonRelease { code } => {
             let button = xlib::XButtonEvent {
@@ -246,27 +247,13 @@ fn convert_native(
                 button: *code as u32,
                 same_screen: 0,
             };
-            Ok(xlib::XEvent { button })
+            Ok(Some(xlib::XEvent { button }))
         }
         EventType::MouseMove { x, y } => {
-            let motion = xlib::XMotionEvent {
-                type_: xlib::MotionNotify,
-                serial: 0,
-                send_event: 0,
-                display,
-                window,
-                root: window,
-                subwindow: window,
-                time: xlib::CurrentTime,
-                x: *x as i32,
-                y: *y as i32,
-                x_root: *x as i32,
-                y_root: *y as i32,
-                state: 0,
-                is_hint: 0,
-                same_screen: 0,
-            };
-            Ok(xlib::XEvent { motion })
+            unsafe {
+                xlib::XWarpPointer(display, 0, root, 0, 0, 0, 0, *x as i32, *y as i32);
+            }
+            Ok(None)
         }
         EventType::Wheel {
             delta_x: _,
@@ -290,7 +277,7 @@ fn convert_native(
                 button: code,
                 same_screen: 0,
             };
-            Ok(xlib::XEvent { button })
+            Ok(Some(xlib::XEvent { button }))
         }
     }
 }
@@ -301,6 +288,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
         if dpy.is_null() {
             panic!("can't open display");
         }
+        let screen = xlib::XDefaultScreen(dpy);
+        let root = xlib::XRootWindow(dpy, screen);
         let mut window: c_ulong = 0;
         let window_ptr: *mut c_ulong = &mut window;
         let mut revert_to: c_int = 0;
@@ -309,11 +298,15 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
         if window_ptr.is_null() {
             return Err(SimulateError);
         }
-        match convert_native(event_type, dpy, *window_ptr) {
-            Ok(mut event) => {
-                let propagate = 1;
-                let event_mask = 0;
-                xlib::XSendEvent(dpy, *window_ptr, propagate, event_mask, &mut event);
+        match convert_native(event_type, dpy, *window_ptr, root) {
+            Ok(option) => {
+                if let Some(mut event) = option {
+                    let propagate = 1;
+                    let event_mask = 0;
+                    xlib::XSendEvent(dpy, *window_ptr, propagate, event_mask, &mut event);
+                }
+                xlib::XFlush(dpy);
+                xlib::XSync(dpy, 0);
                 Ok(())
             }
             Err(_) => Err(SimulateError),
