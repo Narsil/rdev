@@ -10,4 +10,4 @@ pub use crate::macos::{listen, simulate};
 mod linux;
 
 #[cfg(target_os = "linux")]
-pub use crate::linux::listen;
+pub use crate::linux::{listen, simulate};

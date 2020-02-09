@@ -1,9 +1,9 @@
 extern crate libc;
 extern crate x11;
 
-use crate::rdev::{Event, EventType};
+use crate::rdev::{Event, EventType, SimulateError};
 use std::ffi::CString;
-use std::os::raw::c_int;
+use std::os::raw::{c_int, c_ulong};
 use std::ptr::{null, null_mut};
 use std::time::SystemTime;
 use x11::xlib;
@@ -147,8 +147,8 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
             }
         }
         xlib::MotionNotify => Some(EventType::MouseMove {
-            x: xdatum.x as u64,
-            y: xdatum.y as u64,
+            x: xdatum.x as f64,
+            y: xdatum.y as f64,
         }),
         _ => None,
     };
@@ -160,4 +160,163 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
     }
 
     xrecord::XRecordFreeData(raw_data);
+}
+
+fn convert_native(
+    event_type: &EventType,
+    display: *mut xlib::Display,
+    window: xlib::Window,
+) -> Result<xlib::XEvent, ()> {
+    match event_type {
+        EventType::KeyPress { code } => {
+            let key = xlib::XKeyEvent {
+                type_: xlib::KeyPress,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state: 0,
+                keycode: *code as u32,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { key })
+        }
+        EventType::KeyRelease { code } => {
+            let key = xlib::XKeyEvent {
+                type_: xlib::KeyRelease,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state: 0,
+                keycode: *code as u32,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { key })
+        }
+        EventType::ButtonPress { code } => {
+            let button = xlib::XButtonEvent {
+                type_: xlib::ButtonPress,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state: 0,
+                button: *code as u32,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { button })
+        }
+        EventType::ButtonRelease { code } => {
+            let button = xlib::XButtonEvent {
+                type_: xlib::ButtonRelease,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state: 0,
+                button: *code as u32,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { button })
+        }
+        EventType::MouseMove { x, y } => {
+            let motion = xlib::XMotionEvent {
+                type_: xlib::MotionNotify,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: *x as i32,
+                y: *y as i32,
+                x_root: *x as i32,
+                y_root: *y as i32,
+                state: 0,
+                is_hint: 0,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { motion })
+        }
+        EventType::Wheel {
+            delta_x: _,
+            delta_y,
+        } => {
+            let code = if *delta_y > 0 { 4 } else { 5 };
+            let button = xlib::XButtonEvent {
+                type_: xlib::ButtonPress,
+                serial: 0,
+                send_event: 0,
+                display,
+                window,
+                root: window,
+                subwindow: window,
+                time: xlib::CurrentTime,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state: 0,
+                button: code,
+                same_screen: 0,
+            };
+            Ok(xlib::XEvent { button })
+        }
+    }
+}
+
+pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
+    unsafe {
+        let dpy = xlib::XOpenDisplay(null());
+        if dpy.is_null() {
+            panic!("can't open display");
+        }
+        let mut window: c_ulong = 0;
+        let window_ptr: *mut c_ulong = &mut window;
+        let mut revert_to: c_int = 0;
+        let revert_to_ptr: *mut c_int = &mut revert_to;
+        xlib::XGetInputFocus(dpy, window_ptr, revert_to_ptr);
+        if window_ptr.is_null() {
+            return Err(SimulateError);
+        }
+        match convert_native(event_type, dpy, *window_ptr) {
+            Ok(mut event) => {
+                let propagate = 1;
+                let event_mask = 0;
+                xlib::XSendEvent(dpy, *window_ptr, propagate, event_mask, &mut event);
+                Ok(())
+            }
+            Err(_) => Err(SimulateError),
+        }
+    }
 }
