@@ -4,7 +4,10 @@ use std::time::SystemTime;
 pub enum EventError {
     InvalidCoordinates,
     InvalidName,
+    SimulateError,
 }
+#[derive(Debug)]
+pub struct SimulateError;
 
 #[derive(Debug)]
 pub enum EventType {
@@ -12,7 +15,7 @@ pub enum EventType {
     KeyRelease { code: u8 },
     ButtonPress { code: u8 },
     ButtonRelease { code: u8 },
-    MouseMove { x: u64, y: u64 },
+    MouseMove { x: f64, y: f64 },
     Wheel { delta_x: i64, delta_y: i64 },
 }
 
