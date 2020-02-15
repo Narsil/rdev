@@ -129,8 +129,8 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
             }
         }
         xlib::MotionNotify => Some(EventType::MouseMove {
-            x: xdatum.x as i32,
-            y: xdatum.y as i32,
+            x: xdatum.x as f64,
+            y: xdatum.y as f64,
         }),
         _ => None,
     };

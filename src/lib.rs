@@ -1,5 +1,5 @@
 mod rdev;
-pub use crate::rdev::{Event, EventError, EventType, SimulateError};
+pub use crate::rdev::{Event, EventType, SimulateError};
 
 #[cfg(target_os = "macos")]
 mod macos;

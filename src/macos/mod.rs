@@ -123,9 +123,11 @@ unsafe fn convert(_type: CGEventType, cg_event: &CGEvent) -> Option<Event> {
         _ => None,
     };
     if let Some(event_type) = option_type {
-        if let Ok(event) = Event::new(event_type, SystemTime::now(), None) {
-            return Some(event);
-        }
+        return Some(Event {
+            event_type,
+            time: SystemTime::now(),
+            name: None,
+        });
     }
     None
 }
