@@ -4,7 +4,7 @@ Simple library to listen and send events to keyboard and mouse.
 
 Listening to global events
 
-```rs
+```rust
 use rdev::{listen, Event};
 
 fn main() {
@@ -18,7 +18,7 @@ fn callback(event: Event) {
 
 Sending some events
 
-```rs
+```rust
 use rdev::{simulate, EventType, SimulateError};
 use std::{thread, time};
 
@@ -54,7 +54,7 @@ fn main() {
 In order to manage different OS, the current EventType choices is a mix&match
 to account for all possible events.
 
-```rs
+```rust
 pub enum EventType {
     KeyPress { code: u8 },
     KeyRelease { code: u8 },
