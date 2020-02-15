@@ -19,3 +19,6 @@ core-graphics = {version = "0.19.0", features = ["highsierra"]}
 libc = "0.2"
 x11 = {version = "2.18", features = ["xlib", "xrecord"]}
 
+
+[dev-dependencies]
+tokio = {version = "0.2", features=["process", "rt-core", "io-util", "macros"]}
