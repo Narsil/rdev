@@ -11,3 +11,9 @@ mod linux;
 
 #[cfg(target_os = "linux")]
 pub use crate::linux::{listen, simulate};
+
+#[cfg(target_os = "windows")]
+mod win;
+
+#[cfg(target_os = "windows")]
+pub use crate::win::{listen, simulate};

@@ -1,5 +1,8 @@
 use std::time::SystemTime;
 
+/// Callback type to send to listen function.
+pub type Callback = fn(event: Event);
+
 /// Marking an error when we tried to simulate and event
 #[derive(Debug)]
 pub struct SimulateError;
