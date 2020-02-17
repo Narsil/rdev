@@ -2,7 +2,7 @@ extern crate winapi;
 
 use crate::rdev::{Event, EventType, SimulateError, Callback};
 use std::time::SystemTime;
-use winapi::um::winuser::{GetMessageA, WH_KEYBOARD_LL,SetWindowsHookExW, CallNextHookEx, WM_KEYDOWN, HC_ACTION };
+use winapi::um::winuser::{KBDLLHOOKSTRUCT, GetMessageA, WH_KEYBOARD_LL,SetWindowsHookExW, CallNextHookEx, WM_KEYDOWN, WM_KEYUP, HC_ACTION };
 use winapi::um::errhandlingapi::{GetLastError};
 use winapi::shared::windef::HHOOK;
 use std::ptr::{null_mut};
@@ -15,18 +15,27 @@ fn default_callback(event: Event) {
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut HOOK: HHOOK = null_mut();
 
+static WM_KEYDOWN_: usize = WM_KEYDOWN as usize;
+static WM_KEYUP_:usize = WM_KEYUP as usize;
+
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize{
     println!("YOUHOU {:?} {:?} {:?}" ,code, param, lpdata );
     if code == HC_ACTION{
-        let event_type = if param == WM_KEYDOWN as usize{
-            EventType::KeyPress{code: 1}
-        }else{
-            EventType::KeyRelease{code: 1}
+        let opt = if param == WM_KEYDOWN_{
+            let kb = lpdata as *const KBDLLHOOKSTRUCT;
+            Some(EventType::KeyPress{code: (*kb).vkCode})
+        }else if param == WM_KEYUP_{
+            let kb = lpdata as *const KBDLLHOOKSTRUCT;
+            Some(EventType::KeyRelease{code: kb.vkCode})
+        } else{
+            None
+        
         };
-
-    
-        let event = Event{event_type, time:SystemTime::now(), name: None};
-        GLOBAL_CALLBACK(event)
+        
+        if let Some(event_type) = opt {
+            let event = Event{event_type, time:SystemTime::now(), name: None};
+            GLOBAL_CALLBACK(event);
+        }
     } 
 
 
