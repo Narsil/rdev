@@ -1,7 +1,7 @@
 extern crate libc;
 extern crate x11;
 
-use crate::rdev::{Event, EventType, SimulateError};
+use crate::rdev::{Event, EventType, SimulateError, Callback};
 use std::ffi::CString;
 use std::os::raw::c_int;
 use std::ptr::{null, null_mut};
@@ -11,8 +11,6 @@ use x11::xrecord;
 use x11::xtest;
 
 static mut EVENT_COUNT: u32 = 0;
-
-type Callback = fn(event: Event);
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
