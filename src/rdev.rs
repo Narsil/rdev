@@ -41,7 +41,9 @@ pub enum Key {
     Home,
     LeftArrow,
     /// also known as "windows", "super", and "command"
-    Meta,
+    MetaLeft,
+    /// also known as "windows", "super", and "command"
+    MetaRight,
     PageDown,
     PageUp,
     Return,
@@ -120,6 +122,7 @@ pub enum Key {
     Kp8,
     Kp9,
     KpDelete,
+    Function,
     Unknown(u32),
 }
 

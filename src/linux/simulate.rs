@@ -9,14 +9,18 @@ static FALSE: i32 = 0;
 unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Result<(), ()> {
     match event_type {
         EventType::KeyPress(key) => {
-            let code = code_from_key(key);
-            xtest::XTestFakeKeyEvent(display, code, TRUE, 0);
-            Ok(())
+            if let Some(code) = code_from_key(key) {
+                xtest::XTestFakeKeyEvent(display, code, TRUE, 0);
+                Ok(())
+            }
+            Err(())
         }
         EventType::KeyRelease(key) => {
-            let code = code_from_key(key);
-            xtest::XTestFakeKeyEvent(display, code, FALSE, 0);
-            Ok(())
+            if let Some(code) = code_from_key(key) {
+                xtest::XTestFakeKeyEvent(display, code, FALSE, 0);
+                Ok(())
+            }
+            Err(())
         }
         EventType::ButtonPress { code } => {
             xtest::XTestFakeButtonEvent(display, *code as u32, TRUE, 0);
