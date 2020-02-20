@@ -1,4 +1,4 @@
-use rdev::{simulate, EventType, SimulateError};
+use rdev::{simulate, EventType, Key, SimulateError};
 use std::{thread, time};
 
 fn send(event_type: &EventType) {
@@ -14,8 +14,8 @@ fn send(event_type: &EventType) {
 }
 
 fn main() {
-    send(&EventType::KeyPress { code: 83 });
-    send(&EventType::KeyRelease { code: 83 });
+    send(&EventType::KeyPress(Key::Unknown(83)));
+    send(&EventType::KeyRelease(Key::Unknown(83)));
 
     send(&EventType::MouseMove { x: 0.0, y: 0.0 });
     send(&EventType::MouseMove { x: 400.0, y: 400.0 });

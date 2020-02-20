@@ -1,6 +1,6 @@
 extern crate rdev;
 extern crate tokio;
-use rdev::{simulate, EventType};
+use rdev::{simulate, EventType, Key};
 
 use std::process::Stdio;
 use std::thread;
@@ -21,10 +21,11 @@ async fn test_listen_and_simulate() {
     // the terminal if this process is invoked from the command line).
     cmd.stdout(Stdio::piped());
 
-    let mut child = cmd.spawn()
-        .expect("failed to spawn command");
+    let mut child = cmd.spawn().expect("failed to spawn command");
 
-    let stdout = child.stdout.take()
+    let stdout = child
+        .stdout
+        .take()
         .expect("child did not have a handle to stdout");
 
     let mut reader = BufReader::new(stdout).lines();
@@ -32,22 +33,22 @@ async fn test_listen_and_simulate() {
     // Ensure the child process is spawned in the runtime so it can
     // make progress on its own while we await for any output.
     tokio::spawn(async {
-        let status = child.await
-            .expect("child process encountered an error");
+        let status = child.await.expect("child process encountered an error");
 
         println!("child status was: {}", status);
     });
 
     thread::sleep(Duration::from_secs(1));
 
-    let event_type = EventType::KeyPress{code: 39};
+    let event_type = EventType::KeyPress(Key::KeyS);
     let result = simulate(&event_type);
     assert!(result.is_ok());
-    let result = simulate(&EventType::KeyRelease{code: 39});
+    let result = simulate(&EventType::KeyRelease(Key::KeyS));
     assert!(result.is_ok());
 
+    let string = format!("{:?}", event_type);
     if let Ok(Some(line)) = reader.next_line().await {
         println!("Received line {:?}", line);
-        assert!(line.contains("KeyPress { code: 39 }"));
+        assert!(line.contains(&string));
     }
 }

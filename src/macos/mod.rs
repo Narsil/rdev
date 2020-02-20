@@ -1,4 +1,4 @@
-use crate::rdev::{Event, EventType, SimulateError};
+use crate::rdev::{Event, EventType, Key, SimulateError};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{
@@ -9,6 +9,10 @@ use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 use core_graphics::geometry::CGPoint;
 use std::os::raw::c_void;
 use std::time::SystemTime;
+
+mod keycodes;
+
+use crate::macos::keycodes::code_from_key;
 
 type CFMachPortRef = *const c_void;
 type CFIndex = u64;
@@ -95,22 +99,22 @@ unsafe fn convert(_type: CGEventType, cg_event: &CGEvent) -> Option<Event> {
             })
         }
         CGEventType::KeyDown => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u8;
-            Some(EventType::KeyPress { code })
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+            Some(EventType::KeyPress(Key::Unknown(code)))
         }
         CGEventType::KeyUp => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u8;
-            Some(EventType::KeyRelease { code })
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+            Some(EventType::KeyRelease(Key::Unknown(code)))
         }
         CGEventType::FlagsChanged => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u8;
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
             let flags = cg_event.get_flags();
             if flags < LAST_FLAGS {
                 LAST_FLAGS = flags;
-                Some(EventType::KeyRelease { code })
+                Some(EventType::KeyRelease(Key::Unknown(code)))
             } else {
                 LAST_FLAGS = flags;
-                Some(EventType::KeyPress { code })
+                Some(EventType::KeyPress(Key::Unknown(code)))
             }
         }
         CGEventType::ScrollWheel => {
@@ -178,11 +182,13 @@ unsafe fn convert_native_with_source(
     source: CGEventSource,
 ) -> Result<CGEvent, ()> {
     match event_type {
-        EventType::KeyPress { code } => {
-            CGEvent::new_keyboard_event(source, *code as CGKeyCode, true)
+        EventType::KeyPress(key) => {
+            let code = code_from_key(key);
+            CGEvent::new_keyboard_event(source, code as CGKeyCode, true)
         }
-        EventType::KeyRelease { code } => {
-            CGEvent::new_keyboard_event(source, *code as CGKeyCode, false)
+        EventType::KeyRelease(key) => {
+            let code = code_from_key(key);
+            CGEvent::new_keyboard_event(source, code as CGKeyCode, false)
         }
         EventType::ButtonPress { code } => {
             // TODO

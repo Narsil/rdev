@@ -1,11 +1,11 @@
 extern crate winapi;
 
-use crate::rdev::{Callback, Event, EventType, SimulateError};
+use crate::rdev::{Callback, Event, EventType, Key, SimulateError};
 use std::mem::{size_of, transmute, transmute_copy};
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::ctypes::c_int;
-use winapi::shared::windef::{HHOOK};
+use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::winuser::{
     CallNextHookEx, GetMessageA, GetSystemMetrics, SendInput, SetWindowsHookExA, HC_ACTION, INPUT,
@@ -16,8 +16,12 @@ use winapi::um::winuser::{
     MSLLHOOKSTRUCT, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, WHEEL_DELTA, WH_KEYBOARD_LL,
     WH_MOUSE_LL, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
     WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
-    WM_XBUTTONUP, 
+    WM_XBUTTONUP,
 };
+
+mod keycodes;
+
+use crate::windows::keycodes::code_from_key;
 
 static KEYEVENTF_KEYDOWN: u32 = 0; // Not defined in win32 but define here for clarity
 
@@ -28,9 +32,9 @@ fn default_callback(event: Event) {
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut HOOK: HHOOK = null_mut();
 
-unsafe fn get_code(lpdata: isize) -> u8 {
+unsafe fn get_code(lpdata: isize) -> u32 {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
-    kb.vkCode as u8
+    kb.vkCode
 }
 unsafe fn get_point(lpdata: isize) -> (i32, i32) {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
@@ -51,11 +55,11 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
         let opt = match param {
             x if x == WM_KEYDOWN as usize => {
                 let code = get_code(lpdata);
-                Some(EventType::KeyPress { code })
+                Some(EventType::KeyPress(Key::Unknown(code)))
             }
             x if x == WM_KEYUP as usize => {
                 let code = get_code(lpdata);
-                Some(EventType::KeyRelease { code })
+                Some(EventType::KeyRelease(Key::Unknown(code)))
             }
             x if x == WM_LBUTTONDOWN as usize => Some(EventType::ButtonPress { code: 1 }),
             x if x == WM_LBUTTONUP as usize => Some(EventType::ButtonRelease { code: 1 }),
@@ -152,9 +156,9 @@ fn mouse_event(flags: u32, data: u32, dx: i32, dy: i32) -> Result<(), SimulateEr
         },
     };
     let value = unsafe { SendInput(1, &mut input as LPINPUT, size_of::<INPUT>() as c_int) };
-    if value!= 1{
+    if value != 1 {
         Err(SimulateError)
-    }else{
+    } else {
         Ok(())
     }
 }
@@ -173,17 +177,23 @@ fn keyboard_event(flags: u32, vk: u16, scan: u16) -> Result<(), SimulateError> {
         },
     };
     let value = unsafe { SendInput(1, &mut input as LPINPUT, size_of::<INPUT>() as c_int) };
-    if value != 1{
+    if value != 1 {
         Err(SimulateError)
-    }else{
+    } else {
         Ok(())
     }
 }
 
 pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
     match event_type {
-        EventType::KeyPress { code } => keyboard_event(KEYEVENTF_KEYDOWN, *code as u16, 0),
-        EventType::KeyRelease { code } => keyboard_event(KEYEVENTF_KEYUP, *code as u16, 0),
+        EventType::KeyPress(key) => {
+            let code = code_from_key(key);
+            keyboard_event(KEYEVENTF_KEYDOWN, code, 0)
+        }
+        EventType::KeyRelease(key) => {
+            let code = code_from_key(key);
+            keyboard_event(KEYEVENTF_KEYUP, code, 0)
+        }
         EventType::ButtonPress { code } => match code {
             1 => mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
             2 => mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0),
@@ -228,7 +238,6 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
         EventType::MouseMove { x, y } => {
             let width = unsafe { GetSystemMetrics(SM_CXVIRTUALSCREEN) };
             let height = unsafe { GetSystemMetrics(SM_CYVIRTUALSCREEN) };
-
 
             mouse_event(
                 MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
