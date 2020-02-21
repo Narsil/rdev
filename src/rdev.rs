@@ -128,23 +128,26 @@ pub enum Key {
     Unknown(u32),
 }
 
+#[derive(Debug)]
+pub enum Button {
+    Left,
+    Right,
+    Middle,
+    Unknown(u8),
+}
+
 /// In order to manage different OS, the current EventType choices is a mix&match
 /// to account for all possible events.
 #[derive(Debug)]
 pub enum EventType {
-    /// This code is the raw keycode of the OS they tend to vary depending on keyboard
-    /// layout. They might not event correspond to a key on dead keys layout.
+    /// The keys correspond to a standard qwerty layout, they don't correspond
+    /// To the actual letter a user would use, that requires some layout logic to be added.
     KeyPress(Key),
     KeyRelease(Key),
-    /// Note: On MacOS, only LeftButton and RightButton Press and Release are defined
-    /// They are currently mapped to ButtonPress{code: 1} and ButtonPress{code: 3} to
-    /// be closer to X11 behaviour
-    ButtonPress {
-        code: u8,
-    },
-    ButtonRelease {
-        code: u8,
-    },
+    /// Some mouse will have more than 3 buttons, these are not defined, and different OS will
+    /// give different Unknown code.
+    ButtonPress(Button),
+    ButtonRelease(Button),
     /// Values in pixels
     MouseMove {
         x: f64,

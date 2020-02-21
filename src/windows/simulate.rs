@@ -1,4 +1,4 @@
-use crate::rdev::{EventType, SimulateError};
+use crate::rdev::{Button, EventType, SimulateError};
 use crate::windows::keycodes::code_from_key;
 use std::mem::{size_of, transmute, transmute_copy};
 use winapi::ctypes::c_int;
@@ -71,17 +71,17 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
                 Err(SimulateError)
             }
         }
-        EventType::ButtonPress { code } => match code {
-            1 => mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
-            2 => mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0),
-            3 => mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0),
-            _ => mouse_event(MOUSEEVENTF_XDOWN, 0, 0, (code - 3) as i32),
+        EventType::ButtonPress(button) => match button {
+            Button::Left => mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
+            Button::Middle => mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0),
+            Button::Right => mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0),
+            Button::Unknown(code) => mouse_event(MOUSEEVENTF_XDOWN, 0, 0, *code as i32),
         },
-        EventType::ButtonRelease { code } => match code {
-            1 => mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0),
-            2 => mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0),
-            3 => mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0),
-            _ => mouse_event(MOUSEEVENTF_XUP, 0, 0, (code - 3) as i32),
+        EventType::ButtonRelease(button) => match button {
+            Button::Left => mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0),
+            Button::Middle => mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0),
+            Button::Right => mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0),
+            Button::Unknown(code) => mouse_event(MOUSEEVENTF_XUP, 0, 0, *code as i32),
         },
         EventType::Wheel { delta_x, delta_y } => {
             let result_x = if *delta_x != 0 {

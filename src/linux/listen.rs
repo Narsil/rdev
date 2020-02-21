@@ -1,7 +1,7 @@
 extern crate libc;
 extern crate x11;
 use crate::linux::keycodes::key_from_code;
-use crate::rdev::{Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType};
 use std::ffi::CString;
 use std::os::raw::c_int;
 use std::ptr::null;
@@ -122,14 +122,24 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
                     delta_x: 0,
                 })
             } else {
-                Some(EventType::ButtonPress { code: xdatum.code })
+                match xdatum.code {
+                    1 => Some(EventType::ButtonPress(Button::Left)),
+                    2 => Some(EventType::ButtonPress(Button::Middle)),
+                    3 => Some(EventType::ButtonPress(Button::Right)),
+                    _ => Some(EventType::ButtonPress(Button::Unknown(xdatum.code))),
+                }
             }
         }
         xlib::ButtonRelease => {
             if xdatum.code == 4 || xdatum.code == 5 {
                 None
             } else {
-                Some(EventType::ButtonRelease { code: xdatum.code })
+                match xdatum.code {
+                    1 => Some(EventType::ButtonRelease(Button::Left)),
+                    2 => Some(EventType::ButtonRelease(Button::Middle)),
+                    3 => Some(EventType::ButtonRelease(Button::Right)),
+                    _ => Some(EventType::ButtonRelease(Button::Unknown(xdatum.code))),
+                }
             }
         }
         xlib::MotionNotify => Some(EventType::MouseMove {

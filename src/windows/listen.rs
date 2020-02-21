@@ -1,4 +1,4 @@
-use crate::rdev::{Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType};
 use crate::windows::keycodes::key_from_code;
 use std::ptr::null_mut;
 use std::time::SystemTime;
@@ -46,23 +46,23 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
             }
             x if x == WM_KEYUP as usize => {
                 let code = get_code(lpdata);
-                let key = key_from_code(code as  u16);
+                let key = key_from_code(code as u16);
                 Some(EventType::KeyRelease(key))
             }
-            x if x == WM_LBUTTONDOWN as usize => Some(EventType::ButtonPress { code: 1 }),
-            x if x == WM_LBUTTONUP as usize => Some(EventType::ButtonRelease { code: 1 }),
-            x if x == WM_MBUTTONDOWN as usize => Some(EventType::ButtonPress { code: 2 }),
-            x if x == WM_MBUTTONUP as usize => Some(EventType::ButtonRelease { code: 2 }),
-            x if x == WM_RBUTTONDOWN as usize => Some(EventType::ButtonPress { code: 3 }),
-            x if x == WM_RBUTTONUP as usize => Some(EventType::ButtonRelease { code: 3 }),
+            x if x == WM_LBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Left)),
+            x if x == WM_LBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Left)),
+            x if x == WM_MBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Middle)),
+            x if x == WM_MBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Middle)),
+            x if x == WM_RBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Right)),
+            x if x == WM_RBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Right)),
             x if x == WM_XBUTTONDOWN as usize => {
-                let code = get_button_code(lpdata) as u8 + 3;
-                Some(EventType::ButtonPress { code })
+                let code = get_button_code(lpdata) as u8;
+                Some(EventType::ButtonPress(Button::Unknown(code)))
             }
             x if x == WM_XBUTTONUP as usize => {
-                let code = get_button_code(lpdata) as u8 + 3;
+                let code = get_button_code(lpdata) as u8;
 
-                Some(EventType::ButtonRelease { code })
+                Some(EventType::ButtonRelease(Button::Unknown(code)))
             }
 
             x if x == WM_MOUSEMOVE as usize => {
