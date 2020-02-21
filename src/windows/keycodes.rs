@@ -1,108 +1,110 @@
 use crate::rdev::Key;
 
-const ALT: u32 = 64;
-const ALT_GR: u32 = 108;
-const BACKSPACE: u32 = 22;
-const CAPS_LOCK: u32 = 66;
-const CONTROL_LEFT: u32 = 37;
-const CONTROL_RIGHT: u32 = 105;
-const DELETE: u32 = 119;
-const DOWN_ARROW: u32 = 116;
-const END: u32 = 115;
-const ESCAPE: u32 = 9;
-const F1: u32 = 67;
-const F10: u32 = 76;
-const F11: u32 = 95;
-const F12: u32 = 96;
-const F2: u32 = 68;
-const F3: u32 = 69;
-const F4: u32 = 70;
-const F5: u32 = 71;
-const F6: u32 = 72;
-const F7: u32 = 73;
-const F8: u32 = 74;
-const F9: u32 = 75;
-const HOME: u32 = 110;
-const LEFT_ARROW: u32 = 113;
-const META: u32 = 133;
-const PAGE_DOWN: u32 = 117;
-const PAGE_UP: u32 = 112;
-const RETURN: u32 = 36;
-const RIGHT_ARROW: u32 = 114;
-const SHIFT_LEFT: u32 = 50;
-const SHIFT_RIGHT: u32 = 62;
-const SPACE: u32 = 65;
-const TAB: u32 = 23;
-const UP_ARROW: u32 = 111;
-const PRINT_SCREEN: u32 = 107;
-const SCROLL_LOCK: u32 = 78;
-const PAUSE: u32 = 127;
-const NUM_LOCK: u32 = 77;
-const BACK_QUOTE: u32 = 49;
-const NUM1: u32 = 10;
-const NUM2: u32 = 11;
-const NUM3: u32 = 12;
-const NUM4: u32 = 13;
-const NUM5: u32 = 14;
-const NUM6: u32 = 15;
-const NUM7: u32 = 16;
-const NUM8: u32 = 17;
-const NUM9: u32 = 18;
-const NUM0: u32 = 19;
-const MINUS: u32 = 20;
-const EQUAL: u32 = 21;
-const KEY_Q: u32 = 24;
-const KEY_W: u32 = 25;
-const KEY_E: u32 = 26;
-const KEY_R: u32 = 27;
-const KEY_T: u32 = 28;
-const KEY_Y: u32 = 29;
-const KEY_U: u32 = 30;
-const KEY_I: u32 = 31;
-const KEY_O: u32 = 32;
-const KEY_P: u32 = 33;
-const LEFT_BRACKET: u32 = 34;
-const RIGHT_BRACKET: u32 = 35;
-const KEY_A: u32 = 38;
-const KEY_S: u32 = 39;
-const KEY_D: u32 = 40;
-const KEY_F: u32 = 41;
-const KEY_G: u32 = 42;
-const KEY_H: u32 = 43;
-const KEY_J: u32 = 44;
-const KEY_K: u32 = 45;
-const KEY_L: u32 = 46;
-const SEMI_COLON: u32 = 47;
-const QUOTE: u32 = 48;
-const BACK_SLASH: u32 = 51;
-const INTL_BACKSLASH: u32 = 94;
-const KEY_Z: u32 = 52;
-const KEY_X: u32 = 53;
-const KEY_C: u32 = 54;
-const KEY_V: u32 = 55;
-const KEY_B: u32 = 56;
-const KEY_N: u32 = 57;
-const KEY_M: u32 = 58;
-const COMMA: u32 = 59;
-const DOT: u32 = 60;
-const SLASH: u32 = 61;
-const INSERT: u32 = 118;
-const KP_RETURN: u32 = 104;
-const KP_MINUS: u32 = 82;
-const KP_PLUS: u32 = 86;
-const KP_MULTIPLY: u32 = 63;
-const KP_DIVIDE: u32 = 106;
-const KP0: u32 = 90;
-const KP1: u32 = 87;
-const KP2: u32 = 88;
-const KP3: u32 = 89;
-const KP4: u32 = 83;
-const KP5: u32 = 84;
-const KP6: u32 = 85;
-const KP7: u32 = 79;
-const KP8: u32 = 80;
-const KP9: u32 = 81;
-const KP_DELETE: u32 = 91;
+/// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+/// We redefined here for Letter and number keys which are not in winapi crate (and don't have a name either in win32)
+const ALT: u16 = 164;
+const ALT_GR: u16 = 165;
+const BACKSPACE: u16 = 0x08;
+const CAPS_LOCK: u16 = 20;
+const CONTROL_LEFT: u16 = 162;
+const CONTROL_RIGHT: u16 = 163;
+const DELETE: u16 = 46;
+const DOWN_ARROW: u16 = 40;
+const END: u16 = 35;
+const ESCAPE: u16 = 27;
+const F1: u16 = 112;
+const F10: u16 = 121;
+const F11: u16 = 122;
+const F12: u16 = 123;
+const F2: u16 = 113;
+const F3: u16 = 114;
+const F4: u16 = 115;
+const F5: u16 = 116;
+const F6: u16 = 117;
+const F7: u16 = 118;
+const F8: u16 = 119;
+const F9: u16 = 120;
+const HOME: u16 = 36;
+const LEFT_ARROW: u16 = 37;
+const META_LEFT: u16 = 91;
+const PAGE_DOWN: u16 = 34;
+const PAGE_UP: u16 = 33;
+const RETURN: u16 = 0x0D;
+const RIGHT_ARROW: u16 = 39;
+const SHIFT_LEFT: u16 = 160;
+const SHIFT_RIGHT: u16 = 161;
+const SPACE: u16 = 32;
+const TAB: u16 = 0x09;
+const UP_ARROW: u16 = 38;
+const PRINT_SCREEN: u16 = 44;
+const SCROLL_LOCK: u16 = 145;
+const PAUSE: u16 = 19;
+const NUM_LOCK: u16 = 144;
+const BACK_QUOTE: u16 = 192;
+const NUM1: u16 = 49;
+const NUM2: u16 = 50;
+const NUM3: u16 = 51;
+const NUM4: u16 = 52;
+const NUM5: u16 = 53;
+const NUM6: u16 = 54;
+const NUM7: u16 = 55;
+const NUM8: u16 = 56;
+const NUM9: u16 = 57;
+const NUM0: u16 = 48;
+const MINUS: u16 = 189;
+const EQUAL: u16 = 187;
+const KEY_Q: u16 = 81;
+const KEY_W: u16 = 87;
+const KEY_E: u16 = 69;
+const KEY_R: u16 = 82;
+const KEY_T: u16 = 84;
+const KEY_Y: u16 = 89;
+const KEY_U: u16 = 85;
+const KEY_I: u16 = 73;
+const KEY_O: u16 = 79;
+const KEY_P: u16 = 80;
+const LEFT_BRACKET: u16 = 219;
+const RIGHT_BRACKET: u16 = 221;
+const KEY_A: u16 = 65;
+const KEY_S: u16 = 83;
+const KEY_D: u16 = 68;
+const KEY_F: u16 = 70;
+const KEY_G: u16 = 71;
+const KEY_H: u16 = 72;
+const KEY_J: u16 = 74;
+const KEY_K: u16 = 75;
+const KEY_L: u16 = 76;
+const SEMI_COLON: u16 = 186;
+const QUOTE: u16 = 222;
+const BACK_SLASH: u16 = 220;
+const INTL_BACKSLASH: u16 = 226;
+const KEY_Z: u16 = 90;
+const KEY_X: u16 = 88;
+const KEY_C: u16 = 67;
+const KEY_V: u16 = 86;
+const KEY_B: u16 = 66;
+const KEY_N: u16 = 78;
+const KEY_M: u16 = 77;
+const COMMA: u16 = 188;
+const DOT: u16 = 190;
+const SLASH: u16 = 191;
+const INSERT: u16 = 45;
+// const KP_RETURN: u16 = 13;
+const KP_MINUS: u16 = 109;
+const KP_PLUS: u16 = 107;
+const KP_MULTIPLY: u16 = 106;
+const KP_DIVIDE: u16 = 111;
+const KP0: u16 = 96;
+const KP1: u16 = 97;
+const KP2: u16 = 98;
+const KP3: u16 = 99;
+const KP4: u16 = 100;
+const KP5: u16 = 101;
+const KP6: u16 = 102;
+const KP7: u16 = 103;
+const KP8: u16 = 104;
+const KP9: u16 = 105;
+const KP_DELETE: u16 = 110;
 
 pub fn code_from_key(key: &Key) -> Option<u16> {
     match key {
@@ -193,7 +195,7 @@ pub fn code_from_key(key: &Key) -> Option<u16> {
         Key::Dot => Some(DOT),
         Key::Slash => Some(SLASH),
         Key::Insert => Some(INSERT),
-        Key::KpReturn => Some(KP_RETURN),
+        // Key::KpReturn => Some(KP_RETURN),
         Key::KpMinus => Some(KP_MINUS),
         Key::KpPlus => Some(KP_PLUS),
         Key::KpMultiply => Some(KP_MULTIPLY),
@@ -214,7 +216,7 @@ pub fn code_from_key(key: &Key) -> Option<u16> {
     }
 }
 
-pub fn key_from_code(code: u32) -> Key {
+pub fn key_from_code(code: u16) -> Key {
     match code {
         ALT => Key::Alt,
         ALT_GR => Key::AltGr,
@@ -303,7 +305,7 @@ pub fn key_from_code(code: u32) -> Key {
         DOT => Key::Dot,
         SLASH => Key::Slash,
         INSERT => Key::Insert,
-        KP_RETURN => Key::KpReturn,
+        // KP_RETURN => Key::KpReturn,
         KP_MINUS => Key::KpMinus,
         KP_PLUS => Key::KpPlus,
         KP_MULTIPLY => Key::KpMultiply,
@@ -319,7 +321,7 @@ pub fn key_from_code(code: u32) -> Key {
         KP8 => Key::Kp8,
         KP9 => Key::Kp9,
         KP_DELETE => Key::KpDelete,
-        code => Key::Unknown(code),
+        code => Key::Unknown(code as u32),
     }
 }
 
@@ -328,10 +330,13 @@ mod test {
     use super::{code_from_key, key_from_code};
     #[test]
     fn test_reversible() {
-        for code in 0..65636 {
+        for code in 0..65535 {
             let key = key_from_code(code);
-            let code2 = code_from_key(&key);
-            assert_eq!(code, code2)
+            if let Some(code2) = code_from_key(&key) {
+                assert_eq!(code, code2)
+            } else {
+                assert!(false, "We could not convert back code: {:?}", code);
+            }
         }
     }
 }

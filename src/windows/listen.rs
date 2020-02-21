@@ -1,4 +1,5 @@
-use crate::rdev::{Callback, Event, EventType, Key};
+use crate::rdev::{Callback, Event, EventType};
+use crate::windows::keycodes::key_from_code;
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::shared::windef::HHOOK;
@@ -40,11 +41,13 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
         let opt = match param {
             x if x == WM_KEYDOWN as usize => {
                 let code = get_code(lpdata);
-                Some(EventType::KeyPress(Key::Unknown(code)))
+                let key = key_from_code(code as u16);
+                Some(EventType::KeyPress(key))
             }
             x if x == WM_KEYUP as usize => {
                 let code = get_code(lpdata);
-                Some(EventType::KeyRelease(Key::Unknown(code)))
+                let key = key_from_code(code as  u16);
+                Some(EventType::KeyRelease(key))
             }
             x if x == WM_LBUTTONDOWN as usize => Some(EventType::ButtonPress { code: 1 }),
             x if x == WM_LBUTTONUP as usize => Some(EventType::ButtonRelease { code: 1 }),

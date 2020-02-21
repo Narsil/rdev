@@ -13,6 +13,8 @@ pub struct SimulateError;
 /// Characters based on Qwerty layout, don't use this for characters as it WILL
 /// depend on the layout. Use Event.name instead. Key modifiers gives those keys
 /// a different value too.
+/// Careful, on Windows KpReturn does not exist, it' s strictly equivalent to Return, also Keypad keys
+/// get modified if NumLock is Off and ARE pagedown and so on.
 #[derive(Debug)]
 pub enum Key {
     /// Alt key on Linux and Windows (option key on macOS)
