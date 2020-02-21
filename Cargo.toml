@@ -4,6 +4,15 @@ version = "0.1.0"
 authors = ["Nicolas Patry <patry.nicolas@protonmail.com>"]
 edition = "2018"
 
+description = "Listen and send keyboard and mouse events on Windows, Linux and MacOS."
+documentation = "https://docs.rs/rdev/"
+homepage = "https://github.com/Narsil/rdev"
+repository = "https://github.com/Narsil/rdev"
+readme = "README.md"
+keywords = ["input", "mouse", "testing", "keyboard", "automation"]
+categories = ["development-tools::testing", "api-bindings", "hardware-support"]
+license = "MIT"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.20"
 core-graphics = {version = "0.19.0", features = ["highsierra"]}
