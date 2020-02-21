@@ -24,7 +24,7 @@ const F8: u32 = 74;
 const F9: u32 = 75;
 const HOME: u32 = 110;
 const LEFT_ARROW: u32 = 113;
-const META: u32 = 133;
+const META_LEFT: u32 = 133;
 const PAGE_DOWN: u32 = 117;
 const PAGE_UP: u32 = 112;
 const RETURN: u32 = 36;
@@ -104,7 +104,7 @@ const KP8: u32 = 80;
 const KP9: u32 = 81;
 const KP_DELETE: u32 = 91;
 
-pub fn code_from_key(key: &Key) -> Option<u32< {
+pub fn code_from_key(key: &Key) -> Option<u32> {
     match key {
         Key::Alt => Some(ALT),
         Key::AltGr => Some(ALT_GR),
