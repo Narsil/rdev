@@ -104,7 +104,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
 
 unsafe fn set_key_hook() {
     let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
-    if hook == null_mut() {
+    if hook.is_null() {
         let error = GetLastError();
         panic!("Can't set system hook! {:?}", error)
     }
@@ -112,7 +112,7 @@ unsafe fn set_key_hook() {
 }
 unsafe fn set_mouse_hook() {
     let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
-    if hook == null_mut() {
+    if hook.is_null() {
         let error = GetLastError();
         panic!("Can't set system hook! {:?}", error)
     }
