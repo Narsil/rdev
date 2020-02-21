@@ -1,4 +1,4 @@
-use crate::rdev::{Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
@@ -79,10 +79,10 @@ static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
 
 unsafe fn convert(_type: CGEventType, cg_event: &CGEvent) -> Option<Event> {
     let option_type = match _type {
-        CGEventType::LeftMouseDown => Some(EventType::ButtonPress { code: 1 }),
-        CGEventType::LeftMouseUp => Some(EventType::ButtonRelease { code: 1 }),
-        CGEventType::RightMouseDown => Some(EventType::ButtonPress { code: 3 }),
-        CGEventType::RightMouseUp => Some(EventType::ButtonRelease { code: 3 }),
+        CGEventType::LeftMouseDown => Some(EventType::ButtonPress(Button::Left)),
+        CGEventType::LeftMouseUp => Some(EventType::ButtonRelease(Button::Left)),
+        CGEventType::RightMouseDown => Some(EventType::ButtonPress(Button::Right)),
+        CGEventType::RightMouseUp => Some(EventType::ButtonRelease(Button::Right)),
         CGEventType::MouseMoved => {
             let point = cg_event.location();
             Some(EventType::MouseMove {

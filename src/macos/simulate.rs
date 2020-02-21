@@ -1,4 +1,4 @@
-use crate::rdev::{EventType, SimulateError};
+use crate::rdev::{Button, EventType, SimulateError};
 use core_graphics::event::{
     CGEvent, CGEventTapLocation, CGEventType, CGKeyCode, CGMouseButton, ScrollEventUnit,
 };
@@ -24,45 +24,48 @@ unsafe fn convert_native_with_source(
             }
             Err(())
         }
-        EventType::ButtonPress { code } => {
-            // TODO
+        EventType::ButtonPress(button) => {
             let point = get_current_mouse_location();
-            if *code == 1 {
-                CGEvent::new_mouse_event(
-                    source,
-                    CGEventType::LeftMouseDown,
-                    point,
-                    CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
-                )
-            } else if *code == 3 {
-                CGEvent::new_mouse_event(
-                    source,
-                    CGEventType::RightMouseDown,
-                    point,
-                    CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
-                )
-            } else {
-                Err(())
+            match button {
+                Button::Left => {
+                    CGEvent::new_mouse_event(
+                        source,
+                        CGEventType::LeftMouseDown,
+                        point,
+                        CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
+                    )
+                }
+                Button::Right => {
+                    CGEvent::new_mouse_event(
+                        source,
+                        CGEventType::RightMouseDown,
+                        point,
+                        CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
+                    )
+                }
+                _ => Err(()),
             }
         }
-        EventType::ButtonRelease { code } => {
+        EventType::ButtonRelease(button) => {
             let point = get_current_mouse_location();
-            if *code == 1 {
-                CGEvent::new_mouse_event(
-                    source,
-                    CGEventType::LeftMouseUp,
-                    point,
-                    CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
-                )
-            } else if *code == 3 {
-                CGEvent::new_mouse_event(
-                    source,
-                    CGEventType::RightMouseUp,
-                    point,
-                    CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
-                )
-            } else {
-                Err(())
+            match button {
+                Button::Left => {
+                    CGEvent::new_mouse_event(
+                        source,
+                        CGEventType::LeftMouseUp,
+                        point,
+                        CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
+                    )
+                }
+                Button::Right => {
+                    CGEvent::new_mouse_event(
+                        source,
+                        CGEventType::RightMouseUp,
+                        point,
+                        CGMouseButton::Left, // This is actually ignored because we don't use OtherMouse EventType
+                    )
+                }
+                _ => Err(()),
             }
         }
         EventType::MouseMove { x, y } => {
