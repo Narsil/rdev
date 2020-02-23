@@ -5,10 +5,10 @@ use std::time::SystemTime;
 use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::winuser::{
-    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT,
-    WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP,
-    WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN,
-    WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
+    CallNextHookEx, GetKeyboardState, GetMessageA, SetWindowsHookExA, ToUnicode, HC_ACTION,
+    KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN,
+    WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEHWHEEL,
+    WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
 
 fn default_callback(event: Event) {
@@ -17,10 +17,15 @@ fn default_callback(event: Event) {
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut HOOK: HHOOK = null_mut();
+static mut STATE: [u8; 256] = [0; 256];
 
 unsafe fn get_code(lpdata: isize) -> u32 {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
     kb.vkCode
+}
+unsafe fn get_scan_code(lpdata: isize) -> u32 {
+    let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
+    kb.scanCode
 }
 unsafe fn get_point(lpdata: isize) -> (i32, i32) {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
@@ -42,6 +47,14 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
             x if x == WM_KEYDOWN as usize => {
                 let code = get_code(lpdata);
                 let key = key_from_code(code as u16);
+                let scan_code = get_scan_code(lpdata);
+                let buff: [u16; 32] = [0; 32];
+                let buff_ptr = &buff as *const _ as *mut u16;
+                let state_ptr = &mut STATE as *const _ as *mut u8;
+                GetKeyboardState(state_ptr);
+                // println!("Keyboard state {:?}", STATE);
+                ToUnicode(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0);
+                println!("Buff {:?}", buff);
                 Some(EventType::KeyPress(key))
             }
             x if x == WM_KEYUP as usize => {
