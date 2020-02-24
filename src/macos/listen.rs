@@ -1,3 +1,4 @@
+use crate::macos::keyboard_state::KeyboardState;
 use crate::rdev::{Button, Callback, Event, EventType};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
@@ -76,8 +77,13 @@ fn default_callback(event: Event) {
 }
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
+static mut KEYBOARD_STATE: KeyboardState = KeyboardState { dead_state: 0 };
 
-unsafe fn convert(_type: CGEventType, cg_event: &CGEvent) -> Option<Event> {
+unsafe fn convert(
+    _type: CGEventType,
+    cg_event: &CGEvent,
+    keyboard_state: &mut KeyboardState,
+) -> Option<Event> {
     let option_type = match _type {
         CGEventType::LeftMouseDown => Some(EventType::ButtonPress(Button::Left)),
         CGEventType::LeftMouseUp => Some(EventType::ButtonRelease(Button::Left)),
@@ -119,10 +125,19 @@ unsafe fn convert(_type: CGEventType, cg_event: &CGEvent) -> Option<Event> {
         _ => None,
     };
     if let Some(event_type) = option_type {
+        let name = match event_type {
+            EventType::KeyPress(_) => {
+                let code =
+                    cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+                let flags = cg_event.get_flags();
+                keyboard_state.create_string_for_key(code, flags)
+            }
+            _ => None,
+        };
         return Some(Event {
             event_type,
             time: SystemTime::now(),
-            name: None,
+            name,
         });
     }
     None
@@ -134,7 +149,7 @@ unsafe extern "C" fn raw_callback(
     cg_event: CGEvent,
     _user_info: *mut c_void,
 ) -> CGEvent {
-    if let Some(event) = convert(_type, &cg_event) {
+    if let Some(event) = convert(_type, &cg_event, &mut KEYBOARD_STATE) {
         GLOBAL_CALLBACK(event);
     }
     cg_event
