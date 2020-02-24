@@ -167,6 +167,6 @@ pub enum EventType {
 #[derive(Debug)]
 pub struct Event {
     pub time: SystemTime,
-    pub name: Option<Key>,
+    pub name: Option<String>,
     pub event_type: EventType,
 }
