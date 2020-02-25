@@ -82,7 +82,6 @@ unsafe fn get_name(lpdata: isize) -> Option<String> {
     if status != 1 {
         return None;
     }
-    println!("Keyboard state status {:?}", status);
     let layout = GetKeyboardLayout(current_window_thread_id);
     let len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
 
