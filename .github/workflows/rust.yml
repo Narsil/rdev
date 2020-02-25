@@ -6,6 +6,8 @@ jobs:
   build:
 
     runs-on: ${{matrix.os}}
+    env:
+      DISPLAY: ':99'
     strategy:
       fail-fast: false
       matrix: 
