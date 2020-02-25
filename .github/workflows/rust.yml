@@ -11,6 +11,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Dependencies
+      run: |
+        sudo apt install libxtst-dev
     - name: Setup headless environment
       run: |
         Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
