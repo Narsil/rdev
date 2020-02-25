@@ -30,12 +30,52 @@ impl KeyboardState {
             }
             let style = xlib::XIMPreeditNothing | xlib::XIMStatusNothing;
             let input_style = CString::new(xlib::XNInputStyle).expect("CString::new failed");
+            let window_client = CString::new(xlib::XNClientWindow).expect("CString::new failed");
 
-            let xic = xlib::XCreateIC(xim, input_style.as_ptr(), style, null::<c_void>());
+            let mut win_attr = xlib::XSetWindowAttributes {
+                background_pixel: 0,
+                background_pixmap: 0,
+                border_pixel: 0,
+                border_pixmap: 0,
+                bit_gravity: 0,
+                win_gravity: 0,
+                backing_store: 0,
+                backing_planes: 0,
+                backing_pixel: 0,
+                event_mask: 0,
+                save_under: 0,
+                do_not_propagate_mask: 0,
+                override_redirect: 0,
+                colormap: 0,
+                cursor: 0,
+            };
+
+            let window = xlib::XCreateWindow(
+                dpy,
+                xlib::XDefaultRootWindow(dpy),
+                0,
+                0,
+                1,
+                1,
+                0,
+                xlib::CopyFromParent,
+                xlib::InputOnly as u32,
+                null_mut(),
+                0,
+                &mut win_attr,
+            );
+
+            let xic = xlib::XCreateIC(
+                xim,
+                window_client.as_ptr(),
+                window,
+                input_style.as_ptr(),
+                style,
+                null::<c_void>(),
+            );
             if xic.is_null() {
                 return Err(());
             }
-
             Ok(KeyboardState {
                 xic,
                 display: dpy,
