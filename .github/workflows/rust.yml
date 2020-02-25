@@ -13,7 +13,7 @@ jobs:
         include:
         - os: ubuntu-latest
           headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        - os: ubuntu-latest:
+        - os: ubuntu-latest
           dependencies: sudo apt install libxtst-dev
 
     steps:
