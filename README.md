@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/Narsil/rdev/workflows/build/badge.svg)](https://github.com/Narsil/rdev/actions)
+![](https://github.com/Narsil/rdev/workflows/build/badge.svg)
 
 Simple library to listen and send events to keyboard and mouse.
 
