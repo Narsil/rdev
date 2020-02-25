@@ -54,6 +54,30 @@ fn main() {
 }
 ```
 
+### Event struct
+
+In order to detect what a user types, we need to plug to the OS level management
+of keyboard state (modifiers like shift, ctrl, but also dead keys if they exist).
+
+In order to see what is the outcome of an event, you need to read the Event::name option.
+
+```rust
+/// When events arrive from the system we can add some information
+/// time is when the event was received, name *will* be at some point changed
+/// to be mapped to the function of the key (Alt, s, Return and so on).
+#[derive(Debug)]
+pub struct Event {
+    pub time: SystemTime,
+    pub name: Option<String>,
+    pub event_type: EventType,
+}
+```
+
+Be careful, Event::name, might be None, but also String::from(""), and might contain
+not displayable unicode characters. We send exactly what the OS sends us so do some sanity checking
+before using it.
+Caveat: Dead keys don't function yet on Linux
+
 ### Events enum
 
 In order to manage different OS, the current EventType choices is a mix&match
