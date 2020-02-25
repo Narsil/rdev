@@ -16,7 +16,7 @@ use crate::linux::{listen as _listen, simulate as _simulate};
 mod windows;
 
 #[cfg(target_os = "windows")]
-use crate::windows::{listen as _listen, simulat as _simulate};
+use crate::windows::{listen as _listen, simulate as _simulate};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -24,10 +24,6 @@ use crate::windows::{listen as _listen, simulat as _simulate};
 ///
 /// ```no_run
 /// use rdev::{listen, Event};
-///
-/// fn main() {
-///     listen(callback);
-/// }
 ///
 /// fn callback(event: Event) {
 ///     println!("My callback {:?}", event);
@@ -59,7 +55,7 @@ pub fn listen(callback: Callback) {
 ///     thread::sleep(delay);
 /// }
 ///
-/// fn main() {
+/// fn my_shortcut() {
 ///     send(&EventType::KeyPress(Key::KeyS));
 ///     send(&EventType::KeyRelease(Key::KeyS));
 ///
