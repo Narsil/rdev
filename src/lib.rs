@@ -16,7 +16,7 @@ use crate::linux::{listen as _listen, simulate as _simulate};
 mod windows;
 
 #[cfg(target_os = "windows")]
-use crate::windows::{listen as _listen, simulat as _simulatee};
+use crate::windows::{listen as _listen, simulat as _simulate};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
