@@ -161,9 +161,12 @@ pub enum EventType {
     },
 }
 
-/// When events arrive from the system we can add some information
-/// time is when the event was received, name *will* be at some point changed
-/// to be mapped to the function of the key (Alt, s, Return and so on).
+/// When events arrive from the OS they get some additional information added from
+/// EventType, which is the time when this event was received, and the name Option
+/// which contains what characters should be emmitted from that event. This relies
+/// on the OS layout and keyboard state machinery.
+/// Caveat: Dead keys don't function on Linux(X11) yet. You will receive None for
+/// a dead key, and the raw letter instead of accentuated letter instead.
 #[derive(Debug)]
 pub struct Event {
     pub time: SystemTime,
