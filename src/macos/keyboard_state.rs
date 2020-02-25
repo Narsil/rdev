@@ -7,15 +7,21 @@ use std::ffi::c_void;
 type TISInputSourceRef = *mut c_void;
 type ModifierState = u32;
 type UniCharCount = usize;
-type UCKeyboardLayout = *mut u8;
 
 type OptionBits = u32;
+#[allow(non_upper_case_globals)]
 static kUCKeyTranslateDeadKeysBit: OptionBits = 1 << 31;
+#[allow(non_upper_case_globals)]
 static kUCKeyActionDown: u16 = 0;
+#[allow(non_upper_case_globals)]
 static NSEventModifierFlagCapsLock: u64 = 1 << 16;
+#[allow(non_upper_case_globals)]
 static NSEventModifierFlagShift: u64 = 1 << 17;
+#[allow(non_upper_case_globals)]
 static NSEventModifierFlagControl: u64 = 1 << 18;
+#[allow(non_upper_case_globals)]
 static NSEventModifierFlagOption: u64 = 1 << 19;
+#[allow(non_upper_case_globals)]
 static NSEventModifierFlagCommand: u64 = 1 << 20;
 
 #[cfg(target_os = "macos")]
@@ -58,7 +64,7 @@ impl KeyboardState {
         let mut buff: [UniChar; 4] = [0; 4];
         let kb_type = LMGetKbdType();
         let mut length = buff.len();
-        let retval = UCKeyTranslate(
+        let _retval = UCKeyTranslate(
             layout_ptr,
             code as u16,
             kUCKeyActionDown,
@@ -79,6 +85,7 @@ impl KeyboardState {
     }
 }
 
+#[allow(clippy::identity_op)]
 pub unsafe fn flags_to_state(flags: u64) -> ModifierState {
     let has_alt = flags & NSEventModifierFlagOption;
     let has_caps_lock = flags & NSEventModifierFlagCapsLock;
