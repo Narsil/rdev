@@ -1,6 +1,7 @@
 extern crate libc;
 extern crate x11;
 
+mod keyboard_state;
 mod keycodes;
 mod listen;
 mod simulate;

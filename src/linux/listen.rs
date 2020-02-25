@@ -1,20 +1,22 @@
 extern crate libc;
 extern crate x11;
+extern crate xproto;
+use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Callback, Event, EventType};
 use std::ffi::CString;
-use std::os::raw::c_int;
-use std::ptr::null;
+use std::os::raw::{c_int, c_uchar};
+use std::ptr::{null, null_mut};
 use std::time::SystemTime;
 use x11::xlib;
 use x11::xrecord;
-static mut EVENT_COUNT: u32 = 0;
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
+static mut KEYBOARD_STATE: *mut KeyboardState = null_mut();
 
 pub fn listen(callback: Callback) {
     unsafe {
@@ -71,21 +73,30 @@ pub fn listen(callback: Callback) {
 // No idea how to do that properly relevant doc lives here:
 // https://www.x.org/releases/X11R7.7/doc/libXtst/recordlib.html#Datum_Flags
 #[repr(C)]
-struct XRecordDatum {
-    xtype: u8,
-    code: u8,
-    a: u16,
-    b: u32,
-    c: u32,
-    d: u32,
-    e: u32,
-    x: u16,
-    y: u16,
-    h: u32,
+union XRecordDatum {
+    type_: c_uchar,
+    event: xproto::xEvent,
+    // error: xError,
+    // req: xResourceReq,
+    // replay: xGenericReply,
+    // setup: xConnSetupPrefix,
 }
 
+// #[repr(C)]
+// struct XRecordDatum {
+//     xtype: u8,
+//     code: u8,
+//     a: u16,
+//     b: u32,
+//     c: u32,
+//     d: u32,
+//     e: u32,
+//     x: u16,
+//     y: u16,
+//     h: u32,
+// }
+
 unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    EVENT_COUNT += 1;
     let data = &*raw_data;
 
     // Skip server events
@@ -95,66 +106,91 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
 
     // Cast binary data
     #[allow(clippy::cast_ptr_alignment)]
-    let xdatum = &*(data.data as *mut XRecordDatum);
+    let xdatum = &mut *(data.data as *mut XRecordDatum);
 
-    let option_type = match xdatum.xtype as i32 {
+    // println!("xdatum.type_ {:?}", xdatum.type_);
+    // println!("xdatum.event {:?}", xdatum.event);
+
+    let code = xdatum.event.u.u.as_ref().detail;
+    let option_type = match xdatum.type_ as i32 {
         xlib::KeyPress => {
-            let code = xdatum.code as u32;
-            let key = key_from_code(code);
+            let key = key_from_code(code as u32);
             Some(EventType::KeyPress(key))
         }
         xlib::KeyRelease => {
-            let code = xdatum.code as u32;
-            let key = key_from_code(code);
+            let key = key_from_code(code as u32);
             Some(EventType::KeyRelease(key))
         }
         // Xlib does not implement wheel events left and right afaik.
         // But MacOS does, so we need to acknowledge the larger event space.
         xlib::ButtonPress => {
-            if xdatum.code == 4 {
+            if code == 4 {
                 Some(EventType::Wheel {
                     delta_y: -1,
                     delta_x: 0,
                 })
-            } else if xdatum.code == 5 {
+            } else if code == 5 {
                 Some(EventType::Wheel {
                     delta_y: 1,
                     delta_x: 0,
                 })
             } else {
-                match xdatum.code {
+                match code {
                     1 => Some(EventType::ButtonPress(Button::Left)),
                     2 => Some(EventType::ButtonPress(Button::Middle)),
                     3 => Some(EventType::ButtonPress(Button::Right)),
-                    _ => Some(EventType::ButtonPress(Button::Unknown(xdatum.code))),
+                    code => Some(EventType::ButtonPress(Button::Unknown(code as u8))),
                 }
             }
         }
         xlib::ButtonRelease => {
-            if xdatum.code == 4 || xdatum.code == 5 {
+            if code == 4 || code == 5 {
                 None
             } else {
-                match xdatum.code {
+                match code {
                     1 => Some(EventType::ButtonRelease(Button::Left)),
                     2 => Some(EventType::ButtonRelease(Button::Middle)),
                     3 => Some(EventType::ButtonRelease(Button::Right)),
-                    _ => Some(EventType::ButtonRelease(Button::Unknown(xdatum.code))),
+                    _ => Some(EventType::ButtonRelease(Button::Unknown(code as u8))),
                 }
             }
         }
         xlib::MotionNotify => Some(EventType::MouseMove {
-            x: xdatum.x as f64,
-            y: xdatum.y as f64,
+            x: xdatum.event.u.keyButtonPointer.as_ref().rootX as f64,
+            y: xdatum.event.u.keyButtonPointer.as_ref().rootY as f64,
         }),
         _ => None,
     };
 
     if let Some(event_type) = option_type {
+        let name = match event_type {
+            EventType::KeyPress(_) => {
+                KEYBOARD_STATE = if KEYBOARD_STATE.is_null() {
+                    if let Ok(mut keyboard) = KeyboardState::new() {
+                        &mut keyboard as *mut KeyboardState
+                    } else {
+                        null_mut()
+                    }
+                } else {
+                    KEYBOARD_STATE
+                };
+                if KEYBOARD_STATE.is_null() {
+                    println!("Could not set a keyboard state");
+                    None
+                } else if let Some(keyboard) = KEYBOARD_STATE.as_mut() {
+                    keyboard.name_from_code(&mut xdatum.event)
+                } else {
+                    println!("Null pointer");
+                    None
+                }
+            }
+            _ => None,
+        };
         let time = SystemTime::now();
         let event = Event {
             event_type,
             time,
-            name: None,
+            name,
         };
         GLOBAL_CALLBACK(event);
     }
