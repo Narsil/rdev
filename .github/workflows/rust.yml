@@ -5,19 +5,24 @@ on: [push]
 jobs:
   build:
 
-    runs-on: ubuntu-latest
-    env:
-      DISPLAY: ':99'
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix: 
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+        - os: ubuntu-latest
+          headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        - os: ubuntu-latest:
+          dependencies: sudo apt install libxtst-dev
 
     steps:
     - uses: actions/checkout@v2
     - name: Dependencies
-      run: |
-        sudo apt install libxtst-dev
+      run: ${{matrix.dependencies}}
     - name: Setup headless environment
-      run: |
-        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      run: ${{matrix.headless}}
     - name: Build
-      run: RUST_BACKTRACE=1 cargo build --verbose
+      run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
