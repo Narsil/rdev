@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/Narsil/rdev/workflows/rust/badge.svg)](https://github.com/Narsil/rdev/actions)
+
 Simple library to listen and send events to keyboard and mouse.
 
 You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
