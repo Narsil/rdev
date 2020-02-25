@@ -2,23 +2,23 @@ use crate::rdev::{Button, Callback, Event, EventType};
 use crate::windows::keycodes::key_from_code;
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::shared::windef::HHOOK;
 use winapi::shared::minwindef::HKL;
+use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::processthreadsapi::GetCurrentThreadId;
 use winapi::um::winuser;
 use winapi::um::winuser::{
-    CallNextHookEx, GetKeyboardState, GetKeyboardLayout, GetKeyState, GetMessageA, SetWindowsHookExA, ToUnicodeEx, HC_ACTION,
-    KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN,
-    WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEHWHEEL,
-    WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
-    VK_SHIFT, GetForegroundWindow, GetWindowThreadProcessId
+    CallNextHookEx, GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
+    GetMessageA, GetWindowThreadProcessId, SetWindowsHookExA, ToUnicodeEx, HC_ACTION,
+    KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, VK_SHIFT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL,
+    WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
+    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
+    WM_XBUTTONUP,
 };
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
-
 
 const TRUE: i32 = 1;
 const FALSE: i32 = 0;
@@ -50,69 +50,73 @@ unsafe fn get_button_code(lpdata: isize) -> i32 {
 
 static mut LAST_CODE: u32 = 0;
 static mut LAST_SCAN_CODE: u32 = 0;
-static mut LAST_STATE: [u8; 256] = [0;256];
+static mut LAST_STATE: [u8; 256] = [0; 256];
 static mut LAST_IS_DEAD: bool = false;
 
-unsafe fn get_name(lpdata: isize) -> Option<String>{
+unsafe fn get_name(lpdata: isize) -> Option<String> {
     // https://gist.github.com/akimsko/2011327
     // https://www.experts-exchange.com/questions/23453780/LowLevel-Keystroke-Hook-removes-Accents-on-French-Keyboard.html
     let code = get_code(lpdata);
     let scan_code = get_scan_code(lpdata);
-    let buff: [u16; 32] = [0; 32];
-    let buff_ptr = &buff as *const _ as *mut u16;
+    let mut buff: [u16; 32] = [0; 32];
+    let buff_ptr = &mut buff as *mut _ as *mut u16;
     let mut state: [u8; 256] = [0; 256];
     let state_ptr: *mut u8 = &mut state as *const _ as *mut u8;
-
 
     let _shift = GetKeyState(VK_SHIFT);
     let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
     let thread_id = GetCurrentThreadId();
     // Attach to active thread so we can get that keyboard state
-    let status = if winuser::AttachThreadInput(thread_id, current_window_thread_id , TRUE) == 1{
+    let status = if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
         // Current state of the modifiers in keyboard
         let status = GetKeyboardState(state_ptr);
 
         // Detach
         winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
         status
-    }else{
+    } else {
         // Could not attach, perhaps it is this process?
         GetKeyboardState(state_ptr)
     };
 
-    if status != 1{
+    if status != 1 {
         return None;
     }
     println!("Keyboard state status {:?}", status);
     let layout = GetKeyboardLayout(current_window_thread_id);
     let len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
-    
+
     let mut is_dead = false;
-    let result = if len > 0{
-        match String::from_utf16(&buff[0..len as usize]){
-            Ok(string) => {
-                Some(string)
-            },
-            Err(_) => None
+    let result = if len > 0 {
+        match String::from_utf16(&buff[0..len as usize]) {
+            Ok(string) => Some(string),
+            Err(_) => None,
         }
-    }else if len == 0{
+    } else if len == 0 {
         None
-    }else if len == -1{
+    } else if len == -1 {
         is_dead = true;
         clear_keyboard_buffer(code, scan_code, layout);
         None
-    }else{
+    } else {
         None
     };
 
-
-    if LAST_CODE != 0 && LAST_IS_DEAD{
+    if LAST_CODE != 0 && LAST_IS_DEAD {
         let mut buff: [u16; 32] = [0; 32];
-        let buff_ptr = &buff as *const _ as *mut u16;
+        let buff_ptr = &mut buff as *mut _ as *mut u16;
         let last_state_ptr = &LAST_STATE as *const _ as *mut u8;
-        ToUnicodeEx(LAST_CODE, LAST_SCAN_CODE, last_state_ptr, buff_ptr, 8-1, 0, layout);
+        ToUnicodeEx(
+            LAST_CODE,
+            LAST_SCAN_CODE,
+            last_state_ptr,
+            buff_ptr,
+            8 - 1,
+            0,
+            layout,
+        );
         LAST_CODE = 0;
-        return result
+        return result;
     }
 
     LAST_CODE = code;
@@ -123,15 +127,15 @@ unsafe fn get_name(lpdata: isize) -> Option<String>{
     result
 }
 
-unsafe fn clear_keyboard_buffer(code: u32, scan_code: u32, layout: HKL){
+unsafe fn clear_keyboard_buffer(code: u32, scan_code: u32, layout: HKL) {
     let mut len = -1;
     let mut buff: [u16; 32] = [0; 32];
-    let buff_ptr = &buff as *const _ as *mut u16;
+    let buff_ptr = &mut buff as *mut _ as *mut u16;
     let mut state: [u8; 256] = [0; 256];
     let state_ptr: *mut u8 = &mut state as *const _ as *mut u8;
 
-    while len < 0{
-        len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 -1 , 0, layout);
+    while len < 0 {
+        len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
     }
 }
 
@@ -190,11 +194,9 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
         };
 
         if let Some(event_type) = opt {
-            let name = match &event_type{
-                EventType::KeyPress(_key) => {
-                    get_name(lpdata)
-                },
-                _ => None
+            let name = match &event_type {
+                EventType::KeyPress(_key) => get_name(lpdata),
+                _ => None,
             };
             let event = Event {
                 event_type,
