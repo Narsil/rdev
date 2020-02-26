@@ -10,7 +10,7 @@
 //!
 //! Listening to global events
 //!
-//! ```rust
+//! ```no_run
 //! use rdev::{listen, Event};
 //!
 //! fn main() {
@@ -28,7 +28,7 @@
 //!
 //! Sending some events
 //!
-//! ```rust
+//! ```no_run
 //! use rdev::{simulate, Button, EventType, Key, SimulateError};
 //! use std::{thread, time};
 //!
