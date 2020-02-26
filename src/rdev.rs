@@ -128,6 +128,7 @@ pub enum Key {
     Unknown(u32),
 }
 
+/// Standard mouse buttons
 #[derive(Debug)]
 pub enum Button {
     Left,
