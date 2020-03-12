@@ -58,6 +58,17 @@
 //!     });
 //! }
 //! ```
+//! Getting the main screen size
+//!
+//! ```no_run
+//! use rdev::{display_size};
+//!
+//! fn main() {
+//!     let (w, h) = display_size();
+//!     assert!(w > 0);
+//!     assert!(h > 0);
+//! }
+//! ```
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, SimulateError};
 
