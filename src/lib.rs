@@ -64,19 +64,19 @@ pub use crate::rdev::{Button, Callback, Event, EventType, Key, SimulateError};
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
-use crate::macos::{listen as _listen, simulate as _simulate};
+use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "linux")]
 mod linux;
 
 #[cfg(target_os = "linux")]
-use crate::linux::{listen as _listen, simulate as _simulate};
+use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
 mod windows;
 
 #[cfg(target_os = "windows")]
-use crate::windows::{listen as _listen, simulate as _simulate};
+use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -91,6 +91,10 @@ use crate::windows::{listen as _listen, simulate as _simulate};
 ///         Some(string) => println!("User wrote {:?}", string),
 ///         None => ()
 ///     }
+/// }
+/// fn main(){
+///     // This will block.
+///     listen(callback);
 /// }
 /// ```
 pub fn listen(callback: Callback) {
@@ -131,4 +135,19 @@ pub fn listen(callback: Callback) {
 /// ```
 pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
     _simulate(event_type)
+}
+
+/// Returns the size in pixels of the main screen.
+/// This is useful to use with x, y from MouseMove Event.
+///
+/// ```no_run
+/// use rdev::{display_size};
+///
+/// fn main() {
+///     let (w, h )= display_size();
+///     println!("My screen size : {:?}x{:?}", w, h);
+/// }
+/// ```
+pub fn display_size() -> (u64, u64) {
+    _display_size()
 }
