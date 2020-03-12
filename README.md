@@ -62,6 +62,18 @@ fn main() {
 }
 ```
 
+Getting the main screen size
+
+```rust
+use rdev::{display_size};
+
+fn main() {
+    let (w, h) = display_size();
+    assert!(w > 0);
+    assert!(h > 0);
+}
+```
+
 ### Event struct
 
 In order to detect what a user types, we need to plug to the OS level management
