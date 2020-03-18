@@ -6,7 +6,7 @@ use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Callback, Event, EventType};
 use std::ffi::CString;
 use std::os::raw::{c_int, c_uchar};
-use std::ptr::{null, null_mut};
+use std::ptr::null;
 use std::time::SystemTime;
 use x11::xlib;
 use x11::xrecord;
@@ -16,7 +16,6 @@ fn default_callback(event: Event) {
 }
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
-static mut KEYBOARD_STATE: *mut KeyboardState = null_mut();
 
 pub fn listen(callback: Callback) {
     unsafe {
@@ -95,6 +94,7 @@ union XRecordDatum {
 //     y: u16,
 //     h: u32,
 // }
+//
 
 unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
     let data = &*raw_data;
@@ -165,22 +165,9 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
     if let Some(event_type) = option_type {
         let name = match event_type {
             EventType::KeyPress(_) => {
-                KEYBOARD_STATE = if KEYBOARD_STATE.is_null() {
-                    if let Ok(mut keyboard) = KeyboardState::new() {
-                        &mut keyboard as *mut KeyboardState
-                    } else {
-                        null_mut()
-                    }
-                } else {
-                    KEYBOARD_STATE
-                };
-                if KEYBOARD_STATE.is_null() {
-                    println!("Could not set a keyboard state");
-                    None
-                } else if let Some(keyboard) = KEYBOARD_STATE.as_mut() {
+                if let Ok(mut keyboard) = KeyboardState::new() {
                     keyboard.name_from_code(&mut xdatum.event)
                 } else {
-                    println!("Null pointer");
                     None
                 }
             }
