@@ -9,12 +9,12 @@ use x11::xlib;
 // from xEvent data received via xrecord.
 // Other source of inspiration https://gist.github.com/baines/5a49f1334281b2685af5dcae81a6fa8a
 // Needed xproto crate as x11 does not implement _xevent.
-
+#[derive(Debug)]
 pub struct KeyboardState {
-    pub xic: xlib::XIC,
-    pub display: *mut xlib::Display,
-    keysym: u64,
-    status: i32,
+    pub xic: Box<xlib::XIC>,
+    pub display: Box<*mut xlib::Display>,
+    keysym: Box<u64>,
+    status: Box<i32>,
 }
 
 impl KeyboardState {
@@ -77,18 +77,22 @@ impl KeyboardState {
                 return Err(());
             }
             Ok(KeyboardState {
-                xic,
-                display: dpy,
-                keysym: 0,
-                status: 0,
+                xic: Box::new(xic),
+                display: Box::new(dpy),
+                keysym: Box::new(0),
+                status: Box::new(0),
             })
         }
     }
     pub unsafe fn name_from_code(&mut self, xevent: &mut xproto::_xEvent) -> Option<String> {
+        if self.display.is_null() || self.xic.is_null() {
+            println!("We don't seem to have a display or a xic");
+            return None;
+        }
         let mut buf: [c_uchar; 4] = [0; 4];
         let length = buf.len() as i32;
         let mut xkey = xlib::XKeyEvent {
-            display: self.display,
+            display: *self.display,
             root: 0,
             window: 0,
             subwindow: 0,
@@ -105,12 +109,12 @@ impl KeyboardState {
             time: xlib::CurrentTime,
         };
         let _ret = xlib::Xutf8LookupString(
-            self.xic,
+            *self.xic,
             &mut xkey,
             &mut buf as *mut _ as *mut c_char,
             length,
-            &mut self.keysym as *mut u64,
-            &mut self.status as *mut i32,
+            &mut *self.keysym,
+            &mut *self.status,
         );
 
         let mut len = 0;
