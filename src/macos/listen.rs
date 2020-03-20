@@ -75,7 +75,7 @@ type QCallback = unsafe extern "C" fn(
 fn default_callback(event: Event) {
     println!("Default {:?}", event)
 }
-static mut GLOBAL_CALLBACK: Callback = default_callback;
+static mut GLOBAL_CALLBACK: Callback = &default_callback;
 static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
 static mut KEYBOARD_STATE: KeyboardState = KeyboardState { dead_state: 0 };
 

@@ -23,7 +23,7 @@ fn default_callback(event: Event) {
 const TRUE: i32 = 1;
 const FALSE: i32 = 0;
 
-static mut GLOBAL_CALLBACK: Callback = default_callback;
+static mut GLOBAL_CALLBACK: Callback = &default_callback;
 static mut HOOK: HHOOK = null_mut();
 
 unsafe fn get_code(lpdata: isize) -> u32 {
