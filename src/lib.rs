@@ -69,7 +69,14 @@
 //!     assert!(h > 0);
 //! }
 //! ```
+#[cfg(feature = "events")]
+#[macro_use]
+extern crate lazy_static;
+#[cfg(feature = "events")]
 mod events;
+#[cfg(feature = "events")]
+pub use crate::events::events;
+
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, SimulateError};
 
