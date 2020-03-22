@@ -70,7 +70,7 @@
 //! }
 //! ```
 mod rdev;
-pub use crate::rdev::{Button, Callback, Event, EventType, Key, SimulateError};
+pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -105,10 +105,12 @@ use crate::windows::{display_size as _display_size, listen as _listen, simulate 
 /// }
 /// fn main(){
 ///     // This will block.
-///     listen(callback);
+///     if let Err(error) = listen(callback) {
+///         println!("Error: {:?}", error)
+///     }
 /// }
 /// ```
-pub fn listen(callback: Callback) {
+pub fn listen(callback: Callback) -> Result<(), ListenError> {
     _listen(callback)
 }
 
