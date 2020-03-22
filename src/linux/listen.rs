@@ -11,11 +11,26 @@ use std::time::SystemTime;
 use x11::xlib;
 use x11::xrecord;
 
+use std::sync::Mutex;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use lazy_static::lazy_static;
+
 fn default_callback(event: Event) {
+    GLOBAL_CHANNEL.0.lock().unwrap().send(event.clone());
     println!("Default : Event {:?}", event);
 }
 
 static mut GLOBAL_CALLBACK: Callback = &default_callback;
+lazy_static! {
+    static ref GLOBAL_CHANNEL: (Mutex<Sender<Event>>, Mutex<Receiver<Event>>) = {
+        let (send, recv) = channel();
+        (Mutex::new(send), Mutex::new(recv))
+    };
+}
+
+pub fn get_recv() -> &'static Mutex<Receiver<Event>> {
+    &GLOBAL_CHANNEL.1
+}
 
 pub fn listen(callback: Callback) {
     unsafe {

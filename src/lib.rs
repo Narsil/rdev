@@ -81,7 +81,7 @@ use crate::macos::{display_size as _display_size, listen as _listen, simulate as
 mod linux;
 
 #[cfg(target_os = "linux")]
-use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::linux::{display_size as _display_size, listen as _listen, get_recv as _get_recv, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -110,6 +110,11 @@ use crate::windows::{display_size as _display_size, listen as _listen, simulate 
 /// ```
 pub fn listen(callback: Callback) {
     _listen(callback)
+}
+
+use std::sync::{Mutex, mpsc::Receiver};
+pub fn get_recv() -> &'static Mutex<Receiver<Event>> {
+    _get_recv()
 }
 
 /// Sending some events

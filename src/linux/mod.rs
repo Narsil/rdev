@@ -10,3 +10,4 @@ mod simulate;
 pub use crate::linux::display::display_size;
 pub use crate::linux::listen::listen;
 pub use crate::linux::simulate::simulate;
+pub use crate::linux::listen::get_recv;
