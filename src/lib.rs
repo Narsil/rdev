@@ -14,7 +14,7 @@
 //! use rdev::{listen, Event};
 //!
 //! fn main() {
-//!     listen(&callback);
+//!     listen(callback);
 //! }
 //!
 //! fn callback(event: Event) {
@@ -69,6 +69,7 @@
 //!     assert!(h > 0);
 //! }
 //! ```
+mod events;
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, SimulateError};
 
@@ -105,7 +106,7 @@ use crate::windows::{display_size as _display_size, listen as _listen, simulate 
 /// }
 /// fn main(){
 ///     // This will block.
-///     listen(&callback);
+///     listen(callback);
 /// }
 /// ```
 pub fn listen(callback: Callback) {

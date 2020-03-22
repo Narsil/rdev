@@ -15,7 +15,7 @@ fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 
-static mut GLOBAL_CALLBACK: Callback = &default_callback;
+static mut GLOBAL_CALLBACK: Callback = default_callback;
 
 pub fn listen(callback: Callback) {
     unsafe {

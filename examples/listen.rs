@@ -1,8 +1,7 @@
 use rdev::{listen, Event};
 
 fn main() {
-    // listen(&callback);
-    listen(&|e| println!("Event {:?}", e));
+    listen(callback);
 }
 
 fn callback(event: Event) {
