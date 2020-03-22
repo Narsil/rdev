@@ -1,5 +1,5 @@
 use crate::macos::keyboard_state::KeyboardState;
-use crate::rdev::{Button, Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
@@ -29,7 +29,8 @@ pub const kCGEventTapOptionDefault: u32 = 0;
 // https://developer.apple.com/documentation/coregraphics/cgeventmask?language=objc
 type CGEventMask = u64;
 #[allow(non_upper_case_globals)]
-pub const kCGEventMaskForAllEvents: u64 = (1 << CGEventType::LeftMouseDown as u64)
+pub const kCGEventMaskForAllEvents: u64 =
+    (1 << CGEventType::LeftMouseDown as u64)
     + (1 << CGEventType::LeftMouseUp as u64)
     + (1 << CGEventType::RightMouseDown as u64)
     + (1 << CGEventType::RightMouseUp as u64)
@@ -156,12 +157,12 @@ unsafe extern "C" fn raw_callback(
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-pub fn listen(callback: Callback) {
+pub fn listen(callback: Callback) -> Result<(), ListenError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
         let _pool = NSAutoreleasePool::new(nil);
         let tap = CGEventTapCreate(
-            CGEventTapLocation::HID,
+            CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
             kCGHeadInsertEventTap,
             kCGEventTapOptionDefault,
             kCGEventMaskForAllEvents,
@@ -169,11 +170,11 @@ pub fn listen(callback: Callback) {
             nil,
         );
         if tap.is_null() {
-            panic!("We failed to create Event tap !");
+            return Err(ListenError::EventTapError);
         }
         let _loop = CFMachPortCreateRunLoopSource(nil, tap, 0);
         if _loop.is_null() {
-            panic!("We failed to create loop source!");
+            return Err(ListenError::LoopSourceError);
         }
 
         let current_loop = CFRunLoopGetCurrent();
@@ -182,4 +183,5 @@ pub fn listen(callback: Callback) {
         CGEventTapEnable(tap, true);
         CFRunLoopRun();
     }
+    Ok(())
 }

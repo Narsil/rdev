@@ -1,4 +1,4 @@
-use crate::rdev::{Button, Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use crate::windows::keycodes::key_from_code;
 use std::ptr::null_mut;
 use std::time::SystemTime;
@@ -225,7 +225,7 @@ unsafe fn set_mouse_hook() {
     HOOK = hook;
 }
 
-pub fn listen(callback: Callback) {
+pub fn listen(callback: Callback) -> Result<(), ListenError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
         set_key_hook();
@@ -233,4 +233,5 @@ pub fn listen(callback: Callback) {
 
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }
+    Ok(())
 }

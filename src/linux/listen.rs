@@ -3,7 +3,7 @@ extern crate x11;
 extern crate xproto;
 use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
-use crate::rdev::{Button, Callback, Event, EventType};
+use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use std::ffi::CString;
 use std::os::raw::{c_int, c_uchar};
 use std::ptr::null;
@@ -17,14 +17,14 @@ fn default_callback(event: Event) {
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 
-pub fn listen(callback: Callback) {
+pub fn listen(callback: Callback) -> Result<(), ListenError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
         // Open displays
         let dpy_control = xlib::XOpenDisplay(null());
         let dpy_data = xlib::XOpenDisplay(null());
         if dpy_control.is_null() || dpy_data.is_null() {
-            panic!("can't open display");
+            return Err(ListenError::MissingDisplayError);
         }
         // Enable synchronization
         xlib::XSynchronize(dpy_control, 1);
@@ -33,7 +33,7 @@ pub fn listen(callback: Callback) {
 
         let extension = xlib::XInitExtension(dpy_control, extension_name.as_ptr());
         if extension.is_null() {
-            panic!("Error init X Record Extension");
+            return Err(ListenError::XRecordExtensionError);
         }
 
         // Get version
@@ -58,15 +58,16 @@ pub fn listen(callback: Callback) {
         );
 
         if context == 0 {
-            panic!("Fail create Record context\n");
+            return Err(ListenError::RecordContextError);
         }
         // Run
         let result =
             xrecord::XRecordEnableContext(dpy_data, context, Some(record_callback), &mut 0);
         if result == 0 {
-            panic!("Cound not enable the Record context!\n");
+            return Err(ListenError::RecordContextEnablingError);
         }
     }
+    Ok(())
 }
 
 // No idea how to do that properly relevant doc lives here:
