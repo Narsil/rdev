@@ -14,7 +14,10 @@
 //! use rdev::{listen, Event};
 //!
 //! fn main() {
-//!     listen(callback);
+//!     // This will block.
+//!     if let Err(error) = listen(callback) {
+//!         println!("Error: {:?}", error)
+//!     }
 //! }
 //!
 //! fn callback(event: Event) {
@@ -69,6 +72,7 @@
 //!     assert!(h > 0);
 //! }
 //! ```
+#![feature(doc_masked)]
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
 

@@ -29,8 +29,7 @@ pub const kCGEventTapOptionDefault: u32 = 0;
 // https://developer.apple.com/documentation/coregraphics/cgeventmask?language=objc
 type CGEventMask = u64;
 #[allow(non_upper_case_globals)]
-pub const kCGEventMaskForAllEvents: u64 =
-    (1 << CGEventType::LeftMouseDown as u64)
+pub const kCGEventMaskForAllEvents: u64 = (1 << CGEventType::LeftMouseDown as u64)
     + (1 << CGEventType::LeftMouseUp as u64)
     + (1 << CGEventType::RightMouseDown as u64)
     + (1 << CGEventType::RightMouseUp as u64)

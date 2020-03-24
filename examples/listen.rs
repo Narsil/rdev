@@ -1,7 +1,10 @@
 use rdev::{listen, Event};
 
 fn main() {
-    listen(callback);
+    // This will block.
+    if let Err(error) = listen(callback) {
+        println!("Error: {:?}", error)
+    }
 }
 
 fn callback(event: Event) {
