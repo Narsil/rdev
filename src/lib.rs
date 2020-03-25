@@ -72,7 +72,6 @@
 //!     assert!(h > 0);
 //! }
 //! ```
-#![feature(doc_masked)]
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
 
