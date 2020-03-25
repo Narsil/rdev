@@ -34,7 +34,7 @@ pub struct SimulateError;
 /// a different value too.
 /// Careful, on Windows KpReturn does not exist, it' s strictly equivalent to Return, also Keypad keys
 /// get modified if NumLock is Off and ARE pagedown and so on.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Key {
     /// Alt key on Linux and Windows (option key on macOS)
     Alt,
@@ -148,7 +148,7 @@ pub enum Key {
 }
 
 /// Standard mouse buttons
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Button {
     Left,
     Right,
@@ -158,7 +158,7 @@ pub enum Button {
 
 /// In order to manage different OS, the current EventType choices is a mix&match
 /// to account for all possible events.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EventType {
     /// The keys correspond to a standard qwerty layout, they don't correspond
     /// To the actual letter a user would use, that requires some layout logic to be added.
@@ -187,7 +187,7 @@ pub enum EventType {
 /// on the OS layout and keyboard state machinery.
 /// Caveat: Dead keys don't function on Linux(X11) yet. You will receive None for
 /// a dead key, and the raw letter instead of accentuated letter instead.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Event {
     pub time: SystemTime,
     pub name: Option<String>,
