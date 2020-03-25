@@ -17,6 +17,13 @@ jobs:
           headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         - os: ubuntu-latest
           dependencies: sudo apt install libxtst-dev
+        - os: macos-latest
+          # TODO: We can't test this on github, we can't set accessibility yet.
+          test: cargo test --verbose -- --skip test_listen_and_simulate
+        - os: ubuntu-latest
+          test: cargo test --verbose
+        - os: windows-latest
+          test: cargo test --verbose
 
     steps:
     - uses: actions/checkout@v2
@@ -27,6 +34,6 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: ${{matrix.test}}
     - name: Linter
       run: cargo clippy --verbose
