@@ -158,7 +158,7 @@ pub enum Button {
 
 /// In order to manage different OS, the current EventType choices is a mix&match
 /// to account for all possible events.
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum EventType {
     /// The keys correspond to a standard qwerty layout, they don't correspond
     /// To the actual letter a user would use, that requires some layout logic to be added.
