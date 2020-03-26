@@ -30,3 +30,4 @@ winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthr
 
 [dev-dependencies]
 tokio = {version = "0.2", features=["process", "rt-core", "io-util", "macros"]}
+lazy_static = "1.4.0"
