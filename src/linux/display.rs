@@ -11,6 +11,10 @@ pub fn display_size() -> (u64, u64) {
         if screen.is_null() {
             panic!("We can't connect to screen of X server");
         }
-        ((*screen).width as u64, (*screen).height as u64)
+        let res = ((*screen).width as u64, (*screen).height as u64);
+
+        xlib::XCloseDisplay(dpy);
+
+        res
     }
 }

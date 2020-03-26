@@ -16,6 +16,13 @@ pub struct KeyboardState {
     keysym: Box<u64>,
     status: Box<i32>,
 }
+impl Drop for KeyboardState {
+    fn drop(&mut self) {
+        unsafe {
+            xlib::XCloseDisplay(*self.display);
+        }
+    }
+}
 
 impl KeyboardState {
     pub fn new() -> Result<KeyboardState, ()> {
