@@ -1,5 +1,8 @@
 use lazy_static::lazy_static;
-use rdev::listen;
+use rdev::{listen, Event};
+use std::thread;
+use std::sync::Mutex;
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 lazy_static! {
     static ref EVENT_CHANNEL: (Mutex<Sender<Event>>, Mutex<Receiver<Event>>) = {
@@ -9,7 +12,8 @@ lazy_static! {
 }
 
 fn send_event(event: Event) {
-    EVENT_CHANNEL.0
+    EVENT_CHANNEL
+        .0
         .lock()
         .expect("Failed to unlock Mutex")
         .send(event)
@@ -23,7 +27,7 @@ fn main() {
     });
 
     let recv = EVENT_CHANNEL.1.lock().expect("Failed to unlock Mutex");
-    let events = Vec::new();
+    let mut events = Vec::new();
     for event in recv.iter() {
         events.push(event);
         println!("Received {} events", events.len());
