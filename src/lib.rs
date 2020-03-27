@@ -66,6 +66,9 @@
 //! assert!(w > 0);
 //! assert!(h > 0);
 //! ```
+//! Serialization
+//!
+//! Serialization and deserialization is optional behind the feature "serialize".
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
 
