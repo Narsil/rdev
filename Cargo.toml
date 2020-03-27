@@ -13,6 +13,12 @@ keywords = ["input", "mouse", "testing", "keyboard", "automation"]
 categories = ["development-tools::testing", "api-bindings", "hardware-support"]
 license = "MIT"
 
+[dependencies]
+serde = {version = "1.0", features = ["derive"], optional=true}
+
+[features]
+serialize = ["serde"]
+
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.20"
 core-graphics = {version = "0.19.0", features = ["highsierra"]}
@@ -31,3 +37,9 @@ winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthr
 [dev-dependencies]
 tokio = {version = "0.2", features=["process", "rt-core", "io-util", "macros"]}
 lazy_static = "1.4.0"
+serde_json = "1.0"
+
+
+[[example]]
+name = "serialize"
+required-features = ["serialize"]

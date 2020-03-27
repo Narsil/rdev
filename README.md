@@ -77,6 +77,10 @@ fn main() {
 }
 ```
 
+Serialization
+
+Serialization and deserialization is optional behind the feature "serialize".
+
 ### Event struct
 
 In order to detect what a user types, we need to plug to the OS level management
