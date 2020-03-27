@@ -81,7 +81,7 @@ const COMMA: u32 = 43;
 const DOT: u32 = 47;
 const SLASH: u32 = 44;
 
-pub fn code_from_key(key: &Key) -> Option<u32> {
+pub fn code_from_key(key: Key) -> Option<u32> {
     match key {
         Key::Alt => Some(ALT),
         Key::AltGr => Some(ALT_GR),
@@ -160,7 +160,7 @@ pub fn code_from_key(key: &Key) -> Option<u32> {
         Key::Dot => Some(DOT),
         Key::Slash => Some(SLASH),
         Key::Function => Some(FUNCTION),
-        Key::Unknown(code) => Some(*code),
+        Key::Unknown(code) => Some(code),
         _ => None,
     }
 }

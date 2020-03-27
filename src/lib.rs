@@ -13,11 +13,9 @@
 //! ```no_run
 //! use rdev::{listen, Event};
 //!
-//! fn main() {
-//!     // This will block.
-//!     if let Err(error) = listen(callback) {
-//!         println!("Error: {:?}", error)
-//!     }
+//! // This will block.
+//! if let Err(error) = listen(callback) {
+//!     println!("Error: {:?}", error)
 //! }
 //!
 //! fn callback(event: Event) {
@@ -47,30 +45,26 @@
 //!     thread::sleep(delay);
 //! }
 //!
-//! fn main() {
-//!     send(&EventType::KeyPress(Key::KeyS));
-//!     send(&EventType::KeyRelease(Key::KeyS));
+//! send(&EventType::KeyPress(Key::KeyS));
+//! send(&EventType::KeyRelease(Key::KeyS));
 //!
-//!     send(&EventType::MouseMove { x: 0.0, y: 0.0 });
-//!     send(&EventType::MouseMove { x: 400.0, y: 400.0 });
-//!     send(&EventType::ButtonPress(Button::Left));
-//!     send(&EventType::ButtonRelease(Button::Right));
-//!     send(&EventType::Wheel {
-//!         delta_x: 0,
-//!         delta_y: 1,
-//!     });
-//! }
+//! send(&EventType::MouseMove { x: 0.0, y: 0.0 });
+//! send(&EventType::MouseMove { x: 400.0, y: 400.0 });
+//! send(&EventType::ButtonPress(Button::Left));
+//! send(&EventType::ButtonRelease(Button::Right));
+//! send(&EventType::Wheel {
+//!     delta_x: 0,
+//!     delta_y: 1,
+//! });
 //! ```
 //! Getting the main screen size
 //!
 //! ```no_run
 //! use rdev::{display_size};
 //!
-//! fn main() {
-//!     let (w, h) = display_size();
-//!     assert!(w > 0);
-//!     assert!(h > 0);
-//! }
+//! let (w, h) = display_size();
+//! assert!(w > 0);
+//! assert!(h > 0);
 //! ```
 mod rdev;
 pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
@@ -159,10 +153,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
 /// ```no_run
 /// use rdev::{display_size};
 ///
-/// fn main() {
-///     let (w, h )= display_size();
-///     println!("My screen size : {:?}x{:?}", w, h);
-/// }
+/// let (w, h )= display_size();
+/// println!("My screen size : {:?}x{:?}", w, h);
 /// ```
 pub fn display_size() -> (u64, u64) {
     _display_size()

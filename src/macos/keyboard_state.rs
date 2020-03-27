@@ -40,7 +40,7 @@ extern "C" {
         dead_key_state: *mut u32,
         max_length: UniCharCount,
         actual_length: *mut UniCharCount,
-        unicode_string: *mut [u16],
+        unicode_string: *mut c_void,
     ) -> OSStatus;
     fn LMGetKbdType() -> u32;
     static kTISPropertyUnicodeKeyLayoutData: *mut c_void;
@@ -71,10 +71,10 @@ impl KeyboardState {
             modifier_state,
             kb_type,
             kUCKeyTranslateDeadKeysBit,
-            &mut self.dead_state,             // deadKeyState
-            4,                                // max string length
-            &mut length as *mut UniCharCount, // actual string length
-            &mut buff as *mut [UniChar],      // unicode string
+            &mut self.dead_state,               // deadKeyState
+            4,                                  // max string length
+            &mut length as *mut UniCharCount,   // actual string length
+            &mut buff as *mut _ as *mut c_void, // unicode string
         );
         CFRelease(keyboard);
 
