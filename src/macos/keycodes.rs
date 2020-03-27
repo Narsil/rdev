@@ -255,7 +255,7 @@ mod test {
     fn test_reversible() {
         for code in 0..65636 {
             let key = key_from_code(code);
-            if let Some(code2) = code_from_key(&key) {
+            if let Some(code2) = code_from_key(key) {
                 assert_eq!(code, code2)
             } else {
                 assert!(false, "We could not convert back code: {:?}", code);

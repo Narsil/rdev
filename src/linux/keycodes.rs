@@ -104,7 +104,7 @@ const KP8: u32 = 80;
 const KP9: u32 = 81;
 const KP_DELETE: u32 = 91;
 
-pub fn code_from_key(key: &Key) -> Option<u32> {
+pub fn code_from_key(key: Key) -> Option<u32> {
     match key {
         Key::Alt => Some(ALT),
         Key::AltGr => Some(ALT_GR),
@@ -330,7 +330,7 @@ mod test {
     fn test_reversible() {
         for code in 0..65636 {
             let key = key_from_code(code);
-            if let Some(code2) = code_from_key(&key) {
+            if let Some(code2) = code_from_key(key) {
                 assert_eq!(code, code2)
             } else {
                 assert!(false, "We could not convert back code: {:?}", code);
