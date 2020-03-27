@@ -211,7 +211,7 @@ pub fn code_from_key(key: Key) -> Option<u16> {
         Key::Kp8 => Some(KP8),
         Key::Kp9 => Some(KP9),
         Key::KpDelete => Some(KP_DELETE),
-        Key::Unknown(code) => Some(*code as u16),
+        Key::Unknown(code) => Some(code as u16),
         _ => None,
     }
 }
