@@ -13,13 +13,13 @@ unsafe fn convert_native_with_source(
 ) -> Result<CGEvent, ()> {
     match event_type {
         EventType::KeyPress(key) => {
-            if let Some(code) = code_from_key(key) {
+            if let Some(code) = code_from_key(*key) {
                 return CGEvent::new_keyboard_event(source, code as CGKeyCode, true);
             }
             Err(())
         }
         EventType::KeyRelease(key) => {
-            if let Some(code) = code_from_key(key) {
+            if let Some(code) = code_from_key(*key) {
                 return CGEvent::new_keyboard_event(source, code as CGKeyCode, false);
             }
             Err(())

@@ -16,6 +16,8 @@ type CFRunLoopRef = id;
 type CFRunLoopMode = id;
 type CGEventTapProxy = id;
 
+type CGEventRef = CGEvent;
+
 // https://developer.apple.com/documentation/coregraphics/cgeventtapplacement?language=objc
 type CGEventTapPlacement = u32;
 #[allow(non_upper_case_globals)]
@@ -44,6 +46,7 @@ pub const kCGEventMaskForAllEvents: u64 = (1 << CGEventType::LeftMouseDown as u6
 #[cfg(target_os = "macos")]
 #[link(name = "Cocoa", kind = "framework")]
 extern "C" {
+    #[allow(improper_ctypes)]
     fn CGEventTapCreate(
         tap: CGEventTapLocation,
         place: CGEventTapPlacement,
@@ -68,9 +71,9 @@ extern "C" {
 type QCallback = unsafe extern "C" fn(
     proxy: CGEventTapProxy,
     _type: CGEventType,
-    cg_event: CGEvent,
+    cg_event: CGEventRef,
     user_info: *mut c_void,
-) -> CGEvent;
+) -> CGEventRef;
 
 fn default_callback(event: Event) {
     println!("Default {:?}", event)
@@ -146,12 +149,16 @@ unsafe fn convert(
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
     _type: CGEventType,
-    cg_event: CGEvent,
+    cg_event: CGEventRef,
     _user_info: *mut c_void,
-) -> CGEvent {
+) -> CGEventRef {
+    // println!("Event ref {:?}", cg_event_ptr);
+    // let cg_event: CGEvent = transmute_copy::<*mut c_void, CGEvent>(&cg_event_ptr);
     if let Some(event) = convert(_type, &cg_event, &mut KEYBOARD_STATE) {
         GLOBAL_CALLBACK(event);
     }
+    // println!("Event ref END {:?}", cg_event_ptr);
+    // cg_event_ptr
     cg_event
 }
 
