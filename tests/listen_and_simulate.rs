@@ -7,6 +7,7 @@ use std::thread;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
+use tokio::time::timeout;
 
 #[tokio::test]
 async fn test_listen_and_simulate() {
@@ -38,6 +39,7 @@ async fn test_listen_and_simulate() {
         println!("child status was: {}", status);
     });
 
+    // Wait for listen to start
     thread::sleep(Duration::from_secs(1));
 
     let event_type = EventType::KeyPress(Key::KeyS);
@@ -47,8 +49,14 @@ async fn test_listen_and_simulate() {
     assert!(result.is_ok());
 
     let string = format!("{:?}", event_type);
-    if let Ok(Some(line)) = reader.next_line().await {
-        println!("Received line {:?}", line);
-        assert!(line.contains(&string));
+    let fut = timeout(Duration::from_secs(1), reader.next_line());
+    match fut.await{
+        Ok(Ok(Some(line))) => {
+            println!("Received line {:?}", line);
+            assert!(line.contains(&string));
+        },
+        Ok(Ok(None)) => {assert!(false, "Empty stdout");}
+        Ok(Err(_)) => {assert!(false, "Error reading stdout");}
+        Err(_) => {assert!(false, "Timeout expired !");}
     }
 }
