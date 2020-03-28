@@ -1,79 +1,13 @@
+use crate::macos::common::*;
 use crate::macos::keyboard_state::KeyboardState;
 use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError};
-use cocoa::base::{id, nil};
+use cocoa::base::nil;
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
 use std::os::raw::c_void;
 use std::time::SystemTime;
 
 use crate::macos::keycodes::key_from_code;
-
-type CFMachPortRef = *const c_void;
-type CFIndex = u64;
-type CFAllocatorRef = id;
-type CFRunLoopSourceRef = id;
-type CFRunLoopRef = id;
-type CFRunLoopMode = id;
-type CGEventTapProxy = id;
-
-type CGEventRef = CGEvent;
-
-// https://developer.apple.com/documentation/coregraphics/cgeventtapplacement?language=objc
-type CGEventTapPlacement = u32;
-#[allow(non_upper_case_globals)]
-pub const kCGHeadInsertEventTap: u32 = 0;
-
-// https://developer.apple.com/documentation/coregraphics/cgeventtapoptions?language=objc
-type CGEventTapOptions = u32;
-#[allow(non_upper_case_globals)]
-pub const kCGEventTapOptionDefault: u32 = 0;
-
-// https://developer.apple.com/documentation/coregraphics/cgeventmask?language=objc
-type CGEventMask = u64;
-#[allow(non_upper_case_globals)]
-pub const kCGEventMaskForAllEvents: u64 = (1 << CGEventType::LeftMouseDown as u64)
-    + (1 << CGEventType::LeftMouseUp as u64)
-    + (1 << CGEventType::RightMouseDown as u64)
-    + (1 << CGEventType::RightMouseUp as u64)
-    + (1 << CGEventType::MouseMoved as u64)
-    + (1 << CGEventType::LeftMouseDragged as u64)
-    + (1 << CGEventType::RightMouseDragged as u64)
-    + (1 << CGEventType::KeyDown as u64)
-    + (1 << CGEventType::KeyUp as u64)
-    + (1 << CGEventType::FlagsChanged as u64)
-    + (1 << CGEventType::ScrollWheel as u64);
-
-#[cfg(target_os = "macos")]
-#[link(name = "Cocoa", kind = "framework")]
-extern "C" {
-    #[allow(improper_ctypes)]
-    fn CGEventTapCreate(
-        tap: CGEventTapLocation,
-        place: CGEventTapPlacement,
-        options: CGEventTapOptions,
-        eventsOfInterest: CGEventMask,
-        callback: QCallback,
-        user_info: id,
-    ) -> CFMachPortRef;
-    fn CFMachPortCreateRunLoopSource(
-        allocator: CFAllocatorRef,
-        tap: CFMachPortRef,
-        order: CFIndex,
-    ) -> CFRunLoopSourceRef;
-    fn CFRunLoopAddSource(rl: CFRunLoopRef, source: CFRunLoopSourceRef, mode: CFRunLoopMode);
-    fn CFRunLoopGetCurrent() -> CFRunLoopRef;
-    fn CGEventTapEnable(tap: CFMachPortRef, enable: bool);
-    fn CFRunLoopRun();
-
-    pub static kCFRunLoopCommonModes: CFRunLoopMode;
-
-}
-type QCallback = unsafe extern "C" fn(
-    proxy: CGEventTapProxy,
-    _type: CGEventType,
-    cg_event: CGEventRef,
-    user_info: *mut c_void,
-) -> CGEventRef;
 
 fn default_callback(event: Event) -> Option<Event> {
     println!("Default {:?}", event);
@@ -156,7 +90,7 @@ unsafe extern "C" fn raw_callback(
     // println!("Event ref {:?}", cg_event_ptr);
     // let cg_event: CGEvent = transmute_copy::<*mut c_void, CGEvent>(&cg_event_ptr);
     if let Some(event) = convert(_type, &cg_event, &mut KEYBOARD_STATE) {
-        if let None = GLOBAL_CALLBACK(event) {
+        if GLOBAL_CALLBACK(event).is_none() {
             cg_event.set_type(CGEventType::Null);
         }
     }
@@ -171,7 +105,7 @@ pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
         let tap = CGEventTapCreate(
             CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
             kCGHeadInsertEventTap,
-            kCGEventTapOptionDefault,
+            CGEventTapOption::Default,
             kCGEventMaskForAllEvents,
             raw_callback,
             nil,

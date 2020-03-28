@@ -1,3 +1,4 @@
+mod common;
 mod display;
 mod grab;
 mod keyboard_state;
