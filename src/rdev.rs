@@ -5,11 +5,33 @@ use std::{fmt, fmt::Display};
 /// Callback type to send to listen function.
 pub type Callback = fn(event: Event);
 
+/// Callback type to send to grab function.
+pub type GrabCallback = fn(event: Event) -> Option<Event>;
+
 /// Errors that occur when trying to capture OS events.
 /// Be careful on Mac, not setting accessibility does not cause an error
 /// it justs ignores events.
 #[derive(Debug)]
 pub enum ListenError {
+    /// MacOS
+    EventTapError,
+    /// MacOS
+    LoopSourceError,
+    /// Linux
+    MissingDisplayError,
+    /// Linux
+    RecordContextEnablingError,
+    /// Linux
+    RecordContextError,
+    /// Linux
+    XRecordExtensionError,
+}
+
+/// Errors that occur when trying to grab OS events.
+/// Be careful on Mac, not setting accessibility does not cause an error
+/// it justs ignores events.
+#[derive(Debug)]
+pub enum GrabError {
     /// MacOS
     EventTapError,
     /// MacOS
