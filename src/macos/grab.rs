@@ -1,9 +1,8 @@
 use crate::macos::keyboard_state::KeyboardState;
-use crate::rdev::{Button, Callback, Event, EventType, ListenError};
+use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
-use std::convert::TryInto;
 use std::os::raw::c_void;
 use std::time::SystemTime;
 
@@ -28,8 +27,6 @@ pub const kCGHeadInsertEventTap: u32 = 0;
 type CGEventTapOptions = u32;
 #[allow(non_upper_case_globals)]
 pub const kCGEventTapOptionDefault: u32 = 0;
-#[allow(non_upper_case_globals)]
-pub const kCGEventTapOptionListenOnly: u32 = 1;
 
 // https://developer.apple.com/documentation/coregraphics/cgeventmask?language=objc
 type CGEventMask = u64;
@@ -78,10 +75,11 @@ type QCallback = unsafe extern "C" fn(
     user_info: *mut c_void,
 ) -> CGEventRef;
 
-fn default_callback(event: Event) {
-    println!("Default {:?}", event)
+fn default_callback(event: Event) -> Option<Event> {
+    println!("Default {:?}", event);
+    Some(event)
 }
-static mut GLOBAL_CALLBACK: Callback = default_callback;
+static mut GLOBAL_CALLBACK: GrabCallback = default_callback;
 static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
 static mut KEYBOARD_STATE: KeyboardState = KeyboardState { dead_state: 0 };
 
@@ -103,16 +101,15 @@ unsafe fn convert(
             })
         }
         CGEventType::KeyDown => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyPress(key_from_code(code.try_into().ok()?)))
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+            Some(EventType::KeyPress(key_from_code(code)))
         }
         CGEventType::KeyUp => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyRelease(key_from_code(code.try_into().ok()?)))
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+            Some(EventType::KeyRelease(key_from_code(code)))
         }
         CGEventType::FlagsChanged => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            let code = code.try_into().ok()?;
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
             let flags = cg_event.get_flags();
             if flags < LAST_FLAGS {
                 LAST_FLAGS = flags;
@@ -159,32 +156,32 @@ unsafe extern "C" fn raw_callback(
     // println!("Event ref {:?}", cg_event_ptr);
     // let cg_event: CGEvent = transmute_copy::<*mut c_void, CGEvent>(&cg_event_ptr);
     if let Some(event) = convert(_type, &cg_event, &mut KEYBOARD_STATE) {
-        GLOBAL_CALLBACK(event);
+        if let None = GLOBAL_CALLBACK(event) {
+            cg_event.set_type(CGEventType::Null);
+        }
     }
-    // println!("Event ref END {:?}", cg_event_ptr);
-    // cg_event_ptr
     cg_event
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-pub fn listen(callback: Callback) -> Result<(), ListenError> {
+pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
         let _pool = NSAutoreleasePool::new(nil);
         let tap = CGEventTapCreate(
             CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
             kCGHeadInsertEventTap,
-            kCGEventTapOptionListenOnly,
+            kCGEventTapOptionDefault,
             kCGEventMaskForAllEvents,
             raw_callback,
             nil,
         );
         if tap.is_null() {
-            return Err(ListenError::EventTapError);
+            return Err(GrabError::EventTapError);
         }
         let _loop = CFMachPortCreateRunLoopSource(nil, tap, 0);
         if _loop.is_null() {
-            return Err(ListenError::LoopSourceError);
+            return Err(GrabError::LoopSourceError);
         }
 
         let current_loop = CFRunLoopGetCurrent();

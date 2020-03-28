@@ -70,10 +70,14 @@
 //!
 //! Serialization and deserialization is optional behind the feature "serialize".
 mod rdev;
-pub use crate::rdev::{Button, Callback, Event, EventType, Key, ListenError, SimulateError};
+pub use crate::rdev::{
+    Button, Callback, Event, EventType, GrabError, Key, ListenError, SimulateError,
+};
 
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "macos")]
+pub use crate::macos::grab;
 #[cfg(target_os = "macos")]
 use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
