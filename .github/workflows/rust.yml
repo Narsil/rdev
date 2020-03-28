@@ -19,11 +19,11 @@ jobs:
           dependencies: sudo apt install libxtst-dev
         - os: macos-latest
           # TODO: We can't test this on github, we can't set accessibility yet.
-          test: cargo test --verbose -- --skip test_listen_and_simulate
+          test: cargo test --verbose --all-features -- --skip test_listen_and_simulate
         - os: ubuntu-latest
-          test: cargo test --verbose
+          test: cargo test --verbose --all-features
         - os: windows-latest
-          test: cargo test --verbose
+          test: cargo test --verbose --all-features
 
     steps:
     - uses: actions/checkout@v2
