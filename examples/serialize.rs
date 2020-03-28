@@ -15,4 +15,5 @@ fn main() {
 
     println!("Serialized event {:?}", serialized);
     println!("Deserialized event {:?}", deserialized);
+    assert_eq!(event, deserialized);
 }

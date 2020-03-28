@@ -34,7 +34,7 @@ pub struct SimulateError;
 /// a different value too.
 /// Careful, on Windows KpReturn does not exist, it' s strictly equivalent to Return, also Keypad keys
 /// get modified if NumLock is Off and ARE pagedown and so on.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum Key {
     /// Alt key on Linux and Windows (option key on macOS)
@@ -149,7 +149,7 @@ pub enum Key {
 }
 
 /// Standard mouse buttons
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum Button {
     Left,
@@ -160,7 +160,7 @@ pub enum Button {
 
 /// In order to manage different OS, the current EventType choices is a mix&match
 /// to account for all possible events.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventType {
     /// The keys correspond to a standard qwerty layout, they don't correspond
@@ -190,7 +190,7 @@ pub enum EventType {
 /// on the OS layout and keyboard state machinery.
 /// Caveat: Dead keys don't function on Linux(X11) yet. You will receive None for
 /// a dead key, and the raw letter instead of accentuated letter instead.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub struct Event {
     pub time: SystemTime,
