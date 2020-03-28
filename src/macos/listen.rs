@@ -3,6 +3,7 @@ use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use cocoa::base::{id, nil};
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
+use std::convert::TryInto;
 use std::os::raw::c_void;
 use std::time::SystemTime;
 
@@ -100,15 +101,16 @@ unsafe fn convert(
             })
         }
         CGEventType::KeyDown => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
-            Some(EventType::KeyPress(key_from_code(code)))
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
+            Some(EventType::KeyPress(key_from_code(code.try_into().ok()?)))
         }
         CGEventType::KeyUp => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
-            Some(EventType::KeyRelease(key_from_code(code)))
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
+            Some(EventType::KeyRelease(key_from_code(code.try_into().ok()?)))
         }
         CGEventType::FlagsChanged => {
-            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u32;
+            let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
+            let code = code.try_into().ok()?;
             let flags = cg_event.get_flags();
             if flags < LAST_FLAGS {
                 LAST_FLAGS = flags;

@@ -3,12 +3,14 @@ use core_foundation::string::UniChar;
 use core_foundation_sys::data::{CFDataGetBytePtr, CFDataRef};
 use core_graphics::event::CGEventFlags;
 use std::ffi::c_void;
+use std::os::raw::c_uint;
+use std::convert::TryInto;
 
 type TISInputSourceRef = *mut c_void;
 type ModifierState = u32;
 type UniCharCount = usize;
 
-type OptionBits = u32;
+type OptionBits = c_uint;
 #[allow(non_upper_case_globals)]
 static kUCKeyTranslateDeadKeysBit: OptionBits = 1 << 31;
 #[allow(non_upper_case_globals)]
@@ -23,6 +25,8 @@ static NSEventModifierFlagControl: u64 = 1 << 18;
 static NSEventModifierFlagOption: u64 = 1 << 19;
 #[allow(non_upper_case_globals)]
 static NSEventModifierFlagCommand: u64 = 1 << 20;
+
+const BUF_LEN: usize = 4;
 
 #[cfg(target_os = "macos")]
 #[link(name = "Cocoa", kind = "framework")]
@@ -40,7 +44,7 @@ extern "C" {
         dead_key_state: *mut u32,
         max_length: UniCharCount,
         actual_length: *mut UniCharCount,
-        unicode_string: *mut c_void,
+        unicode_string: *mut [UniChar; BUF_LEN],
     ) -> OSStatus;
     fn LMGetKbdType() -> u32;
     static kTISPropertyUnicodeKeyLayoutData: *mut c_void;
@@ -61,27 +65,24 @@ impl KeyboardState {
         let layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
         let layout_ptr = CFDataGetBytePtr(layout);
 
-        let mut buff: [UniChar; 4] = [0; 4];
+        let mut buff = [0 as UniChar; BUF_LEN];
         let kb_type = LMGetKbdType();
-        let mut length = buff.len();
+        let mut length = 0;
         let _retval = UCKeyTranslate(
             layout_ptr,
-            code as u16,
+            code.try_into().ok()?,
             kUCKeyActionDown,
             modifier_state,
             kb_type,
             kUCKeyTranslateDeadKeysBit,
-            &mut self.dead_state,               // deadKeyState
-            4,                                  // max string length
-            &mut length as *mut UniCharCount,   // actual string length
-            &mut buff as *mut _ as *mut c_void, // unicode string
+            &mut self.dead_state,                 // deadKeyState
+            BUF_LEN,                              // max string length
+            &mut length as *mut UniCharCount,     // actual string length
+            &mut buff as *mut [UniChar; BUF_LEN], // unicode string
         );
         CFRelease(keyboard);
 
-        match String::from_utf16(&buff[0..length]) {
-            Ok(string) => Some(string),
-            Err(_) => None,
-        }
+        String::from_utf16(&buff[..length]).ok()
     }
 }
 
