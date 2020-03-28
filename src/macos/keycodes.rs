@@ -81,7 +81,7 @@ const COMMA: u32 = 43;
 const DOT: u32 = 47;
 const SLASH: u32 = 44;
 
-pub fn code_from_key(key: &Key) -> Option<u32> {
+pub fn code_from_key(key: Key) -> Option<u32> {
     match key {
         Key::Alt => Some(ALT),
         Key::AltGr => Some(ALT_GR),
@@ -160,7 +160,7 @@ pub fn code_from_key(key: &Key) -> Option<u32> {
         Key::Dot => Some(DOT),
         Key::Slash => Some(SLASH),
         Key::Function => Some(FUNCTION),
-        Key::Unknown(code) => Some(*code),
+        Key::Unknown(code) => Some(code),
         _ => None,
     }
 }
@@ -255,7 +255,7 @@ mod test {
     fn test_reversible() {
         for code in 0..65636 {
             let key = key_from_code(code);
-            if let Some(code2) = code_from_key(&key) {
+            if let Some(code2) = code_from_key(key) {
                 assert_eq!(code, code2)
             } else {
                 assert!(false, "We could not convert back code: {:?}", code);

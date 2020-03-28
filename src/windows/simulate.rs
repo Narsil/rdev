@@ -58,14 +58,14 @@ fn keyboard_event(flags: u32, vk: u16, scan: u16) -> Result<(), SimulateError> {
 pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
     match event_type {
         EventType::KeyPress(key) => {
-            if let Some(code) = code_from_key(key) {
+            if let Some(code) = code_from_key(*key) {
                 keyboard_event(KEYEVENTF_KEYDOWN, code, 0)
             } else {
                 Err(SimulateError)
             }
         }
         EventType::KeyRelease(key) => {
-            if let Some(code) = code_from_key(key) {
+            if let Some(code) = code_from_key(*key) {
                 keyboard_event(KEYEVENTF_KEYUP, code, 0)
             } else {
                 Err(SimulateError)
