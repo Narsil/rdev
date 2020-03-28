@@ -3,8 +3,9 @@ use crate::rdev::{Button, EventType, SimulateError};
 use std::ptr::null;
 use x11::xlib;
 use x11::xtest;
-static TRUE: i32 = 1;
-static FALSE: i32 = 0;
+use std::os::raw::c_int;
+static TRUE: c_int = 1;
+static FALSE: c_int = 0;
 
 unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Result<(), ()> {
     match event_type {
