@@ -1,7 +1,7 @@
 extern crate x11;
 use std::ffi::CString;
-use std::os::raw::{c_char, c_uchar, c_void};
-use std::ptr::{null, null_mut};
+use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_void};
+use std::ptr::{null, null_mut, NonNull};
 use x11::xlib;
 
 // Inspired from https://github.com/wavexx/screenkey
@@ -25,16 +25,12 @@ impl Drop for KeyboardState {
 }
 
 impl KeyboardState {
-    pub fn new() -> Result<KeyboardState, ()> {
+    pub fn new() -> Option<KeyboardState> {
         unsafe {
             let dpy = xlib::XOpenDisplay(null());
-            if dpy.is_null() {
-                return Err(());
-            }
+            NonNull::new(dpy)?; //return None if dpy is null
             let xim = xlib::XOpenIM(dpy, null_mut(), null_mut(), null_mut());
-            if xim.is_null() {
-                return Err(());
-            }
+            NonNull::new(xim)?;
             let style = xlib::XIMPreeditNothing | xlib::XIMStatusNothing;
             let input_style = CString::new(xlib::XNInputStyle).expect("CString::new failed");
             let window_client = CString::new(xlib::XNClientWindow).expect("CString::new failed");
@@ -66,7 +62,7 @@ impl KeyboardState {
                 1,
                 0,
                 xlib::CopyFromParent,
-                xlib::InputOnly as u32,
+                xlib::InputOnly as c_uint,
                 null_mut(),
                 0,
                 &mut win_attr,
@@ -80,10 +76,8 @@ impl KeyboardState {
                 style,
                 null::<c_void>(),
             );
-            if xic.is_null() {
-                return Err(());
-            }
-            Ok(KeyboardState {
+            NonNull::new(xic)?;
+            Some(KeyboardState {
                 xic: Box::new(xic),
                 display: Box::new(dpy),
                 keysym: Box::new(0),
@@ -91,13 +85,14 @@ impl KeyboardState {
             })
         }
     }
-    pub unsafe fn name_from_code(&mut self, xevent: &mut xproto::_xEvent) -> Option<String> {
+
+    pub unsafe fn name_from_code(&mut self, xevent: &xproto::_xEvent) -> Option<String> {
         if self.display.is_null() || self.xic.is_null() {
             println!("We don't seem to have a display or a xic");
             return None;
         }
-        let mut buf: [c_uchar; 4] = [0; 4];
-        let length = buf.len() as i32;
+        const BUF_LEN: usize = 4;
+        let mut buf = [0 as c_uchar; BUF_LEN];
         let mut xkey = xlib::XKeyEvent {
             display: *self.display,
             root: 0,
@@ -118,23 +113,13 @@ impl KeyboardState {
         let _ret = xlib::Xutf8LookupString(
             *self.xic,
             &mut xkey,
-            &mut buf as *mut _ as *mut c_char,
-            length,
+            buf.as_mut_ptr() as *mut c_char,
+            BUF_LEN as c_int,
             &mut *self.keysym,
             &mut *self.status,
         );
 
-        let mut len = 0;
-        for c in buf.iter() {
-            if *c == 0 {
-                break;
-            }
-            len += 1;
-        }
-
-        match String::from_utf8(buf[0..len].to_vec()) {
-            Ok(string) => Some(string),
-            Err(_) => None,
-        }
+        let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
+        String::from_utf8(buf[..len].to_vec()).ok()
     }
 }
