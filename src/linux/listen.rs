@@ -4,7 +4,7 @@ extern crate xproto;
 use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Callback, Event, EventType, ListenError};
-use std::ffi::CString;
+use std::ffi::CStr;
 use std::os::raw::{c_int, c_uchar};
 use std::ptr::null;
 use std::time::SystemTime;
@@ -14,6 +14,8 @@ use x11::xrecord;
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
+
+const FALSE: c_int = 0;
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 
@@ -26,25 +28,17 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         if dpy_control.is_null() || dpy_data.is_null() {
             return Err(ListenError::MissingDisplayError);
         }
-        // Enable synchronization
-        xlib::XSynchronize(dpy_control, 1);
 
-        let extension_name = CString::new("RECORD").unwrap();
-
+        let extension_name = CStr::from_bytes_with_nul(b"RECORD\0").unwrap();
         let extension = xlib::XInitExtension(dpy_control, extension_name.as_ptr());
         if extension.is_null() {
             return Err(ListenError::XRecordExtensionError);
         }
 
-        // Get version
-        let mut version_major: c_int = 0;
-        let mut version_minor: c_int = 0;
-        xrecord::XRecordQueryVersion(dpy_control, &mut version_major, &mut version_minor);
-
         // Prepare record range
         let mut record_range: xrecord::XRecordRange = *xrecord::XRecordAllocRange();
-        record_range.device_events.first = xlib::KeyPress as u8;
-        record_range.device_events.last = xlib::MotionNotify as u8;
+        record_range.device_events.first = xlib::KeyPress as c_uchar;
+        record_range.device_events.last = xlib::MotionNotify as c_uchar;
 
         // Create context
         let context = xrecord::XRecordCreateContext(
@@ -60,9 +54,11 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         if context == 0 {
             return Err(ListenError::RecordContextError);
         }
+
+        xlib::XSync(dpy_control, FALSE);
         // Run
         let result =
-            xrecord::XRecordEnableContext(dpy_data, context, Some(record_callback), &mut 0);
+            xrecord::XRecordEnableContext(dpy_control, context, Some(record_callback), &mut 0);
         if result == 0 {
             return Err(ListenError::RecordContextEnablingError);
         }
@@ -97,8 +93,8 @@ union XRecordDatum {
 // }
 //
 
-unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    let data = &*raw_data;
+unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
+    let data = raw_data.as_ref().unwrap();
 
     // Skip server events
     if data.category != xrecord::XRecordFromServer {
@@ -107,55 +103,44 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
 
     // Cast binary data
     #[allow(clippy::cast_ptr_alignment)]
-    let xdatum = &mut *(data.data as *mut XRecordDatum);
+    let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
 
     // println!("xdatum.type_ {:?}", xdatum.type_);
     // println!("xdatum.event {:?}", xdatum.event);
 
     let code = xdatum.event.u.u.as_ref().detail;
-    let option_type = match xdatum.type_ as i32 {
+    let option_type = match xdatum.type_.into() {
         xlib::KeyPress => {
-            let key = key_from_code(code as u32);
+            let key = key_from_code(code.into());
             Some(EventType::KeyPress(key))
         }
         xlib::KeyRelease => {
-            let key = key_from_code(code as u32);
+            let key = key_from_code(code.into());
             Some(EventType::KeyRelease(key))
         }
         // Xlib does not implement wheel events left and right afaik.
         // But MacOS does, so we need to acknowledge the larger event space.
-        xlib::ButtonPress => {
-            if code == 4 {
-                Some(EventType::Wheel {
-                    delta_y: -1,
-                    delta_x: 0,
-                })
-            } else if code == 5 {
-                Some(EventType::Wheel {
-                    delta_y: 1,
-                    delta_x: 0,
-                })
-            } else {
-                match code {
-                    1 => Some(EventType::ButtonPress(Button::Left)),
-                    2 => Some(EventType::ButtonPress(Button::Middle)),
-                    3 => Some(EventType::ButtonPress(Button::Right)),
-                    code => Some(EventType::ButtonPress(Button::Unknown(code as u8))),
-                }
-            }
-        }
-        xlib::ButtonRelease => {
-            if code == 4 || code == 5 {
-                None
-            } else {
-                match code {
-                    1 => Some(EventType::ButtonRelease(Button::Left)),
-                    2 => Some(EventType::ButtonRelease(Button::Middle)),
-                    3 => Some(EventType::ButtonRelease(Button::Right)),
-                    _ => Some(EventType::ButtonRelease(Button::Unknown(code as u8))),
-                }
-            }
-        }
+        xlib::ButtonPress => match code {
+            1 => Some(EventType::ButtonPress(Button::Left)),
+            2 => Some(EventType::ButtonPress(Button::Middle)),
+            3 => Some(EventType::ButtonPress(Button::Right)),
+            4 => Some(EventType::Wheel {
+                delta_y: -1,
+                delta_x: 0,
+            }),
+            5 => Some(EventType::Wheel {
+                delta_y: 1,
+                delta_x: 0,
+            }),
+            code => Some(EventType::ButtonPress(Button::Unknown(code.into()))),
+        },
+        xlib::ButtonRelease => match code {
+            1 => Some(EventType::ButtonRelease(Button::Left)),
+            2 => Some(EventType::ButtonRelease(Button::Middle)),
+            3 => Some(EventType::ButtonRelease(Button::Right)),
+            4 | 5 => None,
+            _ => Some(EventType::ButtonRelease(Button::Unknown(code.into()))),
+        },
         xlib::MotionNotify => Some(EventType::MouseMove {
             x: xdatum.event.u.keyButtonPointer.as_ref().rootX as f64,
             y: xdatum.event.u.keyButtonPointer.as_ref().rootY as f64,
@@ -166,18 +151,14 @@ unsafe extern "C" fn record_callback(_: *mut i8, raw_data: *mut xrecord::XRecord
     if let Some(event_type) = option_type {
         let name = match event_type {
             EventType::KeyPress(_) => {
-                if let Ok(mut keyboard) = KeyboardState::new() {
-                    keyboard.name_from_code(&mut xdatum.event)
-                } else {
-                    None
-                }
+                KeyboardState::new().map(|mut kboard| kboard.name_from_code(&xdatum.event))
             }
             _ => None,
-        };
-        let time = SystemTime::now();
+        }
+        .flatten();
         let event = Event {
             event_type,
-            time,
+            time: SystemTime::now(),
             name,
         };
         GLOBAL_CALLBACK(event);
