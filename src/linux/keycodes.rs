@@ -1,328 +1,138 @@
 use crate::rdev::Key;
 use std::os::raw::c_uint;
 
-const ALT: c_uint = 64;
-const ALT_GR: c_uint = 108;
-const BACKSPACE: c_uint = 22;
-const CAPS_LOCK: c_uint = 66;
-const CONTROL_LEFT: c_uint = 37;
-const CONTROL_RIGHT: c_uint = 105;
-const DELETE: c_uint = 119;
-const DOWN_ARROW: c_uint = 116;
-const END: c_uint = 115;
-const ESCAPE: c_uint = 9;
-const F1: c_uint = 67;
-const F10: c_uint = 76;
-const F11: c_uint = 95;
-const F12: c_uint = 96;
-const F2: c_uint = 68;
-const F3: c_uint = 69;
-const F4: c_uint = 70;
-const F5: c_uint = 71;
-const F6: c_uint = 72;
-const F7: c_uint = 73;
-const F8: c_uint = 74;
-const F9: c_uint = 75;
-const HOME: c_uint = 110;
-const LEFT_ARROW: c_uint = 113;
-const META_LEFT: c_uint = 133;
-const PAGE_DOWN: c_uint = 117;
-const PAGE_UP: c_uint = 112;
-const RETURN: c_uint = 36;
-const RIGHT_ARROW: c_uint = 114;
-const SHIFT_LEFT: c_uint = 50;
-const SHIFT_RIGHT: c_uint = 62;
-const SPACE: c_uint = 65;
-const TAB: c_uint = 23;
-const UP_ARROW: c_uint = 111;
-const PRINT_SCREEN: c_uint = 107;
-const SCROLL_LOCK: c_uint = 78;
-const PAUSE: c_uint = 127;
-const NUM_LOCK: c_uint = 77;
-const BACK_QUOTE: c_uint = 49;
-const NUM1: c_uint = 10;
-const NUM2: c_uint = 11;
-const NUM3: c_uint = 12;
-const NUM4: c_uint = 13;
-const NUM5: c_uint = 14;
-const NUM6: c_uint = 15;
-const NUM7: c_uint = 16;
-const NUM8: c_uint = 17;
-const NUM9: c_uint = 18;
-const NUM0: c_uint = 19;
-const MINUS: c_uint = 20;
-const EQUAL: c_uint = 21;
-const KEY_Q: c_uint = 24;
-const KEY_W: c_uint = 25;
-const KEY_E: c_uint = 26;
-const KEY_R: c_uint = 27;
-const KEY_T: c_uint = 28;
-const KEY_Y: c_uint = 29;
-const KEY_U: c_uint = 30;
-const KEY_I: c_uint = 31;
-const KEY_O: c_uint = 32;
-const KEY_P: c_uint = 33;
-const LEFT_BRACKET: c_uint = 34;
-const RIGHT_BRACKET: c_uint = 35;
-const KEY_A: c_uint = 38;
-const KEY_S: c_uint = 39;
-const KEY_D: c_uint = 40;
-const KEY_F: c_uint = 41;
-const KEY_G: c_uint = 42;
-const KEY_H: c_uint = 43;
-const KEY_J: c_uint = 44;
-const KEY_K: c_uint = 45;
-const KEY_L: c_uint = 46;
-const SEMI_COLON: c_uint = 47;
-const QUOTE: c_uint = 48;
-const BACK_SLASH: c_uint = 51;
-const INTL_BACKSLASH: c_uint = 94;
-const KEY_Z: c_uint = 52;
-const KEY_X: c_uint = 53;
-const KEY_C: c_uint = 54;
-const KEY_V: c_uint = 55;
-const KEY_B: c_uint = 56;
-const KEY_N: c_uint = 57;
-const KEY_M: c_uint = 58;
-const COMMA: c_uint = 59;
-const DOT: c_uint = 60;
-const SLASH: c_uint = 61;
-const INSERT: c_uint = 118;
-const KP_RETURN: c_uint = 104;
-const KP_MINUS: c_uint = 82;
-const KP_PLUS: c_uint = 86;
-const KP_MULTIPLY: c_uint = 63;
-const KP_DIVIDE: c_uint = 106;
-const KP0: c_uint = 90;
-const KP1: c_uint = 87;
-const KP2: c_uint = 88;
-const KP3: c_uint = 89;
-const KP4: c_uint = 83;
-const KP5: c_uint = 84;
-const KP6: c_uint = 85;
-const KP7: c_uint = 79;
-const KP8: c_uint = 80;
-const KP9: c_uint = 81;
-const KP_DELETE: c_uint = 91;
+macro_rules! decl_keycodes {
+    ($($name:ident, $key:ident, $code:literal),*) => {
+        $(
+            const $name: c_uint = $code;
+        )*
 
-pub fn code_from_key(key: Key) -> Option<c_uint> {
-    match key {
-        Key::Alt => Some(ALT),
-        Key::AltGr => Some(ALT_GR),
-        Key::Backspace => Some(BACKSPACE),
-        Key::CapsLock => Some(CAPS_LOCK),
-        Key::ControlLeft => Some(CONTROL_LEFT),
-        Key::ControlRight => Some(CONTROL_RIGHT),
-        Key::Delete => Some(DELETE),
-        Key::DownArrow => Some(DOWN_ARROW),
-        Key::End => Some(END),
-        Key::Escape => Some(ESCAPE),
-        Key::F1 => Some(F1),
-        Key::F10 => Some(F10),
-        Key::F11 => Some(F11),
-        Key::F12 => Some(F12),
-        Key::F2 => Some(F2),
-        Key::F3 => Some(F3),
-        Key::F4 => Some(F4),
-        Key::F5 => Some(F5),
-        Key::F6 => Some(F6),
-        Key::F7 => Some(F7),
-        Key::F8 => Some(F8),
-        Key::F9 => Some(F9),
-        Key::Home => Some(HOME),
-        Key::LeftArrow => Some(LEFT_ARROW),
-        Key::MetaLeft => Some(META_LEFT),
-        Key::PageDown => Some(PAGE_DOWN),
-        Key::PageUp => Some(PAGE_UP),
-        Key::Return => Some(RETURN),
-        Key::RightArrow => Some(RIGHT_ARROW),
-        Key::ShiftLeft => Some(SHIFT_LEFT),
-        Key::ShiftRight => Some(SHIFT_RIGHT),
-        Key::Space => Some(SPACE),
-        Key::Tab => Some(TAB),
-        Key::UpArrow => Some(UP_ARROW),
-        Key::PrintScreen => Some(PRINT_SCREEN),
-        Key::ScrollLock => Some(SCROLL_LOCK),
-        Key::Pause => Some(PAUSE),
-        Key::NumLock => Some(NUM_LOCK),
-        Key::BackQuote => Some(BACK_QUOTE),
-        Key::Num1 => Some(NUM1),
-        Key::Num2 => Some(NUM2),
-        Key::Num3 => Some(NUM3),
-        Key::Num4 => Some(NUM4),
-        Key::Num5 => Some(NUM5),
-        Key::Num6 => Some(NUM6),
-        Key::Num7 => Some(NUM7),
-        Key::Num8 => Some(NUM8),
-        Key::Num9 => Some(NUM9),
-        Key::Num0 => Some(NUM0),
-        Key::Minus => Some(MINUS),
-        Key::Equal => Some(EQUAL),
-        Key::KeyQ => Some(KEY_Q),
-        Key::KeyW => Some(KEY_W),
-        Key::KeyE => Some(KEY_E),
-        Key::KeyR => Some(KEY_R),
-        Key::KeyT => Some(KEY_T),
-        Key::KeyY => Some(KEY_Y),
-        Key::KeyU => Some(KEY_U),
-        Key::KeyI => Some(KEY_I),
-        Key::KeyO => Some(KEY_O),
-        Key::KeyP => Some(KEY_P),
-        Key::LeftBracket => Some(LEFT_BRACKET),
-        Key::RightBracket => Some(RIGHT_BRACKET),
-        Key::KeyA => Some(KEY_A),
-        Key::KeyS => Some(KEY_S),
-        Key::KeyD => Some(KEY_D),
-        Key::KeyF => Some(KEY_F),
-        Key::KeyG => Some(KEY_G),
-        Key::KeyH => Some(KEY_H),
-        Key::KeyJ => Some(KEY_J),
-        Key::KeyK => Some(KEY_K),
-        Key::KeyL => Some(KEY_L),
-        Key::SemiColon => Some(SEMI_COLON),
-        Key::Quote => Some(QUOTE),
-        Key::BackSlash => Some(BACK_SLASH),
-        Key::IntlBackslash => Some(INTL_BACKSLASH),
-        Key::KeyZ => Some(KEY_Z),
-        Key::KeyX => Some(KEY_X),
-        Key::KeyC => Some(KEY_C),
-        Key::KeyV => Some(KEY_V),
-        Key::KeyB => Some(KEY_B),
-        Key::KeyN => Some(KEY_N),
-        Key::KeyM => Some(KEY_M),
-        Key::Comma => Some(COMMA),
-        Key::Dot => Some(DOT),
-        Key::Slash => Some(SLASH),
-        Key::Insert => Some(INSERT),
-        Key::KpReturn => Some(KP_RETURN),
-        Key::KpMinus => Some(KP_MINUS),
-        Key::KpPlus => Some(KP_PLUS),
-        Key::KpMultiply => Some(KP_MULTIPLY),
-        Key::KpDivide => Some(KP_DIVIDE),
-        Key::Kp0 => Some(KP0),
-        Key::Kp1 => Some(KP1),
-        Key::Kp2 => Some(KP2),
-        Key::Kp3 => Some(KP3),
-        Key::Kp4 => Some(KP4),
-        Key::Kp5 => Some(KP5),
-        Key::Kp6 => Some(KP6),
-        Key::Kp7 => Some(KP7),
-        Key::Kp8 => Some(KP8),
-        Key::Kp9 => Some(KP9),
-        Key::KpDelete => Some(KP_DELETE),
-        Key::Unknown(code) => Some(code),
-        _ => None,
-    }
+        pub fn code_from_key(key: Key) -> Option<c_uint> {
+            match key {
+                $(
+                    Key::$key => Some($name),
+                )*
+                Key::Unknown(code) => Some(code),
+                _ => None,
+            }
+        }
+
+        pub fn key_from_code(code: c_uint) -> Key {
+            match code {
+                $(
+                    $code => Key::$key,
+                )*
+                _ => Key::Unknown(code)
+            }
+        }
+    };
 }
 
-pub fn key_from_code(code: c_uint) -> Key {
-    match code {
-        ALT => Key::Alt,
-        ALT_GR => Key::AltGr,
-        BACKSPACE => Key::Backspace,
-        CAPS_LOCK => Key::CapsLock,
-        CONTROL_LEFT => Key::ControlLeft,
-        CONTROL_RIGHT => Key::ControlRight,
-        DELETE => Key::Delete,
-        DOWN_ARROW => Key::DownArrow,
-        END => Key::End,
-        ESCAPE => Key::Escape,
-        F1 => Key::F1,
-        F10 => Key::F10,
-        F11 => Key::F11,
-        F12 => Key::F12,
-        F2 => Key::F2,
-        F3 => Key::F3,
-        F4 => Key::F4,
-        F5 => Key::F5,
-        F6 => Key::F6,
-        F7 => Key::F7,
-        F8 => Key::F8,
-        F9 => Key::F9,
-        HOME => Key::Home,
-        LEFT_ARROW => Key::LeftArrow,
-        META_LEFT => Key::MetaLeft,
-        PAGE_DOWN => Key::PageDown,
-        PAGE_UP => Key::PageUp,
-        RETURN => Key::Return,
-        RIGHT_ARROW => Key::RightArrow,
-        SHIFT_LEFT => Key::ShiftLeft,
-        SHIFT_RIGHT => Key::ShiftRight,
-        SPACE => Key::Space,
-        TAB => Key::Tab,
-        UP_ARROW => Key::UpArrow,
-        PRINT_SCREEN => Key::PrintScreen,
-        SCROLL_LOCK => Key::ScrollLock,
-        PAUSE => Key::Pause,
-        NUM_LOCK => Key::NumLock,
-        BACK_QUOTE => Key::BackQuote,
-        NUM1 => Key::Num1,
-        NUM2 => Key::Num2,
-        NUM3 => Key::Num3,
-        NUM4 => Key::Num4,
-        NUM5 => Key::Num5,
-        NUM6 => Key::Num6,
-        NUM7 => Key::Num7,
-        NUM8 => Key::Num8,
-        NUM9 => Key::Num9,
-        NUM0 => Key::Num0,
-        MINUS => Key::Minus,
-        EQUAL => Key::Equal,
-        KEY_Q => Key::KeyQ,
-        KEY_W => Key::KeyW,
-        KEY_E => Key::KeyE,
-        KEY_R => Key::KeyR,
-        KEY_T => Key::KeyT,
-        KEY_Y => Key::KeyY,
-        KEY_U => Key::KeyU,
-        KEY_I => Key::KeyI,
-        KEY_O => Key::KeyO,
-        KEY_P => Key::KeyP,
-        LEFT_BRACKET => Key::LeftBracket,
-        RIGHT_BRACKET => Key::RightBracket,
-        KEY_A => Key::KeyA,
-        KEY_S => Key::KeyS,
-        KEY_D => Key::KeyD,
-        KEY_F => Key::KeyF,
-        KEY_G => Key::KeyG,
-        KEY_H => Key::KeyH,
-        KEY_J => Key::KeyJ,
-        KEY_K => Key::KeyK,
-        KEY_L => Key::KeyL,
-        SEMI_COLON => Key::SemiColon,
-        QUOTE => Key::Quote,
-        BACK_SLASH => Key::BackSlash,
-        INTL_BACKSLASH => Key::IntlBackslash,
-        KEY_Z => Key::KeyZ,
-        KEY_X => Key::KeyX,
-        KEY_C => Key::KeyC,
-        KEY_V => Key::KeyV,
-        KEY_B => Key::KeyB,
-        KEY_N => Key::KeyN,
-        KEY_M => Key::KeyM,
-        COMMA => Key::Comma,
-        DOT => Key::Dot,
-        SLASH => Key::Slash,
-        INSERT => Key::Insert,
-        KP_RETURN => Key::KpReturn,
-        KP_MINUS => Key::KpMinus,
-        KP_PLUS => Key::KpPlus,
-        KP_MULTIPLY => Key::KpMultiply,
-        KP_DIVIDE => Key::KpDivide,
-        KP0 => Key::Kp0,
-        KP1 => Key::Kp1,
-        KP2 => Key::Kp2,
-        KP3 => Key::Kp3,
-        KP4 => Key::Kp4,
-        KP5 => Key::Kp5,
-        KP6 => Key::Kp6,
-        KP7 => Key::Kp7,
-        KP8 => Key::Kp8,
-        KP9 => Key::Kp9,
-        KP_DELETE => Key::KpDelete,
-        code => Key::Unknown(code),
-    }
-}
+decl_keycodes!(
+    ALT, Alt, 64,
+    ALT_GR, AltGr, 108,
+    BACKSPACE, Backspace, 22,
+    CAPS_LOCK, CapsLock, 66,
+    CONTROL_LEFT, ControlLeft, 37,
+    CONTROL_RIGHT, ControlRight, 105,
+    DELETE, Delete, 119,
+    DOWN_ARROW, DownArrow, 116,
+    END, End, 115,
+    ESCAPE, Escape, 9,
+    F1, F1, 67,
+    F10, F10, 76,
+    F11, F11, 95,
+    F12, F12, 96,
+    F2, F2, 68,
+    F3, F3, 69,
+    F4, F4, 70,
+    F5, F5, 71,
+    F6, F6, 72,
+    F7, F7, 73,
+    F8, F8, 74,
+    F9, F9, 75,
+    HOME, Home, 110,
+    LEFT_ARROW, LeftArrow, 113,
+    META_LEFT, MetaLeft, 133,
+    PAGE_DOWN, PageDown, 117,
+    PAGE_UP, PageUp, 112,
+    RETURN, Return, 36,
+    RIGHT_ARROW, RightArrow, 114,
+    SHIFT_LEFT, ShiftLeft, 50,
+    SHIFT_RIGHT, ShiftRight, 62,
+    SPACE, Space, 65,
+    TAB, Tab, 23,
+    UP_ARROW, UpArrow, 111,
+    PRINT_SCREEN, PrintScreen, 107,
+    SCROLL_LOCK, ScrollLock, 78,
+    PAUSE, Pause, 127,
+    NUM_LOCK, NumLock, 77,
+    BACK_QUOTE, BackQuote, 49,
+    NUM1, Num1, 10,
+    NUM2, Num2, 11,
+    NUM3, Num3, 12,
+    NUM4, Num4, 13,
+    NUM5, Num5, 14,
+    NUM6, Num6, 15,
+    NUM7, Num7, 16,
+    NUM8, Num8, 17,
+    NUM9, Num9, 18,
+    NUM0, Num0, 19,
+    MINUS, Minus, 20,
+    EQUAL, Equal, 21,
+    KEY_Q, KeyQ, 24,
+    KEY_W, KeyW, 25,
+    KEY_E, KeyE, 26,
+    KEY_R, KeyR, 27,
+    KEY_T, KeyT, 28,
+    KEY_Y, KeyY, 29,
+    KEY_U, KeyU, 30,
+    KEY_I, KeyI, 31,
+    KEY_O, KeyO, 32,
+    KEY_P, KeyP, 33,
+    LEFT_BRACKET, LeftBracket, 34,
+    RIGHT_BRACKET, RightBracket, 35,
+    KEY_A, KeyA, 38,
+    KEY_S, KeyS, 39,
+    KEY_D, KeyD, 40,
+    KEY_F, KeyF, 41,
+    KEY_G, KeyG, 42,
+    KEY_H, KeyH, 43,
+    KEY_J, KeyJ, 44,
+    KEY_K, KeyK, 45,
+    KEY_L, KeyL, 46,
+    SEMI_COLON, SemiColon, 47,
+    QUOTE, Quote, 48,
+    BACK_SLASH, BackSlash, 51,
+    INTL_BACKSLASH, IntlBackslash, 94,
+    KEY_Z, KeyZ, 52,
+    KEY_X, KeyX, 53,
+    KEY_C, KeyC, 54,
+    KEY_V, KeyV, 55,
+    KEY_B, KeyB, 56,
+    KEY_N, KeyN, 57,
+    KEY_M, KeyM, 58,
+    COMMA, Comma, 59,
+    DOT, Dot, 60,
+    SLASH, Slash, 61,
+    INSERT, Insert, 118,
+    KP_RETURN, KpReturn, 104,
+    KP_MINUS, KpMinus, 82,
+    KP_PLUS, KpPlus, 86,
+    KP_MULTIPLY, KpMultiply, 63,
+    KP_DIVIDE, KpDivide, 106,
+    KP0, Kp0, 90,
+    KP1, Kp1, 87,
+    KP2, Kp2, 88,
+    KP3, Kp3, 89,
+    KP4, Kp4, 83,
+    KP5, Kp5, 84,
+    KP6, Kp6, 85,
+    KP7, Kp7, 79,
+    KP8, Kp8, 80,
+    KP9, Kp9, 81,
+    KP_DELETE, KpDelete, 91
+);
 
 #[cfg(test)]
 mod test {
