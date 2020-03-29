@@ -35,7 +35,6 @@ xproto = "1.1"
 winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthreadsapi"] }
 
 [dev-dependencies]
-tokio = {version = "0.2", features=["process", "rt-core", "io-util", "macros", "time"]}
 lazy_static = "1.4.0"
 serde_json = "1.0"
 
