@@ -1,31 +1,24 @@
 use crate::rdev::{Button, Callback, Event, EventType, ListenError};
+use crate::rdev::{Callback, Event, EventType, ListenError};
+use crate::windows::common::{convert, get_name, HOOK};
 use crate::windows::keycodes::key_from_code;
 use std::convert::TryInto;
 use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
+use std::ptr::null_mut;
+use std::time::SystemTime;
 use std::time::SystemTime;
 use winapi::shared::minwindef::{BYTE, DWORD, HIWORD, HKL, LPARAM, LRESULT, UINT, WORD, WPARAM};
 use winapi::shared::ntdef::{LONG, WCHAR};
 use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
-use winapi::um::processthreadsapi::GetCurrentThreadId;
-use winapi::um::winuser;
 use winapi::um::winuser::{
-    CallNextHookEx, GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
-    GetMessageA, GetWindowThreadProcessId, SetWindowsHookExA, ToUnicodeEx, HC_ACTION,
-    KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, VK_SHIFT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL,
-    WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
-    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
-    WM_XBUTTONUP,
+    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, WH_KEYBOARD_LL, WH_MOUSE_LL,
 };
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
-
-const TRUE: i32 = 1;
-const FALSE: i32 = 0;
-
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut HOOK: HHOOK = null_mut();
 
@@ -192,6 +185,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
             _ => None,
         };
 
+        let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
                 EventType::KeyPress(_key) => get_name(lpdata),
