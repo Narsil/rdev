@@ -41,9 +41,6 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         record_range.device_events.last = xlib::MotionNotify as c_uchar;
 
         // Create context
-        println!("Extension create context");
-        // Enable synchronization
-        xlib::XSynchronize(dpy_control, 1);
         let context = xrecord::XRecordCreateContext(
             dpy_control,
             0,
@@ -60,13 +57,11 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
 
         xlib::XSync(dpy_control, FALSE);
         // Run
-        println!("Extension enable context");
         let result =
             xrecord::XRecordEnableContext(dpy_control, context, Some(record_callback), &mut 0);
         if result == 0 {
             return Err(ListenError::RecordContextEnablingError);
         }
-        println!("OK ?");
     }
     Ok(())
 }
