@@ -7,9 +7,6 @@ use std::ptr::null;
 use x11::xlib;
 use x11::xtest;
 
-static TRUE: c_int = 1;
-static FALSE: c_int = 0;
-
 unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Option<()> {
     let res = match event_type {
         EventType::KeyPress(key) => {
