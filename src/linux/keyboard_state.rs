@@ -28,9 +28,13 @@ impl KeyboardState {
     pub fn new() -> Option<KeyboardState> {
         unsafe {
             let dpy = xlib::XOpenDisplay(null());
-            NonNull::new(dpy)?; //return None if dpy is null
+            if dpy.is_null() {
+                return None;
+            }
             let xim = xlib::XOpenIM(dpy, null_mut(), null_mut(), null_mut());
-            NonNull::new(xim)?;
+            if xim.is_null() {
+                return None;
+            }
             let style = xlib::XIMPreeditNothing | xlib::XIMStatusNothing;
             let input_style = CString::new(xlib::XNInputStyle).expect("CString::new failed");
             let window_client = CString::new(xlib::XNClientWindow).expect("CString::new failed");
