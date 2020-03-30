@@ -85,6 +85,8 @@ use crate::macos::{display_size as _display_size, listen as _listen, simulate as
 mod linux;
 
 #[cfg(target_os = "linux")]
+pub use crate::linux::grab;
+#[cfg(target_os = "linux")]
 use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
