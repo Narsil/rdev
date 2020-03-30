@@ -15,6 +15,9 @@ fn default_callback(event: Event) -> Option<Event> {
 static mut GLOBAL_CALLBACK: GrabCallback = default_callback;
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
+    let msg: LPMSG = lpdata as LPMSG;
+    println!("code {:?}" , code);
+    println!("msg value {:?}", (*msg).message);
     if code == HC_ACTION {
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
@@ -28,10 +31,11 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                 name,
             };
             if GLOBAL_CALLBACK(event).is_none() {
-                let result = CallNextHookEx(HOOK, code, param, lpdata);
-                let msg: LPMSG = param as LPMSG;
-                (*msg).message = WM_NULL;
-                return result;
+                // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
+                // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
+                // https://cboard.cprogramming.com/windows-programming/99678-setwindowshookex-wm_keyboard_ll.html
+                let _result = CallNextHookEx(HOOK, code, param, lpdata);
+                return 1;
             }
         }
     }
