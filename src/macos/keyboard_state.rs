@@ -2,9 +2,9 @@ use core_foundation::base::{CFRelease, OSStatus};
 use core_foundation::string::UniChar;
 use core_foundation_sys::data::{CFDataGetBytePtr, CFDataRef};
 use core_graphics::event::CGEventFlags;
+use std::convert::TryInto;
 use std::ffi::c_void;
 use std::os::raw::c_uint;
-use std::convert::TryInto;
 
 type TISInputSourceRef = *mut c_void;
 type ModifierState = u32;
