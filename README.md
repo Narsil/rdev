@@ -145,6 +145,5 @@ pub enum EventType {
 ### OS Specificities
 
 For now the code only works for Linux (X11), MacOS and Windows. On MacOS, the listen
-loop needs to be the primary app (no fork before) and need to have accessibility
-settings enabled. The `listen_and_simulate` test does have both a listen and a simulate part.
-We use tokio to manage the listen process (Terminal was added in accessibility settings).
+loop needs to be the primary app (no fork before) and needs to have accessibility
+settings enabled (Terminal added in System Preferences > Security & Privacy > Privacy > Accessibility).

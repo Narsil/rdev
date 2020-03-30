@@ -14,10 +14,12 @@ unsafe fn convert_native_with_source(
 ) -> Option<CGEvent> {
     match event_type {
         EventType::KeyPress(key) => {
-            CGEvent::new_keyboard_event(source, code_from_key(*key)?, true).ok()
+            let code = code_from_key(*key)?;
+            CGEvent::new_keyboard_event(source, code, true).ok()
         }
         EventType::KeyRelease(key) => {
-            CGEvent::new_keyboard_event(source, code_from_key(*key)?, false).ok()
+            let code = code_from_key(*key)?;
+            CGEvent::new_keyboard_event(source, code, false).ok()
         }
         EventType::ButtonPress(button) => {
             let point = get_current_mouse_location()?;
