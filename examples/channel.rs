@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
 use rdev::{listen, Event};
-use std::thread;
-use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Mutex;
+use std::thread;
 
 lazy_static! {
     static ref EVENT_CHANNEL: (Mutex<Sender<Event>>, Mutex<Receiver<Event>>) = {

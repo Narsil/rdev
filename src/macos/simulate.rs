@@ -31,7 +31,8 @@ unsafe fn convert_native_with_source(
                 event,
                 point,
                 CGMouseButton::Left, // ignored because we don't use OtherMouse EventType
-            ).ok()
+            )
+            .ok()
         }
         EventType::ButtonRelease(button) => {
             let point = get_current_mouse_location()?;
@@ -45,14 +46,16 @@ unsafe fn convert_native_with_source(
                 event,
                 point,
                 CGMouseButton::Left, // ignored because we don't use OtherMouse EventType
-            ).ok()
+            )
+            .ok()
         }
         EventType::MouseMove { x, y } => {
             let point = CGPoint {
                 x: (*x).try_into().ok()?,
                 y: (*y).try_into().ok()?,
             };
-            CGEvent::new_mouse_event(source, CGEventType::MouseMoved, point, CGMouseButton::Left).ok()
+            CGEvent::new_mouse_event(source, CGEventType::MouseMoved, point, CGMouseButton::Left)
+                .ok()
         }
         EventType::Wheel { delta_x, delta_y } => {
             let wheel_count = 2;
@@ -63,7 +66,8 @@ unsafe fn convert_native_with_source(
                 (*delta_y).try_into().ok()?,
                 (*delta_x).try_into().ok()?,
                 0,
-            ).ok()
+            )
+            .ok()
         }
     }
 }

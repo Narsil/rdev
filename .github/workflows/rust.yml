@@ -16,7 +16,7 @@ jobs:
         - os: ubuntu-latest
           headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         - os: ubuntu-latest
-          dependencies: sudo apt install libxtst-dev
+          dependencies: sudo apt-get install libxtst-dev
         - os: macos-latest
           # TODO: We can't test this on github, we can't set accessibility yet.
           test: cargo test --verbose --all-features -- --skip test_listen_and_simulate
@@ -31,6 +31,8 @@ jobs:
       run: ${{matrix.dependencies}}
     - name: Setup headless environment
       run: ${{matrix.headless}}
+    - name: Check formatting
+      run: cargo fmt -- --check
     - name: Build
       run: cargo build --verbose
     - name: Run tests
