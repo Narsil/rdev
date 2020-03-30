@@ -1,14 +1,9 @@
 use crate::macos::common::*;
-use crate::macos::keyboard_state::KeyboardState;
-use crate::rdev::{Button, Callback, Event, EventType, ListenError};
+use crate::rdev::{Callback, Event, ListenError};
 use cocoa::base::nil;
 use cocoa::foundation::NSAutoreleasePool;
-use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
-use std::convert::TryInto;
+use core_graphics::event::{CGEventTapLocation, CGEventType};
 use std::os::raw::c_void;
-use std::time::SystemTime;
-
-use crate::macos::keycodes::key_from_code;
 
 fn default_callback(event: Event) {
     println!("Default {:?}", event)

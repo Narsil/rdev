@@ -1,6 +1,12 @@
+use crate::macos::keyboard_state::KeyboardState;
+use crate::rdev::{Button, Event, EventType};
 use cocoa::base::id;
-use core_graphics::event::{CGEvent, CGEventTapLocation, CGEventType};
+use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
+use std::convert::TryInto;
 use std::os::raw::c_void;
+use std::time::SystemTime;
+
+use crate::macos::keycodes::key_from_code;
 
 pub type CFMachPortRef = *const c_void;
 pub type CFIndex = u64;
