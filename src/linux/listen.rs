@@ -132,6 +132,7 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
                 delta_y: 1,
                 delta_x: 0,
             }),
+            #[allow(clippy::identity_conversion)]
             code => Some(EventType::ButtonPress(Button::Unknown(code.into()))),
         },
         xlib::ButtonRelease => match code {
@@ -139,6 +140,7 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
             2 => Some(EventType::ButtonRelease(Button::Middle)),
             3 => Some(EventType::ButtonRelease(Button::Right)),
             4 | 5 => None,
+            #[allow(clippy::identity_conversion)]
             _ => Some(EventType::ButtonRelease(Button::Unknown(code.into()))),
         },
         xlib::MotionNotify => Some(EventType::MouseMove {
