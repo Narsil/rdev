@@ -4,8 +4,7 @@ use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::winuser::{
-    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, LPMSG, WH_KEYBOARD_LL, WH_MOUSE_LL,
-    WM_NULL,
+    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, WH_KEYBOARD_LL, WH_MOUSE_LL,
 };
 
 fn default_callback(event: Event) -> Option<Event> {
@@ -15,9 +14,6 @@ fn default_callback(event: Event) -> Option<Event> {
 static mut GLOBAL_CALLBACK: GrabCallback = default_callback;
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
-    let msg: LPMSG = lpdata as LPMSG;
-    println!("code {:?}" , code);
-    println!("msg value {:?}", (*msg).message);
     if code == HC_ACTION {
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
