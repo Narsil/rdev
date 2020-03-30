@@ -71,10 +71,13 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
                 xlib::XFlush(dpy);
                 xlib::XSync(dpy, 0);
 
+                xlib::XCloseDisplay(dpy);
                 Ok(())
             }
-            Err(_) => Err(SimulateError),
+            Err(_) => {
+                xlib::XCloseDisplay(dpy);
+                Err(SimulateError)
+            }
         }
-        xlib::XCloseDisplay(dpy);
     }
 }
