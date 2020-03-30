@@ -5,7 +5,8 @@ use std::ptr::null;
 use std::time::SystemTime;
 use x11::{xlib, xtest};
 
-fn convert(ev: &xlib::XEvent) -> Event {
+fn convert(_ev: &xlib::XEvent) -> Event {
+    // TODO
     Event {
         event_type: EventType::KeyPress(Key::KeyS),
         name: None,
@@ -37,32 +38,29 @@ pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
             xlib::XNextEvent(dpy, &mut ev);
             println!("Got 1 event {:?}", ev);
             let event_type = convert(&ev);
-            match callback(event_type) {
-                Some(event) => {
-                    let r = xlib::XUngrabKeyboard(dpy, xlib::CurrentTime);
-                    println!("Ungrab keyboard {}", r);
-                    if (ev.type_ == xlib::KeyPress) {
-                        // xlib::XSendEvent(dpy, xlib::InputFocus as u64, TRUE, xlib::KeyPressMask, &mut ev);
-                        println!("Sending keypress {}", ev.key.keycode);
-                        xtest::XTestFakeKeyEvent(dpy, ev.key.keycode, TRUE, 0);
-                    } else {
-                        // xlib::XSendEvent(dpy, xlib::InputFocus as u64, TRUE, xlib::KeyReleaseMask, &mut ev);
-                        println!("Sending keyrelease {}", ev.key.keycode);
-                        xtest::XTestFakeKeyEvent(dpy, ev.key.keycode, FALSE, 0);
-                    }
-                    xlib::XFlush(dpy);
-                    xlib::XSync(dpy, 0);
-                    let res = xlib::XGrabKeyboard(
-                        dpy,
-                        root,
-                        TRUE,
-                        xlib::GrabModeAsync,
-                        xlib::GrabModeAsync,
-                        xlib::CurrentTime,
-                    );
-                    println!("Regrab keyboard {}", res);
+            if let Some(_event) = callback(event_type) {
+                let r = xlib::XUngrabKeyboard(dpy, xlib::CurrentTime);
+                println!("Ungrab keyboard {}", r);
+                if ev.type_ == xlib::KeyPress {
+                    // xlib::XSendEvent(dpy, xlib::InputFocus as u64, TRUE, xlib::KeyPressMask, &mut ev);
+                    println!("Sending keypress {}", ev.key.keycode);
+                    xtest::XTestFakeKeyEvent(dpy, ev.key.keycode, TRUE, 0);
+                } else {
+                    // xlib::XSendEvent(dpy, xlib::InputFocus as u64, TRUE, xlib::KeyReleaseMask, &mut ev);
+                    println!("Sending keyrelease {}", ev.key.keycode);
+                    xtest::XTestFakeKeyEvent(dpy, ev.key.keycode, FALSE, 0);
                 }
-                None => {}
+                xlib::XFlush(dpy);
+                xlib::XSync(dpy, 0);
+                let res = xlib::XGrabKeyboard(
+                    dpy,
+                    root,
+                    TRUE,
+                    xlib::GrabModeAsync,
+                    xlib::GrabModeAsync,
+                    xlib::CurrentTime,
+                );
+                println!("Regrab keyboard {}", res);
             }
         }
     }
