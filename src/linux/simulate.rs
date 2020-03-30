@@ -1,3 +1,4 @@
+use crate::linux::common::{FALSE, TRUE};
 use crate::linux::keycodes::code_from_key;
 use crate::rdev::{Button, EventType, SimulateError};
 use std::convert::TryInto;
