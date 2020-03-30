@@ -75,5 +75,6 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             }
             Err(_) => Err(SimulateError),
         }
+        xlib::XCloseDisplay(dpy);
     }
 }
