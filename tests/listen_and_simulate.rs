@@ -1,5 +1,7 @@
 use lazy_static::lazy_static;
-use rdev::{listen, simulate, Event, EventType, Key};
+use rdev::{listen, simulate, Button, Event, EventType, Key};
+use std::error::Error;
+use std::iter::Iterator;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
 use std::thread;
@@ -13,6 +15,7 @@ lazy_static! {
 }
 
 fn send_event(event: Event) {
+    println!("got event: {:?}", event);
     EVENT_CHANNEL
         .0
         .lock()
@@ -21,31 +24,39 @@ fn send_event(event: Event) {
         .expect("Receiving end of EVENT_CHANNEL was closed");
 }
 
-#[test]
-fn test_listen_and_simulate() {
+fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Box<dyn Error>> {
     // spawn new thread because listen blocks
     let _listener = thread::spawn(move || {
         listen(send_event).expect("Could not listen");
     });
+    let tenth_sec = Duration::from_millis(100);
+    thread::sleep(tenth_sec);
 
-    let recv = EVENT_CHANNEL.1.lock().expect("Failed to unlock Mutex");
-
-    // Wait for listen to start
-    thread::sleep(Duration::from_secs(1));
-
-    let event_type = EventType::KeyPress(Key::KeyS);
-    let event_type2 = EventType::KeyRelease(Key::KeyS);
-    let result = simulate(&event_type);
-    assert!(result.is_ok());
-    let result = simulate(&event_type2);
-    assert!(result.is_ok());
-    let timeout = Duration::from_secs(1);
-    match recv.recv_timeout(timeout) {
-        Ok(event1) => assert_eq!(event1.event_type, event_type),
-        Err(err) => panic!("{:?}", err),
+    let recv = EVENT_CHANNEL.1.lock()?;
+    for event in events {
+        simulate(&event)?;
+        let recieved_event = recv.recv_timeout(tenth_sec).expect("No events to recieve");
+        assert_eq!(recieved_event.event_type, event);
     }
-    match recv.recv_timeout(timeout) {
-        Ok(event2) => assert_eq!(event2.event_type, event_type2),
-        Err(err) => panic!("{:?}", err),
-    }
+    Ok(())
+}
+
+#[test]
+fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
+    let events = vec![
+        EventType::KeyPress(Key::ShiftLeft),
+        EventType::KeyRelease(Key::ShiftLeft),
+        EventType::ButtonPress(Button::Right),
+        EventType::Wheel {
+            delta_x: 0,
+            delta_y: 1,
+        },
+    ]
+    .into_iter();
+    let click_events = (0..480).map(|pixel| EventType::MouseMove {
+        x: pixel as f64,
+        y: pixel as f64,
+    });
+    let events = events.chain(click_events);
+    sim_then_listen(&mut events.into_iter())
 }
