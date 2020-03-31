@@ -1,8 +1,11 @@
 use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use crate::windows::keycodes::key_from_code;
+use std::convert::TryInto;
+use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::shared::minwindef::HKL;
+use winapi::shared::minwindef::{BYTE, DWORD, HIWORD, HKL, LPARAM, LRESULT, UINT, WORD, WPARAM};
+use winapi::shared::ntdef::{LONG, WCHAR};
 use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::processthreadsapi::GetCurrentThreadId;
@@ -26,42 +29,47 @@ const FALSE: i32 = 0;
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 static mut HOOK: HHOOK = null_mut();
 
-unsafe fn get_code(lpdata: isize) -> u32 {
+unsafe fn get_code(lpdata: LPARAM) -> DWORD {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
     kb.vkCode
 }
-unsafe fn get_scan_code(lpdata: isize) -> u32 {
+unsafe fn get_scan_code(lpdata: LPARAM) -> DWORD {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
     kb.scanCode
 }
-unsafe fn get_point(lpdata: isize) -> (i32, i32) {
+unsafe fn get_point(lpdata: LPARAM) -> (LONG, LONG) {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
     (mouse.pt.x, mouse.pt.y)
 }
-/// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644986(v=vs.85)
-unsafe fn get_delta(lpdata: isize) -> i32 {
+
+// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644986(v=vs.85)
+/// confusingly, this function returns a WORD (unsigned), but may be
+/// interpreted as either signed or unsigned depending on context
+unsafe fn get_delta(lpdata: LPARAM) -> WORD {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
-    (mouse.mouseData as i32 >> 16) as i32
+    HIWORD(mouse.mouseData)
 }
-unsafe fn get_button_code(lpdata: isize) -> i32 {
+unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
-    (mouse.mouseData as i32 >> 16) as i32
+    HIWORD(mouse.mouseData)
 }
 
-static mut LAST_CODE: u32 = 0;
-static mut LAST_SCAN_CODE: u32 = 0;
-static mut LAST_STATE: [u8; 256] = [0; 256];
+static mut LAST_CODE: UINT = 0;
+static mut LAST_SCAN_CODE: UINT = 0;
+static mut LAST_STATE: [BYTE; 256] = [0; 256];
 static mut LAST_IS_DEAD: bool = false;
 
-unsafe fn get_name(lpdata: isize) -> Option<String> {
+unsafe fn get_name(lpdata: LPARAM) -> Option<String> {
     // https://gist.github.com/akimsko/2011327
     // https://www.experts-exchange.com/questions/23453780/LowLevel-Keystroke-Hook-removes-Accents-on-French-Keyboard.html
     let code = get_code(lpdata);
     let scan_code = get_scan_code(lpdata);
-    let mut buff: [u16; 32] = [0; 32];
-    let buff_ptr = &mut buff as *mut _ as *mut u16;
-    let mut state: [u8; 256] = [0; 256];
-    let state_ptr: *mut u8 = &mut state as *const _ as *mut u8;
+
+    const BUF_LEN: i32 = 32;
+    let mut buff = [0 as WCHAR; BUF_LEN as usize];
+    let buff_ptr = buff.as_mut_ptr();
+    let mut state = [0 as BYTE; 256];
+    let state_ptr = state.as_mut_ptr();
 
     let _shift = GetKeyState(VK_SHIFT);
     let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
@@ -86,106 +94,98 @@ unsafe fn get_name(lpdata: isize) -> Option<String> {
     let len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
 
     let mut is_dead = false;
-    let result = if len > 0 {
-        match String::from_utf16(&buff[0..len as usize]) {
-            Ok(string) => Some(string),
-            Err(_) => None,
+    let result = match len {
+        0 => None,
+        -1 => {
+            is_dead = true;
+            clear_keyboard_buffer(code, scan_code, layout);
+            None
         }
-    } else if len == 0 {
-        None
-    } else if len == -1 {
-        is_dead = true;
-        clear_keyboard_buffer(code, scan_code, layout);
-        None
-    } else {
-        None
+        len if len > 0 => String::from_utf16(&buff[..len as usize]).ok(),
+        _ => None,
     };
 
     if LAST_CODE != 0 && LAST_IS_DEAD {
-        let mut buff: [u16; 32] = [0; 32];
-        let buff_ptr = &mut buff as *mut _ as *mut u16;
-        let last_state_ptr = &LAST_STATE as *const _ as *mut u8;
+        buff = [0; 32];
+        let buff_ptr = buff.as_mut_ptr();
+        let last_state_ptr = LAST_STATE.as_mut_ptr();
         ToUnicodeEx(
             LAST_CODE,
             LAST_SCAN_CODE,
             last_state_ptr,
             buff_ptr,
-            8 - 1,
+            BUF_LEN,
             0,
             layout,
         );
         LAST_CODE = 0;
-        return result;
+    } else {
+        LAST_CODE = code;
+        LAST_SCAN_CODE = scan_code;
+        LAST_IS_DEAD = is_dead;
+        LAST_STATE.copy_from_slice(&state);
     }
-
-    LAST_CODE = code;
-    LAST_SCAN_CODE = scan_code;
-    LAST_IS_DEAD = is_dead;
-    LAST_STATE.clone_from_slice(&state);
-
     result
 }
 
-unsafe fn clear_keyboard_buffer(code: u32, scan_code: u32, layout: HKL) {
-    let mut len = -1;
-    let mut buff: [u16; 32] = [0; 32];
-    let buff_ptr = &mut buff as *mut _ as *mut u16;
-    let mut state: [u8; 256] = [0; 256];
-    let state_ptr: *mut u8 = &mut state as *const _ as *mut u8;
+unsafe fn clear_keyboard_buffer(code: UINT, scan_code: UINT, layout: HKL) {
+    const BUF_LEN: i32 = 32;
+    let mut buff = [0 as WCHAR; BUF_LEN as usize];
+    let buff_ptr = buff.as_mut_ptr();
+    let mut state = [0 as BYTE; 256];
+    let state_ptr = state.as_mut_ptr();
 
+    let mut len = -1;
     while len < 0 {
-        len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
+        len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, BUF_LEN, 0, layout);
     }
 }
 
-unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
+unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT {
     if code == HC_ACTION {
-        let opt = match param {
-            x if x == WM_KEYDOWN as usize => {
+        let opt = match param.try_into() {
+            Ok(WM_KEYDOWN) => {
                 let code = get_code(lpdata);
                 let key = key_from_code(code as u16);
                 Some(EventType::KeyPress(key))
             }
-            x if x == WM_KEYUP as usize => {
+            Ok(WM_KEYUP) => {
                 let code = get_code(lpdata);
                 let key = key_from_code(code as u16);
                 Some(EventType::KeyRelease(key))
             }
-            x if x == WM_LBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Left)),
-            x if x == WM_LBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Left)),
-            x if x == WM_MBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Middle)),
-            x if x == WM_MBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Middle)),
-            x if x == WM_RBUTTONDOWN as usize => Some(EventType::ButtonPress(Button::Right)),
-            x if x == WM_RBUTTONUP as usize => Some(EventType::ButtonRelease(Button::Right)),
-            x if x == WM_XBUTTONDOWN as usize => {
+            Ok(WM_LBUTTONDOWN) => Some(EventType::ButtonPress(Button::Left)),
+            Ok(WM_LBUTTONUP) => Some(EventType::ButtonRelease(Button::Left)),
+            Ok(WM_MBUTTONDOWN) => Some(EventType::ButtonPress(Button::Middle)),
+            Ok(WM_MBUTTONUP) => Some(EventType::ButtonRelease(Button::Middle)),
+            Ok(WM_RBUTTONDOWN) => Some(EventType::ButtonPress(Button::Right)),
+            Ok(WM_RBUTTONUP) => Some(EventType::ButtonRelease(Button::Right)),
+            Ok(WM_XBUTTONDOWN) => {
                 let code = get_button_code(lpdata) as u8;
                 Some(EventType::ButtonPress(Button::Unknown(code)))
             }
-            x if x == WM_XBUTTONUP as usize => {
+            Ok(WM_XBUTTONUP) => {
                 let code = get_button_code(lpdata) as u8;
-
                 Some(EventType::ButtonRelease(Button::Unknown(code)))
             }
-
-            x if x == WM_MOUSEMOVE as usize => {
+            Ok(WM_MOUSEMOVE) => {
                 let (x, y) = get_point(lpdata);
                 Some(EventType::MouseMove {
                     x: x as f64,
                     y: y as f64,
                 })
             }
-            x if x == WM_MOUSEWHEEL as usize => {
-                let delta = get_delta(lpdata);
+            Ok(WM_MOUSEWHEEL) => {
+                let delta = get_delta(lpdata) as c_short;
                 Some(EventType::Wheel {
                     delta_x: 0,
-                    delta_y: (delta as i64) / WHEEL_DELTA as i64,
+                    delta_y: (delta / WHEEL_DELTA) as i64,
                 })
             }
-            x if x == WM_MOUSEHWHEEL as usize => {
-                let delta = get_delta(lpdata);
-
+            Ok(WM_MOUSEHWHEEL) => {
+                let delta = get_delta(lpdata) as c_short;
                 Some(EventType::Wheel {
-                    delta_x: (delta as i64) / WHEEL_DELTA as i64,
+                    delta_x: (delta / WHEEL_DELTA) as i64,
                     delta_y: 0,
                 })
             }
@@ -216,6 +216,7 @@ unsafe fn set_key_hook() {
     }
     HOOK = hook;
 }
+
 unsafe fn set_mouse_hook() {
     let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
     if hook.is_null() {
