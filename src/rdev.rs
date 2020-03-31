@@ -1,4 +1,6 @@
+use std::error::Error;
 use std::time::SystemTime;
+use std::{fmt, fmt::Display};
 
 /// Callback type to send to listen function.
 pub type Callback = fn(event: Event);
@@ -25,6 +27,14 @@ pub enum ListenError {
 /// Marking an error when we tried to simulate and event
 #[derive(Debug)]
 pub struct SimulateError;
+
+impl Display for SimulateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Could not simulate event")
+    }
+}
+
+impl Error for SimulateError {}
 
 /// Key names based on physical location on the device
 /// Merge Option(MacOS) and Alt(Windows, Linux) into Alt
