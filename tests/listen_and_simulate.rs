@@ -29,13 +29,13 @@ fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Bo
     let _listener = thread::spawn(move || {
         listen(send_event).expect("Could not listen");
     });
-    let tenth_sec = Duration::from_millis(100);
-    thread::sleep(tenth_sec);
+    let second = Duration::from_millis(1000);
+    thread::sleep(second);
 
     let recv = EVENT_CHANNEL.1.lock()?;
     for event in events {
         simulate(&event)?;
-        let recieved_event = recv.recv_timeout(tenth_sec).expect("No events to recieve");
+        let recieved_event = recv.recv_timeout(second).expect("No events to recieve");
         assert_eq!(recieved_event.event_type, event);
     }
     Ok(())
