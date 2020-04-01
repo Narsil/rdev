@@ -12,6 +12,8 @@ lazy_static! {
     };
 }
 
+static TAB : EventType =EventType::KeyPress(Key::KeyT); 
+
 fn send_event(event: Event) {
     EVENT_CHANNEL
         .0
@@ -23,19 +25,19 @@ fn send_event(event: Event) {
 
 fn grab_tab(event: Event) -> Option<Event> {
     match event.event_type {
-        EventType::KeyPress(Key::Tab) => None,
+         EventType::KeyPress(Key::KeyT) => None,
         _ => Some(event),
     }
 }
 
 #[test]
-fn test_listen_and_simulate() {
+fn test_grab() {
     // spawn new thread because listen blocks
     let _listener = thread::spawn(move || {
         listen(send_event).expect("Could not listen");
     });
     let _grab = thread::spawn(move || {
-        grab(grab_tab).expect("Could not listen");
+        grab(grab_tab).expect("Could not grab");
     });
 
     let recv = EVENT_CHANNEL.1.lock().expect("Failed to unlock Mutex");
@@ -58,11 +60,10 @@ fn test_listen_and_simulate() {
         Ok(event2) => assert_eq!(event2.event_type, event_type2),
         Err(err) => panic!("{:?}", err),
     }
-    let tab = EventType::KeyPress(Key::Tab);
-    let result = simulate(&tab);
+    let result = simulate(&TAB);
     assert!(result.is_ok());
     match recv.recv_timeout(timeout) {
-        Ok(_) => panic!("We should not receive tab event"),
+        Ok(event) => panic!("We should not receive event : {:?}", event ),
         Err(err) => assert_eq!(err, RecvTimeoutError::Timeout),
     }
 }

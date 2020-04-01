@@ -30,7 +30,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                 // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
                 // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
                 // https://cboard.cprogramming.com/windows-programming/99678-setwindowshookex-wm_keyboard_ll.html
-                let _result = CallNextHookEx(HOOK, code, param, lpdata);
+                // let _result = CallNextHookEx(HOOK, code, param, lpdata);
                 return 1;
             }
         }
