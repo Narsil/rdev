@@ -4,6 +4,7 @@ extern crate xproto;
 use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Callback, Event, EventType, ListenError};
+use std::convert::TryInto;
 use std::ffi::CStr;
 use std::os::raw::{c_int, c_uchar};
 use std::ptr::null;
@@ -101,6 +102,7 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
         return;
     }
 
+    debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
     // Cast binary data
     #[allow(clippy::cast_ptr_alignment)]
     let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();

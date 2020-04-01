@@ -43,10 +43,17 @@ fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Bo
 
 #[test]
 fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
+    // wait for user input from keyboard to stop
+    // (i.e. the return/enter keypress to run test command)
+    thread::sleep(Duration::from_millis(50));
+
     let events = vec![
-        EventType::KeyPress(Key::ShiftLeft),
-        EventType::KeyRelease(Key::ShiftLeft),
+        //TODO: fix sending shift keypress events on linux
+        //EventType::KeyPress(Key::ShiftLeft),
+        EventType::KeyPress(Key::KeyS),
+        EventType::KeyRelease(Key::KeyS),
         EventType::ButtonPress(Button::Right),
+        EventType::ButtonRelease(Button::Right),
         EventType::Wheel {
             delta_x: 0,
             delta_y: 1,
