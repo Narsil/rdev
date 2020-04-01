@@ -90,7 +90,7 @@ impl KeyboardState {
         }
     }
 
-    pub unsafe fn name_from_code(&mut self, xevent: &xproto::_xEvent) -> Option<String> {
+    pub unsafe fn name_from_code(&mut self, keycode: c_uint, state: c_uint) -> Option<String> {
         if self.display.is_null() || self.xic.is_null() {
             println!("We don't seem to have a display or a xic");
             return None;
@@ -106,8 +106,8 @@ impl KeyboardState {
             y: 0,
             x_root: 0,
             y_root: 0,
-            state: xevent.u.keyButtonPointer.as_ref().state as u32,
-            keycode: xevent.u.u.as_ref().detail as u32,
+            state,
+            keycode,
             same_screen: 0,
             send_event: 0,
             serial: 0,

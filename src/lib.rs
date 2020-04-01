@@ -66,36 +66,62 @@
 //! assert!(w > 0);
 //! assert!(h > 0);
 //! ```
+//! Grabbing global events.
+//!
+//! In the callback, returning None ignores the event
+//! and returning the event let's it pass. There is no modification of the event
+//! possible here.
+//! Caveat: On MacOS, you require the grab
+//! loop needs to be the primary app (no fork before) and need to have accessibility
+//! settings enabled.
+//! On Linux, this is not implemented, you will always receive an error.
+//!
+//! ```no_run
+//! use rdev::{grab, Event, EventType, Key};
+//!
+//! fn callback(event: Event) -> Option<Event> {
+//!     println!("My callback {:?}", event);
+//!     match event.event_type{
+//!         EventType::KeyPress(Key::Tab) => None,
+//!         _ => Some(event),
+//!     }
+//! }
+//!
+//! // This will block.
+//! if let Err(error) = grab(callback) {
+//!     println!("Error: {:?}", error)
+//! }
+//! ```
 //! Serialization
 //!
 //! Serialization and deserialization is optional behind the feature "serialize".
 mod rdev;
 pub use crate::rdev::{
-    Button, Callback, Event, EventType, GrabError, Key, ListenError, SimulateError,
+    Button, Callback, Event, EventType, GrabCallback, GrabError, Key, ListenError, SimulateError,
 };
 
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
-pub use crate::macos::grab;
-#[cfg(target_os = "macos")]
-use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::macos::{
+    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
+};
 
 #[cfg(target_os = "linux")]
 mod linux;
 
 #[cfg(target_os = "linux")]
-pub use crate::linux::grab;
-#[cfg(target_os = "linux")]
-use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::linux::{
+    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
+};
 
 #[cfg(target_os = "windows")]
 mod windows;
 
 #[cfg(target_os = "windows")]
-pub use crate::windows::grab;
-#[cfg(target_os = "windows")]
-use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::windows::{
+    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
+};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -169,4 +195,33 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
 /// ```
 pub fn display_size() -> (u64, u64) {
     _display_size()
+}
+
+/// Grabbing global events. In the callback, returning None ignores the event
+/// and returning the event let's it pass. There is no modification of the event
+/// possible here.
+/// Caveat: On MacOS, you require the grab
+/// loop needs to be the primary app (no fork before) and need to have accessibility
+/// settings enabled.
+/// On Linux, this is not implemented, you will always receive an error.
+///
+/// ```no_run
+/// use rdev::{grab, Event, EventType, Key};
+///
+/// fn callback(event: Event) -> Option<Event> {
+///     println!("My callback {:?}", event);
+///     match event.event_type{
+///         EventType::KeyPress(Key::Tab) => None,
+///         _ => Some(event),
+///     }
+/// }
+/// fn main(){
+///     // This will block.
+///     if let Err(error) = grab(callback) {
+///         println!("Error: {:?}", error)
+///     }
+/// }
+/// ```
+pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+    _grab(callback)
 }

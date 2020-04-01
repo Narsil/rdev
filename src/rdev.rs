@@ -37,13 +37,7 @@ pub enum GrabError {
     /// MacOS
     LoopSourceError,
     /// Linux
-    MissingDisplayError,
-    /// Linux
-    RecordContextEnablingError,
-    /// Linux
-    RecordContextError,
-    /// Linux
-    XRecordExtensionError,
+    LinuxNotSupported,
 }
 
 /// Marking an error when we tried to simulate and event

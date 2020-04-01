@@ -77,6 +77,34 @@ fn main() {
 }
 ```
 
+Grabbing global events.
+
+In the callback, returning None ignores the event
+and returning the event let's it pass. There is no modification of the event
+possible here.
+Caveat: On MacOS, you require the grab
+loop needs to be the primary app (no fork before) and need to have accessibility
+settings enabled.
+On Linux, this is not implemented, you will always receive an error.
+
+```rust
+use rdev::{grab, Event, EventType, Key};
+
+fn callback(event: Event) -> Option<Event> {
+    println!("My callback {:?}", event);
+    match event.event_type{
+        EventType::KeyPress(Key::Tab) => None,
+        _ => Some(event),
+    }
+}
+fn main(){
+    // This will block.
+    if let Err(error) = grab(callback) {
+        println!("Error: {:?}", error)
+    }
+}
+```
+
 Serialization
 
 Serialization and deserialization is optional behind the feature "serialize".
