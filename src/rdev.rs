@@ -159,6 +159,8 @@ pub enum Key {
 }
 
 /// Standard mouse buttons
+/// Some mice have more than 3 buttons. These are not defined, and different
+/// OSs will give different `Button::Unknown` values.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum Button {
@@ -168,8 +170,8 @@ pub enum Button {
     Unknown(u8),
 }
 
-/// In order to manage different OS, the current EventType choices is a mix&match
-/// to account for all possible events.
+/// In order to manage different OSs, the current EventType choices are a mix and
+/// match to account for all possible events.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventType {
@@ -177,17 +179,20 @@ pub enum EventType {
     /// To the actual letter a user would use, that requires some layout logic to be added.
     KeyPress(Key),
     KeyRelease(Key),
-    /// Some mouse will have more than 3 buttons, these are not defined, and different OS will
-    /// give different Unknown code.
+    /// Mouse Button
     ButtonPress(Button),
     ButtonRelease(Button),
-    /// Values in pixels
+    /// Values in pixels. `EventType::MouseMove{x: 0, y: 0}` corresponds to the
+    /// top left corner, with x increasing downward and y increasing rightward
     MouseMove {
         x: f64,
         y: f64,
     },
-    /// Note: On Linux, there is no actual delta the actual values are ignored for delta_x
-    /// and we only look at the sign of delta_y to simulate wheelup or wheeldown.
+    /// `delta_y` represents vertical scroll and `delta_x` represents horizontal scroll.
+    /// Positive values correspond to scrolling up or right and negative values
+    /// correspond to scrolling down or left
+    /// Note: Linux does not support horizontal scroll. When simulating scroll on Linux,
+    /// only the sign of delta_y is considered, and not the magnitude to determine wheelup or wheeldown.
     Wheel {
         delta_x: i64,
         delta_y: i64,
@@ -199,7 +204,7 @@ pub enum EventType {
 /// which contains what characters should be emmitted from that event. This relies
 /// on the OS layout and keyboard state machinery.
 /// Caveat: Dead keys don't function on Linux(X11) yet. You will receive None for
-/// a dead key, and the raw letter instead of accentuated letter instead.
+/// a dead key, and the raw letter instead of accentuated letter.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub struct Event {

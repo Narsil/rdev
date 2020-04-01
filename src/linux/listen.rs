@@ -125,11 +125,11 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
             2 => Some(EventType::ButtonPress(Button::Middle)),
             3 => Some(EventType::ButtonPress(Button::Right)),
             4 => Some(EventType::Wheel {
-                delta_y: -1,
+                delta_y: 1,
                 delta_x: 0,
             }),
             5 => Some(EventType::Wheel {
-                delta_y: 1,
+                delta_y: -1,
                 delta_x: 0,
             }),
             #[allow(clippy::identity_conversion)]

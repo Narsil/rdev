@@ -51,6 +51,10 @@ fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
             delta_x: 0,
             delta_y: 1,
         },
+        EventType::Wheel {
+            delta_x: 0,
+            delta_y: -1,
+        },
     ]
     .into_iter();
     let click_events = (0..480).map(|pixel| EventType::MouseMove {
