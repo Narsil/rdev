@@ -34,6 +34,8 @@ fn test_grab() {
     let _listener = thread::spawn(move || {
         listen(send_event).expect("Could not listen");
     });
+    // Make sure grab ends up on top of listen so it can properly discard.
+    thread::sleep(Duration::from_secs(1));
     let _grab = thread::spawn(move || {
         grab(grab_tab).expect("Could not listen");
     });
