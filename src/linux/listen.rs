@@ -5,18 +5,17 @@ use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Callback, Event, EventType, ListenError};
 use std::convert::TryInto;
+use crate::linux::common::{convert, FALSE};
+use crate::rdev::{Callback, Event, ListenError};
 use std::ffi::CStr;
-use std::os::raw::{c_int, c_uchar};
+use std::os::raw::{c_int, c_uchar, c_uint};
 use std::ptr::null;
-use std::time::SystemTime;
 use x11::xlib;
 use x11::xrecord;
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
-
-const FALSE: c_int = 0;
 
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 
@@ -92,6 +91,7 @@ union XRecordDatum {
 //     h: u32,
 // }
 //
+//
 
 unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
     let data = raw_data.as_ref().unwrap();
@@ -164,6 +164,15 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
             time: SystemTime::now(),
             name,
         };
+    ///////////////
+    let code: c_uint = xdatum.event.u.u.as_ref().detail.into();
+    let type_: c_int = xdatum.type_.into();
+    let keypointer = xdatum.event.u.keyButtonPointer.as_ref();
+    let x = keypointer.rootX as f64;
+    let y = keypointer.rootY as f64;
+    let state = keypointer.state as c_uint;
+
+    if let Some(event) = convert(code, state, type_, x, y) {
         GLOBAL_CALLBACK(event);
     }
 
