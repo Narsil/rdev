@@ -66,7 +66,7 @@
 //! assert!(w > 0);
 //! assert!(h > 0);
 //! ```
-//! Grabbing global events.
+//! Grabbing global events. (Requires `grab` feature)
 //!
 //! In the callback, returning None ignores the event
 //! and returning the event let's it pass. There is no modification of the event
@@ -103,25 +103,19 @@ pub use crate::rdev::{
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
-use crate::macos::{
-    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
-};
+use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "linux")]
 mod linux;
 
 #[cfg(target_os = "linux")]
-use crate::linux::{
-    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
-};
+use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
 mod windows;
 
 #[cfg(target_os = "windows")]
-use crate::windows::{
-    display_size as _display_size, grab as _grab, listen as _listen, simulate as _simulate,
-};
+use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -197,6 +191,15 @@ pub fn display_size() -> (u64, u64) {
     _display_size()
 }
 
+#[cfg(feature = "grab")]
+#[cfg(target_os = "linux")]
+pub use crate::linux::grab as _grab;
+#[cfg(feature = "grab")]
+#[cfg(target_os = "macos")]
+pub use crate::macos::grab as _grab;
+#[cfg(feature = "grab")]
+#[cfg(target_os = "windows")]
+pub use crate::windows::grab as _grab;
 /// Grabbing global events. In the callback, returning None ignores the event
 /// and returning the event let's it pass. There is no modification of the event
 /// possible here.
@@ -222,6 +225,7 @@ pub fn display_size() -> (u64, u64) {
 ///     }
 /// }
 /// ```
+#[cfg(feature = "grab")]
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     _grab(callback)
 }
