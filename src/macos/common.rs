@@ -26,6 +26,7 @@ pub const kCGHeadInsertEventTap: u32 = 0;
 #[allow(non_upper_case_globals)]
 #[repr(u32)]
 pub enum CGEventTapOption {
+    #[cfg(feature = "unstable_grab")]
     Default = 0,
     ListenOnly = 1,
 }
