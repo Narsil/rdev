@@ -12,6 +12,7 @@ pub type GrabCallback = fn(event: Event) -> Option<Event>;
 /// Be careful on Mac, not setting accessibility does not cause an error
 /// it justs ignores events.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum ListenError {
     /// MacOS
     EventTapError,
