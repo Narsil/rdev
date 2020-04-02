@@ -67,7 +67,7 @@
 //! assert!(h > 0);
 //! ```
 //!
-//! ### Grabbing global events. (Requires `grab` feature)
+//! ### Grabbing global events. (Requires `unstable_grab` feature)
 //!
 //! In the callback, returning None ignores the event
 //! and returning the event let's it pass. There is no modification of the event
@@ -79,7 +79,7 @@
 //!
 //! ### Serialization
 //!
-//! Serialization and deserialization is optional behind the feature "serialize".
+//! Serialization and deserialization. (Requires `serialize` feature).
 mod rdev;
 pub use crate::rdev::{
     Button, Callback, Event, EventType, GrabCallback, GrabError, Key, ListenError, SimulateError,
@@ -176,16 +176,16 @@ pub fn display_size() -> (u64, u64) {
     _display_size()
 }
 
-#[cfg(feature = "grab")]
+#[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "linux")]
 pub use crate::linux::grab as _grab;
-#[cfg(feature = "grab")]
+#[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "macos")]
 pub use crate::macos::grab as _grab;
-#[cfg(feature = "grab")]
+#[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "windows")]
 pub use crate::windows::grab as _grab;
-#[cfg(any(feature = "grab"))]
+#[cfg(any(feature = "unstable_grab"))]
 /// Grabbing global events. In the callback, returning None ignores the event
 /// and returning the event let's it pass. There is no modification of the event
 /// possible here.
@@ -211,6 +211,7 @@ pub use crate::windows::grab as _grab;
 ///     }
 /// }
 /// ```
+#[cfg(any(feature = "unstable_grab"))]
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     _grab(callback)
 }
