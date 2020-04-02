@@ -1,5 +1,5 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
-use crate::windows::common::{convert, get_name, HOOK};
+use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HOOK};
 use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::time::SystemTime;
@@ -33,31 +33,11 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
     CallNextHookEx(HOOK, code, param, lpdata)
 }
 
-unsafe fn set_key_hook() -> Result<(), ListenError> {
-    let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
-    if hook.is_null() {
-        let error = GetLastError();
-        return Err(ListenError::KeyHookError(error));
-    }
-    HOOK = hook;
-    Ok(())
-}
-
-unsafe fn set_mouse_hook() -> Result<(), ListenError> {
-    let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
-    if hook.is_null() {
-        let error = GetLastError();
-        return Err(ListenError::MouseHookError(error));
-    }
-    HOOK = hook;
-    Ok(())
-}
-
 pub fn listen(callback: Callback) -> Result<(), ListenError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
-        set_key_hook()?;
-        set_mouse_hook()?;
+        set_key_hook(raw_callback)?;
+        set_mouse_hook(raw_callback)?;
 
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }

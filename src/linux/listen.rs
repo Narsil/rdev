@@ -24,7 +24,8 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         if dpy_control.is_null() {
             return Err(ListenError::MissingDisplayError);
         }
-        let extension_name = CStr::from_bytes_with_nul(b"RECORD\0").unwrap();
+        let extension_name =
+            CStr::from_bytes_with_nul(b"RECORD\0").map_err(|_| ListenError::XRecordExtensionError);
         let extension = xlib::XInitExtension(dpy_control, extension_name.as_ptr());
         if extension.is_null() {
             return Err(ListenError::XRecordExtensionError);
@@ -74,7 +75,7 @@ union XRecordDatum {
 }
 
 unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    let data = raw_data.as_ref().unwrap();
+    let data = raw_data.as_ref()?;
 
     // Skip server events
     if data.category != xrecord::XRecordFromServer {
@@ -84,7 +85,7 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
     debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
     // Cast binary data
     #[allow(clippy::cast_ptr_alignment)]
-    let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
+    let xdatum = (data.data as *const XRecordDatum).as_ref()?;
 
     let code: c_uint = xdatum.event.u.u.as_ref().detail.into();
     let type_: c_int = xdatum.type_.into();

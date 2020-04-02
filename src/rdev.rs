@@ -36,6 +36,7 @@ pub enum ListenError {
 /// Be careful on Mac, not setting accessibility does not cause an error
 /// it justs ignores events.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum GrabError {
     /// MacOS
     EventTapError,
@@ -43,6 +44,10 @@ pub enum GrabError {
     LoopSourceError,
     /// Linux
     LinuxNotSupported,
+    /// Windows
+    KeyHookError(u32),
+    /// Windows
+    MouseHookError(u32),
 }
 /// Errors that occur when trying to get display size.
 #[non_exhaustive]
