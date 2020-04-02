@@ -33,29 +33,31 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
     CallNextHookEx(HOOK, code, param, lpdata)
 }
 
-unsafe fn set_key_hook() {
+unsafe fn set_key_hook() -> Result<(), ListenError> {
     let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
-        panic!("Can't set system hook! {:?}", error)
+        return Err(ListenError::NoDisplay);
     }
     HOOK = hook;
+    Ok(())
 }
 
-unsafe fn set_mouse_hook() {
+unsafe fn set_mouse_hook() -> Result<(), ListenError> {
     let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
-        panic!("Can't set system hook! {:?}", error)
+        return Err(ListenError::NoDisplay);
     }
     HOOK = hook;
+    Ok(())
 }
 
 pub fn listen(callback: Callback) -> Result<(), ListenError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
-        set_key_hook();
-        set_mouse_hook();
+        set_key_hook()?;
+        set_mouse_hook()?;
 
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }
