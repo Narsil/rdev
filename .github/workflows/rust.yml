@@ -38,4 +38,4 @@ jobs:
     - name: Run tests
       run: ${{matrix.test}}
     - name: Linter
-      run: cargo clippy --verbose -- -Dwarnings
+      run: cargo clippy --all-features --verbose -- -Dwarnings
