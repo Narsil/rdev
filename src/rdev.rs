@@ -25,6 +25,10 @@ pub enum ListenError {
     RecordContextError,
     /// Linux
     XRecordExtensionError,
+    /// Windows
+    KeyHookError(u32),
+    /// Windows
+    MouseHookError(u32),
 }
 
 /// Errors that occur when trying to grab OS events.
