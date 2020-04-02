@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use rdev::{listen, simulate, Button, Event, EventType, Key};
+use serial_test::serial;
 use std::error::Error;
 use std::iter::Iterator;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -42,6 +43,7 @@ fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Bo
 }
 
 #[test]
+#[serial]
 fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
     // wait for user input from keyboard to stop
     // (i.e. the return/enter keypress to run test command)
