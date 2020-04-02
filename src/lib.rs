@@ -62,7 +62,7 @@
 //! ```no_run
 //! use rdev::{display_size};
 //!
-//! let (w, h) = display_size();
+//! let (w, h) = display_size().unwrap();
 //! assert!(w > 0);
 //! assert!(h > 0);
 //! ```
@@ -82,7 +82,8 @@
 //! Serialization and deserialization. (Requires `serialize` feature).
 mod rdev;
 pub use crate::rdev::{
-    Button, Callback, Event, EventType, GrabCallback, GrabError, Key, ListenError, SimulateError,
+    Button, Callback, DisplayError, Event, EventType, GrabCallback, GrabError, Key, ListenError,
+    SimulateError,
 };
 
 #[cfg(target_os = "macos")]
@@ -169,10 +170,10 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
 /// ```no_run
 /// use rdev::{display_size};
 ///
-/// let (w, h )= display_size();
+/// let (w, h) = display_size().unwrap();
 /// println!("My screen size : {:?}x{:?}", w, h);
 /// ```
-pub fn display_size() -> (u64, u64) {
+pub fn display_size() -> Result<(u64, u64), DisplayError> {
     _display_size()
 }
 

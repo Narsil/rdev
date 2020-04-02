@@ -118,6 +118,9 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
         EventType::MouseMove { x, y } => {
             let width = unsafe { GetSystemMetrics(SM_CXVIRTUALSCREEN) };
             let height = unsafe { GetSystemMetrics(SM_CYVIRTUALSCREEN) };
+            if width == 0 || height == 0 {
+                return Err(SimulateError);
+            }
 
             sim_mouse_event(
                 MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK,
