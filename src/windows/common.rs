@@ -1,4 +1,4 @@
-use crate::rdev::{Button, EventType, ListenError};
+use crate::rdev::{Button, EventType};
 use crate::windows::keycodes::key_from_code;
 use std::convert::TryInto;
 use std::os::raw::{c_int, c_short};
@@ -187,15 +187,6 @@ type RawCallback = unsafe extern "system" fn(code: c_int, param: WPARAM, lpdata:
 pub enum HookError {
     Mouse(DWORD),
     Key(DWORD),
-}
-
-impl From<HookError> for ListenError {
-    fn from(error: HookError) -> Self {
-        match error {
-            HookError::Mouse(code) => ListenError::MouseHookError(code),
-            HookError::Key(code) => ListenError::KeyHookError(code),
-        }
-    }
 }
 
 pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), HookError> {
