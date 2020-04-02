@@ -1,19 +1,20 @@
-use crate::rdev::{Button, EventType};
+use crate::rdev::{Button, EventType, ListenError};
 use crate::windows::keycodes::key_from_code;
 use std::convert::TryInto;
-use std::os::raw::c_short;
+use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
-use winapi::shared::minwindef::{BYTE, DWORD, HIWORD, HKL, LPARAM, UINT, WORD, WPARAM};
+use winapi::shared::minwindef::{BYTE, DWORD, HIWORD, HKL, LPARAM, LRESULT, UINT, WORD, WPARAM};
 use winapi::shared::ntdef::{LONG, WCHAR};
 use winapi::shared::windef::HHOOK;
+use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::processthreadsapi::GetCurrentThreadId;
 use winapi::um::winuser;
 use winapi::um::winuser::{
     GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
-    GetWindowThreadProcessId, ToUnicodeEx, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, VK_SHIFT, WHEEL_DELTA,
-    WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
-    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
-    WM_XBUTTONUP,
+    GetWindowThreadProcessId, SetWindowsHookExA, ToUnicodeEx, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT,
+    VK_SHIFT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN,
+    WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL,
+    WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
 pub const TRUE: i32 = 1;
 pub const FALSE: i32 = 0;
@@ -182,23 +183,37 @@ pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
     }
 }
 
-type RawCallback = extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT;
-pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), ListenError> {
-    let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
+type RawCallback = unsafe extern "system" fn(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT;
+pub enum HookError {
+    Mouse(DWORD),
+    Key(DWORD),
+}
+
+impl From<HookError> for ListenError {
+    fn from(error: HookError) -> Self {
+        match error {
+            HookError::Mouse(code) => ListenError::MouseHookError(code),
+            HookError::Key(code) => ListenError::KeyHookError(code),
+        }
+    }
+}
+
+pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), HookError> {
+    let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(callback), null_mut(), 0);
 
     if hook.is_null() {
         let error = GetLastError();
-        return Err(ListenError::KeyHookError(error));
+        return Err(HookError::Key(error));
     }
     HOOK = hook;
     Ok(())
 }
 
-pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), ListenError> {
-    let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
+pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), HookError> {
+    let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
-        return Err(ListenError::MouseHookError(error));
+        return Err(HookError::Mouse(error));
     }
     HOOK = hook;
     Ok(())

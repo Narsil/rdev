@@ -1,18 +1,24 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
-use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HOOK};
+use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HookError, HOOK};
 use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
-use winapi::um::errhandlingapi::GetLastError;
-use winapi::um::winuser::{
-    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, WH_KEYBOARD_LL, WH_MOUSE_LL,
-};
+use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 static mut GLOBAL_CALLBACK: Callback = default_callback;
+
+impl From<HookError> for ListenError {
+    fn from(error: HookError) -> Self {
+        match error {
+            HookError::Mouse(code) => ListenError::MouseHookError(code),
+            HookError::Key(code) => ListenError::KeyHookError(code),
+        }
+    }
+}
 
 unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT {
     if code == HC_ACTION {

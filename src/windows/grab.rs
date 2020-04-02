@@ -1,11 +1,8 @@
 use crate::rdev::{Event, EventType, GrabCallback, GrabError};
-use crate::windows::common::{convert, get_name, HOOK, set_mouse_hook, set_key_hook};
+use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HookError, HOOK};
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::um::errhandlingapi::GetLastError;
-use winapi::um::winuser::{
-    CallNextHookEx, GetMessageA, SetWindowsHookExA, HC_ACTION, WH_KEYBOARD_LL, WH_MOUSE_LL,
-};
+use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 fn default_callback(event: Event) -> Option<Event> {
     println!("Default : Event {:?}", event);
@@ -37,12 +34,20 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
     }
     CallNextHookEx(HOOK, code, param, lpdata)
 }
+impl From<HookError> for GrabError {
+    fn from(error: HookError) -> Self {
+        match error {
+            HookError::Mouse(code) => GrabError::MouseHookError(code),
+            HookError::Key(code) => GrabError::KeyHookError(code),
+        }
+    }
+}
 
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     unsafe {
         GLOBAL_CALLBACK = callback;
         set_key_hook(raw_callback)?;
-        set_mouse_hook(raw_callback)?
+        set_mouse_hook(raw_callback)?;
 
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }
