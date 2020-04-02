@@ -11,7 +11,7 @@ This crate is so far a pet project for me to understand the rust ecosystem.
 
 ## Simple Usage
 
-Listening to global events
+### Listening to global events
 
 ```rust
 use rdev::{listen, Event};
@@ -32,7 +32,7 @@ fn callback(event: Event) {
 }
 ```
 
-Sending some events
+### Sending some events
 
 ```rust
 use rdev::{simulate, Button, EventType, Key, SimulateError};
@@ -65,7 +65,7 @@ fn main() {
 }
 ```
 
-Getting the main screen size
+### Getting the main screen size
 
 ```rust
 use rdev::{display_size};
@@ -77,7 +77,7 @@ fn main() {
 }
 ```
 
-Grabbing global events.
+### Grabbing global events.
 
 In the callback, returning None ignores the event
 and returning the event let's it pass. There is no modification of the event
@@ -105,7 +105,7 @@ fn main(){
 }
 ```
 
-Serialization
+### Serialization
 
 Serialization and deserialization is optional behind the feature "serialize".
 

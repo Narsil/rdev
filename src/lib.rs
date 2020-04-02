@@ -8,7 +8,7 @@
 //!
 //! ## Simple Usage
 //!
-//! Listening to global events
+//! ### Listening to global events
 //!
 //! ```no_run
 //! use rdev::{listen, Event};
@@ -27,7 +27,7 @@
 //! }
 //! ```
 //!
-//! Sending some events
+//! ### Sending some events
 //!
 //! ```no_run
 //! use rdev::{simulate, Button, EventType, Key, SimulateError};
@@ -57,7 +57,7 @@
 //!     delta_y: 1,
 //! });
 //! ```
-//! Getting the main screen size
+//! ### Getting the main screen size
 //!
 //! ```no_run
 //! use rdev::{display_size};
@@ -66,7 +66,8 @@
 //! assert!(w > 0);
 //! assert!(h > 0);
 //! ```
-//! Grabbing global events. (Requires `grab` feature)
+//!
+//! ### Grabbing global events. (Requires `grab` feature)
 //!
 //! In the callback, returning None ignores the event
 //! and returning the event let's it pass. There is no modification of the event
@@ -76,23 +77,9 @@
 //! settings enabled.
 //! On Linux, this is not implemented, you will always receive an error.
 //!
-//! ```no_run
-//! use rdev::{grab, Event, EventType, Key};
+//! [See more](grab)
 //!
-//! fn callback(event: Event) -> Option<Event> {
-//!     println!("My callback {:?}", event);
-//!     match event.event_type{
-//!         EventType::KeyPress(Key::Tab) => None,
-//!         _ => Some(event),
-//!     }
-//! }
-//!
-//! // This will block.
-//! if let Err(error) = grab(callback) {
-//!     println!("Error: {:?}", error)
-//! }
-//! ```
-//! Serialization
+//! ### Serialization
 //!
 //! Serialization and deserialization is optional behind the feature "serialize".
 mod rdev;
@@ -225,7 +212,7 @@ pub use crate::windows::grab as _grab;
 ///     }
 /// }
 /// ```
-#[cfg(feature = "grab")]
+#[cfg(any(feature = "grab", doc))]
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     _grab(callback)
 }
