@@ -24,8 +24,8 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         if dpy_control.is_null() {
             return Err(ListenError::MissingDisplayError);
         }
-        let extension_name =
-            CStr::from_bytes_with_nul(b"RECORD\0").map_err(|_| ListenError::XRecordExtensionError);
+        let extension_name = CStr::from_bytes_with_nul(b"RECORD\0")
+            .map_err(|_| ListenError::XRecordExtensionError)?;
         let extension = xlib::XInitExtension(dpy_control, extension_name.as_ptr());
         if extension.is_null() {
             return Err(ListenError::XRecordExtensionError);
@@ -75,28 +75,30 @@ union XRecordDatum {
 }
 
 unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    let data = raw_data.as_ref()?;
+    let ptr = raw_data.as_ref();
+    if let Some(data) = ptr {
+        // Skip server events
+        if data.category != xrecord::XRecordFromServer {
+            return;
+        }
 
-    // Skip server events
-    if data.category != xrecord::XRecordFromServer {
-        return;
+        debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
+        // Cast binary data
+        #[allow(clippy::cast_ptr_alignment)]
+        let xdatum_ptr = (data.data as *const XRecordDatum).as_ref();
+
+        if let Some(xdatum) = xdatum_ptr {
+            let code: c_uint = xdatum.event.u.u.as_ref().detail.into();
+            let type_: c_int = xdatum.type_.into();
+            let keypointer = xdatum.event.u.keyButtonPointer.as_ref();
+            let x = keypointer.rootX as f64;
+            let y = keypointer.rootY as f64;
+            let state = keypointer.state as c_uint;
+
+            if let Some(event) = convert(code, state, type_, x, y) {
+                GLOBAL_CALLBACK(event);
+            }
+        }
     }
-
-    debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
-    // Cast binary data
-    #[allow(clippy::cast_ptr_alignment)]
-    let xdatum = (data.data as *const XRecordDatum).as_ref()?;
-
-    let code: c_uint = xdatum.event.u.u.as_ref().detail.into();
-    let type_: c_int = xdatum.type_.into();
-    let keypointer = xdatum.event.u.keyButtonPointer.as_ref();
-    let x = keypointer.rootX as f64;
-    let y = keypointer.rootY as f64;
-    let state = keypointer.state as c_uint;
-
-    if let Some(event) = convert(code, state, type_, x, y) {
-        GLOBAL_CALLBACK(event);
-    }
-
     xrecord::XRecordFreeData(raw_data);
 }
