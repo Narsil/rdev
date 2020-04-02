@@ -75,9 +75,7 @@
 //! Caveat: On MacOS, you require the grab
 //! loop needs to be the primary app (no fork before) and need to have accessibility
 //! settings enabled.
-//! On Linux, this is not implemented, you will always receive an error.
-//!
-//! [See more](grab)
+//! **Not implemented on Linux, you will always receive an error.**
 //!
 //! ### Serialization
 //!
@@ -187,6 +185,7 @@ pub use crate::macos::grab as _grab;
 #[cfg(feature = "grab")]
 #[cfg(target_os = "windows")]
 pub use crate::windows::grab as _grab;
+#[cfg(any(feature = "grab"))]
 /// Grabbing global events. In the callback, returning None ignores the event
 /// and returning the event let's it pass. There is no modification of the event
 /// possible here.
@@ -212,7 +211,6 @@ pub use crate::windows::grab as _grab;
 ///     }
 /// }
 /// ```
-#[cfg(any(feature = "grab", doc))]
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     _grab(callback)
 }
