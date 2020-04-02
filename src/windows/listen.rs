@@ -37,7 +37,7 @@ unsafe fn set_key_hook() -> Result<(), ListenError> {
     let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
-        return Err(ListenError::NoDisplay);
+        return Err(ListenError::KeyHookError(error));
     }
     HOOK = hook;
     Ok(())
@@ -47,7 +47,7 @@ unsafe fn set_mouse_hook() -> Result<(), ListenError> {
     let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
-        return Err(ListenError::NoDisplay);
+        return Err(ListenError::MouseHookError(error));
     }
     HOOK = hook;
     Ok(())
