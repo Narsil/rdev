@@ -21,7 +21,7 @@ jobs:
           # TODO: We can't test this on github, we can't set accessibility yet.
           test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab --test-threads=1
         - os: ubuntu-latest
-          test: cargo test --verbose --all-features -- --test-threads=1
+          test: cargo test --verbose --features=serialize -- --test-threads=1
         - os: windows-latest
           test: cargo test --verbose --all-features -- --test-threads=1
 
