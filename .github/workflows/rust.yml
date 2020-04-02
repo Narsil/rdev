@@ -19,11 +19,12 @@ jobs:
           dependencies: sudo apt-get install libxtst-dev --assume-yes
         - os: macos-latest
           # TODO: We can't test this on github, we can't set accessibility yet.
-          test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab --test-threads=1
+          test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab
         - os: ubuntu-latest
-          test: cargo test --verbose --features=serialize -- --test-threads=1
+          # TODO unstable_grab feature is not supported on Linux.
+          test: cargo test --verbose --features=serialize
         - os: windows-latest
-          test: cargo test --verbose --all-features -- --test-threads=1
+          test: cargo test --verbose --all-features
 
     steps:
     - uses: actions/checkout@v2

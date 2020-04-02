@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use rdev::{grab, listen, simulate, Event, EventType, Key};
+use serial_test::serial;
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::sync::Mutex;
 use std::thread;
@@ -29,6 +30,7 @@ fn grab_tab(event: Event) -> Option<Event> {
 }
 
 #[test]
+#[serial]
 fn test_grab() {
     // spawn new thread because listen blocks
     let _listener = thread::spawn(move || {
