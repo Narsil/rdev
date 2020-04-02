@@ -1,6 +1,7 @@
 use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Event, EventType};
+use std::convert::TryInto;
 use std::os::raw::{c_int, c_uchar, c_uint};
 use std::ptr::null;
 use std::time::SystemTime;
@@ -67,29 +68,39 @@ pub fn convert(code: c_uint, state: c_uint, type_: c_int, x: f64, y: f64) -> Opt
     }
 }
 
-struct Display {
-    display: i32,
+pub struct Display {
+    display: *mut xlib::Display,
 }
 
 impl Display {
-    fn new() -> Option<Display> {
-        let display = xlib::XOpenDisplay(null());
-        if display.is_null() {
-            return None;
+    pub fn new() -> Option<Display> {
+        unsafe {
+            let display = xlib::XOpenDisplay(null());
+            if display.is_null() {
+                return None;
+            }
+            Some(Display { display })
         }
-        Some(Display { display })
     }
 
-    fn get_screen() -> Option<Screen> {
-        let screen_ptr = xlib::XDefaultScreenOfDisplay(dpy);
-        if screen_ptr.is_null() {
-            return None;
+    pub fn get_size(&self) -> Option<(u64, u64)> {
+        unsafe {
+            let screen_ptr = xlib::XDefaultScreenOfDisplay(self.display);
+            if screen_ptr.is_null() {
+                return None;
+            }
+            let screen = *screen_ptr;
+            Some((
+                screen.width.try_into().ok()?,
+                screen.height.try_into().ok()?,
+            ))
         }
-        Some(*screen_ptr);
     }
 }
 impl Drop for Display {
-    fn drop(&self) {
-        xlib::XCloseDisplay(self.display)
+    fn drop(&mut self) {
+        unsafe {
+            xlib::XCloseDisplay(self.display);
+        }
     }
 }
