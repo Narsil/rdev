@@ -39,6 +39,11 @@ pub enum GrabError {
     /// Linux
     LinuxNotSupported,
 }
+/// Errors that occur when trying to get display size.
+#[derive(Debug)]
+pub enum DisplayError {
+    MissingDisplayError,
+}
 
 /// Marking an error when we tried to simulate and event
 #[derive(Debug)]

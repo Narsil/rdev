@@ -2,6 +2,7 @@ use crate::linux::keyboard_state::KeyboardState;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Event, EventType};
 use std::os::raw::{c_int, c_uchar, c_uint};
+use std::ptr::null;
 use std::time::SystemTime;
 use x11::xlib;
 
@@ -63,5 +64,32 @@ pub fn convert(code: c_uint, state: c_uint, type_: c_int, x: f64, y: f64) -> Opt
             time: SystemTime::now(),
             name,
         })
+    }
+}
+
+struct Display {
+    display: i32,
+}
+
+impl Display {
+    fn new() -> Option<Display> {
+        let display = xlib::XOpenDisplay(null());
+        if display.is_null() {
+            return None;
+        }
+        Some(Display { display })
+    }
+
+    fn get_screen() -> Option<Screen> {
+        let screen_ptr = xlib::XDefaultScreenOfDisplay(dpy);
+        if screen_ptr.is_null() {
+            return None;
+        }
+        Some(*screen_ptr);
+    }
+}
+impl Drop for Display {
+    fn drop(&self) {
+        xlib::XCloseDisplay(self.display)
     }
 }
