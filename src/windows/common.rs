@@ -181,3 +181,25 @@ pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
         _ => None,
     }
 }
+
+type RawCallback = extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT;
+pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), ListenError> {
+    let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(raw_callback), null_mut(), 0);
+
+    if hook.is_null() {
+        let error = GetLastError();
+        return Err(ListenError::KeyHookError(error));
+    }
+    HOOK = hook;
+    Ok(())
+}
+
+pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), ListenError> {
+    let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(raw_callback), null_mut(), 0);
+    if hook.is_null() {
+        let error = GetLastError();
+        return Err(ListenError::MouseHookError(error));
+    }
+    HOOK = hook;
+    Ok(())
+}
