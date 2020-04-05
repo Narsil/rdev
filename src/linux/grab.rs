@@ -1,110 +1,142 @@
-// use crate::linux::common::{convert, FALSE, TRUE};
-// use crate::linux::simulate::simulate;
-use crate::rdev::{GrabCallback, GrabError};
-// use std::mem::{transmute, zeroed};
-// use std::os::raw::c_int;
-// use std::ptr::null;
-// use std::thread::sleep;
-// use std::time::{Duration, SystemTime};
-// use x11::{xinput2, xlib};
+use crate::linux::keycodes::key_from_code;
+use crate::linux::simulate::simulate;
+use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key};
+use std::mem::transmute;
+use std::time::SystemTime;
+use xcb::ffi::base::XCB_NONE;
+use xcb::{
+    create_window, destroy_window, grab_keyboard, grab_pointer, ungrab_keyboard, ungrab_pointer,
+    ButtonPressEvent, ButtonReleaseEvent, Connection, KeyPressEvent, KeyReleaseEvent,
+    MotionNotifyEvent, BUTTON_PRESS, BUTTON_RELEASE, COPY_FROM_PARENT, CURRENT_TIME, ENTER_NOTIFY,
+    EVENT_MASK_POINTER_MOTION, EXPOSE, GRAB_MODE_ASYNC, GRAB_STATUS_SUCCESS, KEY_PRESS,
+    KEY_RELEASE, LEAVE_NOTIFY, MOTION_NOTIFY, WINDOW_CLASS_INPUT_ONLY,
+};
 
-// unsafe fn convert_event(ev: &xinput2::XIDeviceEvent) -> Option<Event> {
-//     let (code, state, x, y) = (ev.detail, ev.mods.effective, ev.root_x, ev.root_y);
-//     convert(code as u32, state as u32, ev.evtype, x as f64, y as f64)
-// }
-//
-pub fn grab(_callback: GrabCallback) -> Result<(), GrabError> {
-    Err(GrabError::LinuxNotSupported)
-    // unsafe {
-    //     let dpy = xlib::XOpenDisplay(null());
-    //     if dpy.is_null() {
-    //         return Err(GrabError::MissingDisplayError);
-    //     }
+fn xcb_event_to_rdev_event(event: xcb::GenericEvent) -> Option<EventType> {
+    match event.response_type() {
+        KEY_PRESS => {
+            let key_event: KeyPressEvent = unsafe { transmute(event) };
+            let key = key_from_code(key_event.detail().into());
+            Some(EventType::KeyPress(key))
+        }
+        KEY_RELEASE => {
+            let key_event: KeyReleaseEvent = unsafe { transmute(event) };
+            let key = key_from_code(key_event.detail().into());
+            Some(EventType::KeyRelease(key))
+        }
+        BUTTON_PRESS => {
+            let mouse_event: ButtonPressEvent = unsafe { transmute(event) };
+            let button = match mouse_event.detail() {
+                1 => Button::Left,
+                2 => Button::Middle,
+                3 => Button::Right,
+                code => Button::Unknown(code),
+            };
+            Some(EventType::ButtonPress(button))
+        }
+        BUTTON_RELEASE => {
+            let mouse_event: ButtonReleaseEvent = unsafe { transmute(event) };
+            let button = match mouse_event.detail() {
+                1 => Button::Left,
+                2 => Button::Middle,
+                3 => Button::Right,
+                code => Button::Unknown(code),
+            };
+            Some(EventType::ButtonRelease(button))
+        }
+        MOTION_NOTIFY => {
+            let mouse_event: MotionNotifyEvent = unsafe { transmute(event) };
+            Some(EventType::MouseMove {
+                x: mouse_event.root_x().into(),
+                y: mouse_event.root_y().into(),
+            })
+        }
+        EXPOSE | ENTER_NOTIFY | LEAVE_NOTIFY => None,
+        _ => None, // this should never happen
+    }
+}
 
-    //     let root = xlib::XDefaultRootWindow(dpy);
+pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+    let (conn, screen_num) = Connection::connect(None).unwrap();
+    let setup = conn.get_setup();
+    let screen = setup.roots().nth(screen_num as usize).unwrap();
+    let root = screen.root();
+    let window = conn.generate_id();
 
-    //     // let mode = xlib::GrabModeAsync;
-    //     let mode = xinput2::XIGrabModeAsync;
-    //     println!("Before grab");
-    //     let mut eventmask: xinput2::XIEventMask = zeroed();
-    //     let mut mask: [u8; 1] = [0];
-    //     eventmask.mask_len = 1;
-    //     xinput2::XISetMask(&mut mask, xinput2::XI_ButtonPress);
-    //     xinput2::XISetMask(&mut mask, xinput2::XI_ButtonRelease);
-    //     xinput2::XISetMask(&mut mask, xinput2::XI_Motion);
-    //     xinput2::XISetMask(&mut mask, xinput2::XI_KeyPress);
-    //     xinput2::XISetMask(&mut mask, xinput2::XI_KeyRelease);
-    //     // eventmask.deviceid = xinput2::XIAllDevices;
-    //     eventmask.deviceid = 3;
-    //     eventmask.mask = &mut mask[0];
-    //     println!("mask ready");
-    //     println!("eventmask {:?} ", eventmask);
-    //     let mut grabmodifiers: xinput2::XIGrabModifiers = zeroed();
-    //     // grabmodifiers.modifiers = xlib::AnyModifier as i32;
-    //     grabmodifiers.modifiers = 0;
-    //     println!(
-    //         "\n Grab keycode mask : {:p}\n modifiers: {:p}",
-    //         &eventmask, &grabmodifiers
-    //     );
-    //     println!("Display {:p}", dpy);
-    //     println!("Root {:p}", &root);
-    //     println!("mode {:p}", &mode);
-    //     println!("false {:p}", &FALSE);
-    //     xinput2::XIGrabKeycode(
-    //         dpy,
-    //         xinput2::XIAllMasterDevices,
-    //         xinput2::XIAnyKeycode,
-    //         root,
-    //         mode,
-    //         mode,
-    //         FALSE,
-    //         &mut eventmask,
-    //         1,
-    //         &mut grabmodifiers,
-    //     );
-    //     println!("After grab");
-    //     // println!("Grab first keyboard {}", res);
-    //     let mut ev: xlib::XEvent = zeroed();
-    //     loop {
-    //         println!("Waiting for event");
-    //         xlib::XNextEvent(dpy, &mut ev);
-    //         let mut cookie = ev.generic_event_cookie;
-    //         xlib::XGetEventData(dpy, &mut cookie);
-    //         // TODO 131 by correct get query extension
-    //         if (cookie.type_ == xlib::GenericEvent && cookie.extension == 131) {
-    //             let devev: &mut xinput2::XIDeviceEvent = transmute(cookie.data);
-    //             println!("Devev {:?}", devev);
-    //             if let Some(in_event) = convert_event(&devev) {
-    //                 if let Some(out_event) = callback(in_event) {
-    //                     xinput2::XIUngrabKeycode(
-    //                         dpy,
-    //                         xinput2::XIAllMasterDevices,
-    //                         xinput2::XIAnyKeycode,
-    //                         root,
-    //                         1,
-    //                         &mut grabmodifiers,
-    //                     );
-    //                     sleep(Duration::from_millis(100));
-    //                     simulate(&out_event.event_type).unwrap();
-    //                     // xinput2::XIAllowEvents(dpy, devev.deviceid, mode, xlib::CurrentTime);
-    //                 }
-    //             }
-    //         }
-    //         println!("Waited for event");
-    //         xlib::XFreeEventData(dpy, &mut cookie);
-    //         // let r = xinput2::XIUngrabDevice(dpy, device, xlib::CurrentTime);
-    //         // xinput2::XIGrabDevice(
-    //         //     dpy,
-    //         //     // xinput2::XIAllDevices,
-    //         //     device,
-    //         //     root,
-    //         //     xlib::CurrentTime,
-    //         //     cursor,
-    //         //     mode,
-    //         //     mode,
-    //         //     TRUE,
-    //         //     &mut eventmask,
-    //         // );
-    //     }
-    // }
+    create_window(
+        &conn,
+        COPY_FROM_PARENT as u8,
+        window,
+        root,
+        10,
+        10,
+        0,
+        0,
+        0,
+        WINDOW_CLASS_INPUT_ONLY as u16,
+        screen.root_visual(),
+        &[],
+    );
+    xcb::map_window(&conn, window);
+    conn.flush();
+
+    println!("before grab");
+    let kbd_cookie = grab_keyboard(
+        &conn,
+        false,
+        root,
+        CURRENT_TIME,
+        GRAB_MODE_ASYNC as u8,
+        GRAB_MODE_ASYNC as u8,
+    );
+    let ptr_cookie = grab_pointer(
+        &conn,
+        true,
+        root,
+        EVENT_MASK_POINTER_MOTION as u16,
+        GRAB_MODE_ASYNC as u8,
+        GRAB_MODE_ASYNC as u8,
+        XCB_NONE,
+        XCB_NONE,
+        CURRENT_TIME,
+    );
+    let grab_err = |_| GrabError::LinuxNotSupported;
+    if kbd_cookie.get_reply().map_err(grab_err)?.status() != GRAB_STATUS_SUCCESS as u8 {
+        return Err(GrabError::LinuxNotSupported);
+    }
+    if ptr_cookie.get_reply().map_err(grab_err)?.status() != GRAB_STATUS_SUCCESS as u8 {
+        return Err(GrabError::LinuxNotSupported);
+    }
+    while let Some(event) = conn.wait_for_event() {
+        let event_type = xcb_event_to_rdev_event(event);
+        println!("grabbed_event: {:?}", event_type);
+        if event_type == Some(EventType::KeyPress(Key::Escape)) {
+            // TODO: remove
+            // used in testing to prevent
+            break;
+        }
+        let event = event_type.map(|event_type| Event {
+            event_type,
+            time: SystemTime::now(),
+            name: None,
+        });
+        let maybe_event = event.map(|ev| callback(ev)).flatten();
+        match maybe_event {
+            Some(event) => {
+                //simulate(&event.event_type)?;
+            }
+            None => {}
+        };
+    }
+    // This code should never run, but it is the correct cleanup procedure
+    ungrab_pointer(&conn, CURRENT_TIME)
+        .request_check()
+        .map_err(|_| GrabError::LinuxNotSupported)?;
+    ungrab_keyboard(&conn, CURRENT_TIME)
+        .request_check()
+        .map_err(|_| GrabError::LinuxNotSupported)?;
+    destroy_window(&conn, window)
+        .request_check()
+        .map_err(|_| GrabError::LinuxNotSupported)?;
+    Ok(())
 }
