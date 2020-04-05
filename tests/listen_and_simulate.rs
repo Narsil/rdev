@@ -16,7 +16,6 @@ lazy_static! {
 }
 
 fn send_event(event: Event) {
-    // println!("got event: {:?}", event);
     EVENT_CHANNEL
         .0
         .lock()

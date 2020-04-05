@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use rdev::{grab, listen, simulate, Event, EventType, Key};
 use serial_test::serial;
+use std::error::Error;
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::sync::Mutex;
 use std::thread;
@@ -31,7 +32,11 @@ fn grab_tab(event: Event) -> Option<Event> {
 
 #[test]
 #[serial]
-fn test_grab() {
+fn test_grab() -> Result<(), Box<dyn Error>> {
+    // Wait for tester's key to go back up
+    // otherwise, test fails due to KeyRelease(Return)
+    thread::sleep(Duration::from_millis(300));
+
     // spawn new thread because listen blocks
     let _listener = thread::spawn(move || {
         listen(send_event).expect("Could not listen");
@@ -39,7 +44,7 @@ fn test_grab() {
     // Make sure grab ends up on top of listen so it can properly discard.
     thread::sleep(Duration::from_secs(1));
     let _grab = thread::spawn(move || {
-        grab(grab_tab).expect("Could not listen");
+        grab(grab_tab).expect("Could not grab");
     });
 
     let recv = EVENT_CHANNEL.1.lock().expect("Failed to unlock Mutex");
@@ -49,24 +54,18 @@ fn test_grab() {
 
     let event_type = EventType::KeyPress(Key::KeyS);
     let event_type2 = EventType::KeyRelease(Key::KeyS);
-    let result = simulate(&event_type);
-    assert!(result.is_ok());
-    let result = simulate(&event_type2);
-    assert!(result.is_ok());
+    simulate(&event_type)?;
+    simulate(&event_type2)?;
+
     let timeout = Duration::from_secs(1);
-    match recv.recv_timeout(timeout) {
-        Ok(event1) => assert_eq!(event1.event_type, event_type),
-        Err(err) => panic!("{:?}", err),
-    }
-    match recv.recv_timeout(timeout) {
-        Ok(event2) => assert_eq!(event2.event_type, event_type2),
-        Err(err) => panic!("{:?}", err),
-    }
-    let tab = EventType::KeyPress(Key::Tab);
-    let result = simulate(&tab);
-    assert!(result.is_ok());
+    assert_eq!(event_type, recv.recv_timeout(timeout)?.event_type);
+    assert_eq!(event_type2, recv.recv_timeout(timeout)?.event_type);
+
+    simulate(&EventType::KeyPress(Key::Tab))?;
+    simulate(&EventType::KeyRelease(Key::Tab))?;
     match recv.recv_timeout(timeout) {
         Ok(event) => panic!("We should not receive event : {:?}", event),
         Err(err) => assert_eq!(err, RecvTimeoutError::Timeout),
-    }
+    };
+    Ok(())
 }
