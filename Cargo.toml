@@ -38,6 +38,9 @@ winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthr
 [dev-dependencies]
 lazy_static = "1.4.0"
 serde_json = "1.0"
+# Some tests interact with the real OS. We can't hit the OS in parallel
+# because that leads to unexpected behavior and flaky tests, so we need
+# to run thoses tests in sequence instead.
 serial_test = "0.4"
 
 
