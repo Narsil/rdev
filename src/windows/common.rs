@@ -1,5 +1,6 @@
 use crate::rdev::{Button, EventType};
 use crate::windows::keycodes::key_from_code;
+use lazy_static::lazy_static;
 use std::convert::TryInto;
 use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
@@ -17,6 +18,9 @@ pub const TRUE: i32 = 1;
 pub const FALSE: i32 = 0;
 
 pub static mut HOOK: HHOOK = null_mut();
+lazy_static! {
+    pub(crate) static ref KEYBOARD: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
+}
 
 pub unsafe fn get_code(lpdata: LPARAM) -> DWORD {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);

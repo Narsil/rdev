@@ -1,7 +1,6 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
-use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK};
+use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
 use crate::windows::keyboard::Keyboard;
-use lazy_static::lazy_static;
 use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::sync::Mutex;
@@ -13,10 +12,6 @@ fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 static mut GLOBAL_CALLBACK: Callback = default_callback;
-
-lazy_static! {
-    static ref STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
-}
 
 impl From<HookError> for ListenError {
     fn from(error: HookError) -> Self {
@@ -32,7 +27,10 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
-                EventType::KeyPress(_key) => (*STATE).lock().unwrap().get_name(lpdata),
+                EventType::KeyPress(_key) => match (*KEYBOARD).lock() {
+                    Ok(mut keyboard) => keyboard.get_name(lpdata),
+                    Err(_) => None,
+                },
                 _ => None,
             };
             let event = Event {

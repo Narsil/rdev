@@ -69,9 +69,9 @@ impl Keyboard {
 
     fn modifier_state(&self) -> ModifierState {
         if self.caps_lock || self.shift {
-            return 2;
+            2
         } else {
-            return 0;
+            0
         }
     }
 

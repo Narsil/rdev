@@ -1,5 +1,5 @@
 use crate::rdev::{Event, EventType, GrabCallback, GrabError};
-use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HookError, HOOK};
+use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
@@ -15,8 +15,10 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
-                EventType::KeyPress(_key) => get_name(lpdata),
-                _ => None,
+                EventType::KeyPress(_key) => match (*KEYBOARD).lock() {
+                    Ok(mut keyboard) => keyboard.get_name(lpdata),
+                    Err(_) => None,
+                },
             };
             let event = Event {
                 event_type,
