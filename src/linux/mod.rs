@@ -13,6 +13,6 @@ mod simulate;
 pub use crate::linux::display::display_size;
 #[cfg(feature = "unstable_grab")]
 pub use crate::linux::grab::grab;
-pub use crate::linux::keyboard_state::KeyboardState;
+pub use crate::linux::keyboard_state::Keyboard;
 pub use crate::linux::listen::listen;
 pub use crate::linux::simulate::simulate;

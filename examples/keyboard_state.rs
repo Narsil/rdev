@@ -1,7 +1,7 @@
-use rdev::{EventType, Key, KeyboardState};
+use rdev::{EventType, Key, Keyboard, KeyboardState};
 
 fn main() {
-    let mut keyboard = KeyboardState::new().unwrap();
+    let mut keyboard = Keyboard::new().unwrap();
     let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
     assert_eq!(char_s, "s".to_string());
     println!("Pressing S gives: {:?}", char_s);

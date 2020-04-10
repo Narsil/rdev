@@ -1,4 +1,4 @@
-use crate::rdev::{EventType, Key};
+use crate::rdev::{EventType, Key, KeyboardState};
 use crate::windows::common::{get_code, get_scan_code, FALSE, TRUE};
 use crate::windows::keycodes::code_from_key;
 use std::ptr::null_mut;
@@ -17,67 +17,21 @@ const VK_LSHIFT_: usize = VK_LSHIFT as usize;
 const VK_RSHIFT_: usize = VK_RSHIFT as usize;
 const HIGHBIT: u8 = 0x80;
 
-pub struct KeyboardState {
+pub struct Keyboard {
     last_code: UINT,
     last_scan_code: UINT,
     last_state: [BYTE; 256],
     last_is_dead: bool,
 }
 
-impl KeyboardState {
-    pub fn new() -> Option<KeyboardState> {
-        Some(KeyboardState {
+impl Keyboard {
+    pub fn new() -> Option<Keyboard> {
+        Some(Keyboard {
             last_code: 0,
             last_scan_code: 0,
             last_state: [0; 256],
             last_is_dead: false,
         })
-    }
-
-    pub fn add(&mut self, event_type: &EventType) -> Option<String> {
-        match event_type {
-            EventType::KeyPress(key) => match key {
-                Key::ShiftLeft => {
-                    self.last_state[VK_SHIFT_] |= HIGHBIT;
-                    self.last_state[VK_LSHIFT_] |= HIGHBIT;
-                    None
-                }
-                Key::ShiftRight => {
-                    self.last_state[VK_SHIFT_] |= HIGHBIT;
-                    self.last_state[VK_RSHIFT_] |= HIGHBIT;
-                    None
-                }
-                Key::CapsLock => {
-                    self.last_state[VK_CAPITAL_] ^= HIGHBIT;
-                    None
-                }
-                key => {
-                    let code = code_from_key(*key)?;
-                    println!("Code {:?}", code);
-                    unsafe { self.get_code_name(code.into(), 0) }
-                }
-            },
-            EventType::KeyRelease(key) => match key {
-                Key::ShiftLeft => {
-                    self.last_state[VK_SHIFT_] &= !HIGHBIT;
-                    self.last_state[VK_LSHIFT_] &= !HIGHBIT;
-                    None
-                }
-                Key::ShiftRight => {
-                    self.last_state[VK_SHIFT_] &= !HIGHBIT;
-                    self.last_state[VK_RSHIFT_] &= HIGHBIT;
-                    None
-                }
-                _ => None,
-            },
-
-            _ => None,
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.last_state[16] = 0;
-        self.last_state[20] = 0;
     }
 
     pub(crate) unsafe fn get_name(&mut self, lpdata: LPARAM) -> Option<String> {
@@ -171,5 +125,53 @@ impl KeyboardState {
         while len < 0 {
             len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, BUF_LEN, 0, layout);
         }
+    }
+}
+
+impl KeyboardState for Keyboard {
+    fn add(&mut self, event_type: &EventType) -> Option<String> {
+        match event_type {
+            EventType::KeyPress(key) => match key {
+                Key::ShiftLeft => {
+                    self.last_state[VK_SHIFT_] |= HIGHBIT;
+                    self.last_state[VK_LSHIFT_] |= HIGHBIT;
+                    None
+                }
+                Key::ShiftRight => {
+                    self.last_state[VK_SHIFT_] |= HIGHBIT;
+                    self.last_state[VK_RSHIFT_] |= HIGHBIT;
+                    None
+                }
+                Key::CapsLock => {
+                    self.last_state[VK_CAPITAL_] ^= HIGHBIT;
+                    None
+                }
+                key => {
+                    let code = code_from_key(*key)?;
+                    println!("Code {:?}", code);
+                    unsafe { self.get_code_name(code.into(), 0) }
+                }
+            },
+            EventType::KeyRelease(key) => match key {
+                Key::ShiftLeft => {
+                    self.last_state[VK_SHIFT_] &= !HIGHBIT;
+                    self.last_state[VK_LSHIFT_] &= !HIGHBIT;
+                    None
+                }
+                Key::ShiftRight => {
+                    self.last_state[VK_SHIFT_] &= !HIGHBIT;
+                    self.last_state[VK_RSHIFT_] &= HIGHBIT;
+                    None
+                }
+                _ => None,
+            },
+
+            _ => None,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.last_state[16] = 0;
+        self.last_state[20] = 0;
     }
 }

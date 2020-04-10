@@ -1,6 +1,6 @@
 extern crate x11;
 use crate::linux::keycodes::code_from_key;
-use crate::rdev::{EventType, Key};
+use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_void};
 use std::ptr::{null, null_mut, NonNull};
@@ -53,14 +53,14 @@ impl State {
 }
 
 #[derive(Debug)]
-pub struct KeyboardState {
+pub struct Keyboard {
     pub xic: Box<xlib::XIC>,
     pub display: Box<*mut xlib::Display>,
     keysym: Box<u64>,
     status: Box<i32>,
     state: State,
 }
-impl Drop for KeyboardState {
+impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
             xlib::XCloseDisplay(*self.display);
@@ -68,8 +68,8 @@ impl Drop for KeyboardState {
     }
 }
 
-impl KeyboardState {
-    pub fn new() -> Option<KeyboardState> {
+impl Keyboard {
+    pub fn new() -> Option<Keyboard> {
         unsafe {
             let dpy = xlib::XOpenDisplay(null());
             if dpy.is_null() {
@@ -125,7 +125,7 @@ impl KeyboardState {
                 null::<c_void>(),
             );
             NonNull::new(xic)?;
-            Some(KeyboardState {
+            Some(Keyboard {
                 xic: Box::new(xic),
                 display: Box::new(dpy),
                 keysym: Box::new(0),
@@ -133,37 +133,6 @@ impl KeyboardState {
                 state: State::new(),
             })
         }
-    }
-
-    pub fn add(&mut self, event_type: &EventType) -> Option<String> {
-        match event_type {
-            EventType::KeyPress(key) => match key {
-                Key::ShiftLeft | Key::ShiftRight => {
-                    self.state.shift = true;
-                    None
-                }
-                Key::CapsLock => {
-                    self.state.caps_lock = !self.state.caps_lock;
-                    None
-                }
-                key => {
-                    let keycode = code_from_key(*key)?;
-                    let state = self.state.value();
-                    unsafe { self.name_from_code(keycode, state) }
-                }
-            },
-            EventType::KeyRelease(key) => match key {
-                Key::ShiftLeft | Key::ShiftRight => {
-                    self.state.shift = false;
-                    None
-                }
-                _ => None,
-            },
-            _ => None,
-        }
-    }
-    pub fn reset(&mut self) {
-        self.state = State::new();
     }
 
     pub(crate) unsafe fn name_from_code(
@@ -205,5 +174,38 @@ impl KeyboardState {
 
         let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
         String::from_utf8(buf[..len].to_vec()).ok()
+    }
+}
+
+impl KeyboardState for Keyboard {
+    fn add(&mut self, event_type: &EventType) -> Option<String> {
+        match event_type {
+            EventType::KeyPress(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.state.shift = true;
+                    None
+                }
+                Key::CapsLock => {
+                    self.state.caps_lock = !self.state.caps_lock;
+                    None
+                }
+                key => {
+                    let keycode = code_from_key(*key)?;
+                    let state = self.state.value();
+                    unsafe { self.name_from_code(keycode, state) }
+                }
+            },
+            EventType::KeyRelease(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.state.shift = false;
+                    None
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+    fn reset(&mut self) {
+        self.state = State::new();
     }
 }

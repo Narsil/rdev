@@ -1,3 +1,5 @@
+use crate::macos::keycodes::code_from_key;
+use crate::rdev::{EventType, Key, KeyboardState};
 use core_foundation::base::{CFRelease, OSStatus};
 use core_foundation::string::UniChar;
 use core_foundation_sys::data::{CFDataGetBytePtr, CFDataRef};
@@ -51,16 +53,42 @@ extern "C" {
 
 }
 
-pub struct KeyboardState {
-    pub dead_state: u32,
+pub struct Keyboard {
+    dead_state: u32,
+    shift: bool,
+    caps_lock: bool,
 }
-impl KeyboardState {
-    pub unsafe fn create_string_for_key(
+impl Keyboard {
+    pub fn new() -> Option<Keyboard> {
+        Some(Keyboard {
+            dead_state: 0,
+            shift: false,
+            caps_lock: false,
+        })
+    }
+
+    fn modifier_state(&self) -> ModifierState {
+        if self.caps_lock || self.shift {
+            return 2;
+        } else {
+            return 0;
+        }
+    }
+
+    pub(crate) unsafe fn create_string_for_key(
         &mut self,
         code: u32,
         flags: CGEventFlags,
     ) -> Option<String> {
         let modifier_state = flags_to_state(flags.bits());
+        self.string_from_code(code, modifier_state)
+    }
+
+    pub(crate) unsafe fn string_from_code(
+        &mut self,
+        code: u32,
+        modifier_state: ModifierState,
+    ) -> Option<String> {
         let keyboard = TISCopyCurrentKeyboardInputSource();
         let layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
         let layout_ptr = CFDataGetBytePtr(layout);
@@ -83,6 +111,41 @@ impl KeyboardState {
         CFRelease(keyboard);
 
         String::from_utf16(&buff[..length]).ok()
+    }
+}
+
+impl KeyboardState for Keyboard {
+    fn add(&mut self, event_type: &EventType) -> Option<String> {
+        match event_type {
+            EventType::KeyPress(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.shift = true;
+                    None
+                }
+                Key::CapsLock => {
+                    self.caps_lock = !self.caps_lock;
+                    None
+                }
+                key => {
+                    let code = code_from_key(*key)?;
+                    unsafe { self.string_from_code(code.into(), self.modifier_state()) }
+                }
+            },
+            EventType::KeyRelease(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.shift = false;
+                    None
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.dead_state = 0;
+        self.shift = false;
+        self.caps_lock = false;
     }
 }
 

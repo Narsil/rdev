@@ -12,6 +12,6 @@ mod simulate;
 pub use crate::windows::display::display_size;
 #[cfg(feature = "unstable_grab")]
 pub use crate::windows::grab::grab;
-pub use crate::windows::keyboard_state::KeyboardState;
+pub use crate::windows::keyboard_state::Keyboard;
 pub use crate::windows::listen::listen;
 pub use crate::windows::simulate::simulate;
