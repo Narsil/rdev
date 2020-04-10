@@ -1,6 +1,6 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
 use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK};
-use crate::windows::keyboard_state::KeyboardState;
+use crate::windows::keyboard::Keyboard;
 use lazy_static::lazy_static;
 use std::os::raw::c_int;
 use std::ptr::null_mut;
@@ -15,7 +15,7 @@ fn default_callback(event: Event) {
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 
 lazy_static! {
-    static ref STATE: Mutex<KeyboardState> = Mutex::new(KeyboardState::new().unwrap());
+    static ref STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
 }
 
 impl From<HookError> for ListenError {

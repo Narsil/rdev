@@ -1,4 +1,4 @@
-use crate::linux::keyboard_state::KeyboardState;
+use crate::linux::keyboard::Keyboard;
 use crate::linux::keycodes::key_from_code;
 use crate::rdev::{Button, Event, EventType};
 use std::convert::TryInto;
@@ -55,7 +55,7 @@ pub fn convert(code: c_uint, state: c_uint, type_: c_int, x: f64, y: f64) -> Opt
         let event_type = convert_event(code as c_uchar, type_, x, y)?;
         let name = match event_type {
             EventType::KeyPress(_) => {
-                KeyboardState::new().map(|mut kboard| kboard.name_from_code(code, state))
+                Keyboard::new().map(|mut kboard| kboard.name_from_code(code, state))
             }
             _ => None,
         }
