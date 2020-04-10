@@ -11,11 +11,11 @@ use winapi::um::winuser::{
     GetWindowThreadProcessId, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT, VK_RSHIFT, VK_SHIFT,
 };
 
-const VK_SHIFT_ : usize = VK_SHIFT as usize;
-const VK_CAPITAL_ : usize = VK_CAPITAL as usize;
-const VK_LSHIFT_ : usize = VK_LSHIFT as usize;
-const VK_RSHIFT_ : usize = VK_RSHIFT as usize;
-const HIGHBIT : u8= 0x80;
+const VK_SHIFT_: usize = VK_SHIFT as usize;
+const VK_CAPITAL_: usize = VK_CAPITAL as usize;
+const VK_LSHIFT_: usize = VK_LSHIFT as usize;
+const VK_RSHIFT_: usize = VK_RSHIFT as usize;
+const HIGHBIT: u8 = 0x80;
 
 pub struct KeyboardState {
     last_code: UINT,
@@ -23,7 +23,6 @@ pub struct KeyboardState {
     last_state: [BYTE; 256],
     last_is_dead: bool,
 }
-
 
 impl KeyboardState {
     pub fn new() -> Option<KeyboardState> {
@@ -50,7 +49,7 @@ impl KeyboardState {
                 }
                 Key::CapsLock => {
                     self.last_state[VK_CAPITAL_] ^= HIGHBIT;
-                                    None
+                    None
                 }
                 key => {
                     let code = code_from_key(*key)?;
