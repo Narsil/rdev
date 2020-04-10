@@ -246,9 +246,9 @@ pub struct Event {
     pub event_type: EventType,
 }
 
-//! We can define a dummy Keyboard, that we will use to detect
-//! what kind of EventType trigger some String. We get the currently used
-//! layout for now !
+/// We can define a dummy Keyboard, that we will use to detect
+/// what kind of EventType trigger some String. We get the currently used
+/// layout for now !
 /// Caveat : This is layout dependent. If your app needs to support
 /// layout switching don't use this !
 /// Caveat: On Linux, the dead keys mechanism is not implemented.
