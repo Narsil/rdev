@@ -1,5 +1,5 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
-use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HookError, HOOK};
+use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
 use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::time::SystemTime;
@@ -25,7 +25,10 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
-                EventType::KeyPress(_key) => get_name(lpdata),
+                EventType::KeyPress(_key) => match (*KEYBOARD).lock() {
+                    Ok(mut keyboard) => keyboard.get_name(lpdata),
+                    Err(_) => None,
+                },
                 _ => None,
             };
             let event = Event {

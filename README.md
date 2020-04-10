@@ -77,6 +77,25 @@ fn main() {
 }
 ```
 
+### Keyboard state
+
+We can define a dummy Keyboard, that we will use to detect
+what kind of EventType trigger some String. We get the currently used
+layout for now !
+Caveat : This is layout dependent. If your app needs to support
+layout switching don't use this !
+Caveat: On Linux, the dead keys mechanism is not implemented.
+Caveat: Only shift and dead keys are implemented, Alt+unicode code on windows
+won't work.
+
+```rust
+use rdev::{Keyboard, EventType, Key, KeyboardState};
+
+let mut keyboard = Keyboard::new().unwrap();
+let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
+// string == Some("s")
+```
+
 ### Grabbing global events.
 
 In the callback, returning None ignores the event

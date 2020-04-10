@@ -1,22 +1,66 @@
 extern crate x11;
+use crate::linux::keycodes::code_from_key;
+use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_void};
 use std::ptr::{null, null_mut, NonNull};
 use x11::xlib;
+
+#[derive(Debug)]
+struct State {
+    alt: bool,
+    ctrl: bool,
+    caps_lock: bool,
+    shift: bool,
+    meta: bool,
+}
 
 // Inspired from https://github.com/wavexx/screenkey
 // But without remitting events to custom windows, instead we recreate  XKeyEvent
 // from xEvent data received via xrecord.
 // Other source of inspiration https://gist.github.com/baines/5a49f1334281b2685af5dcae81a6fa8a
 // Needed xproto crate as x11 does not implement _xevent.
+impl State {
+    fn new() -> State {
+        State {
+            alt: false,
+            ctrl: false,
+            caps_lock: false,
+            meta: false,
+            shift: false,
+        }
+    }
+
+    fn value(&self) -> c_uint {
+        let mut res: c_uint = 0;
+        if self.alt {
+            res += xlib::Mod1Mask;
+        }
+        if self.ctrl {
+            res += xlib::ControlMask;
+        }
+        if self.caps_lock {
+            res += xlib::LockMask;
+        }
+        if self.meta {
+            res += xlib::Mod4Mask;
+        }
+        if self.shift {
+            res += xlib::ShiftMask;
+        }
+        res
+    }
+}
+
 #[derive(Debug)]
-pub struct KeyboardState {
+pub struct Keyboard {
     pub xic: Box<xlib::XIC>,
     pub display: Box<*mut xlib::Display>,
     keysym: Box<u64>,
     status: Box<i32>,
+    state: State,
 }
-impl Drop for KeyboardState {
+impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
             xlib::XCloseDisplay(*self.display);
@@ -24,8 +68,8 @@ impl Drop for KeyboardState {
     }
 }
 
-impl KeyboardState {
-    pub fn new() -> Option<KeyboardState> {
+impl Keyboard {
+    pub fn new() -> Option<Keyboard> {
         unsafe {
             let dpy = xlib::XOpenDisplay(null());
             if dpy.is_null() {
@@ -81,16 +125,21 @@ impl KeyboardState {
                 null::<c_void>(),
             );
             NonNull::new(xic)?;
-            Some(KeyboardState {
+            Some(Keyboard {
                 xic: Box::new(xic),
                 display: Box::new(dpy),
                 keysym: Box::new(0),
                 status: Box::new(0),
+                state: State::new(),
             })
         }
     }
 
-    pub unsafe fn name_from_code(&mut self, keycode: c_uint, state: c_uint) -> Option<String> {
+    pub(crate) unsafe fn name_from_code(
+        &mut self,
+        keycode: c_uint,
+        state: c_uint,
+    ) -> Option<String> {
         if self.display.is_null() || self.xic.is_null() {
             println!("We don't seem to have a display or a xic");
             return None;
@@ -125,5 +174,38 @@ impl KeyboardState {
 
         let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
         String::from_utf8(buf[..len].to_vec()).ok()
+    }
+}
+
+impl KeyboardState for Keyboard {
+    fn add(&mut self, event_type: &EventType) -> Option<String> {
+        match event_type {
+            EventType::KeyPress(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.state.shift = true;
+                    None
+                }
+                Key::CapsLock => {
+                    self.state.caps_lock = !self.state.caps_lock;
+                    None
+                }
+                key => {
+                    let keycode = code_from_key(*key)?;
+                    let state = self.state.value();
+                    unsafe { self.name_from_code(keycode, state) }
+                }
+            },
+            EventType::KeyRelease(key) => match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    self.state.shift = false;
+                    None
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+    fn reset(&mut self) {
+        self.state = State::new();
     }
 }

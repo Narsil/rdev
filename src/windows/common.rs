@@ -1,25 +1,28 @@
 use crate::rdev::{Button, EventType};
+use crate::windows::keyboard::Keyboard;
 use crate::windows::keycodes::key_from_code;
+use lazy_static::lazy_static;
 use std::convert::TryInto;
 use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
-use winapi::shared::minwindef::{BYTE, DWORD, HIWORD, HKL, LPARAM, LRESULT, UINT, WORD, WPARAM};
-use winapi::shared::ntdef::{LONG, WCHAR};
+use std::sync::Mutex;
+use winapi::shared::minwindef::{DWORD, HIWORD, LPARAM, LRESULT, WORD, WPARAM};
+use winapi::shared::ntdef::LONG;
 use winapi::shared::windef::HHOOK;
 use winapi::um::errhandlingapi::GetLastError;
-use winapi::um::processthreadsapi::GetCurrentThreadId;
-use winapi::um::winuser;
 use winapi::um::winuser::{
-    GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
-    GetWindowThreadProcessId, SetWindowsHookExA, ToUnicodeEx, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT,
-    VK_SHIFT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN,
-    WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL,
-    WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
+    SetWindowsHookExA, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL,
+    WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
+    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
+    WM_XBUTTONUP,
 };
 pub const TRUE: i32 = 1;
 pub const FALSE: i32 = 0;
 
 pub static mut HOOK: HHOOK = null_mut();
+lazy_static! {
+    pub(crate) static ref KEYBOARD: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
+}
 
 pub unsafe fn get_code(lpdata: LPARAM) -> DWORD {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
@@ -43,93 +46,6 @@ pub unsafe fn get_delta(lpdata: LPARAM) -> WORD {
 pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
     HIWORD(mouse.mouseData)
-}
-
-pub static mut LAST_CODE: UINT = 0;
-pub static mut LAST_SCAN_CODE: UINT = 0;
-pub static mut LAST_STATE: [BYTE; 256] = [0; 256];
-pub static mut LAST_IS_DEAD: bool = false;
-
-pub unsafe fn get_name(lpdata: LPARAM) -> Option<String> {
-    // https://gist.github.com/akimsko/2011327
-    // https://www.experts-exchange.com/questions/23453780/LowLevel-Keystroke-Hook-removes-Accents-on-French-Keyboard.html
-    let code = get_code(lpdata);
-    let scan_code = get_scan_code(lpdata);
-
-    const BUF_LEN: i32 = 32;
-    let mut buff = [0 as WCHAR; BUF_LEN as usize];
-    let buff_ptr = buff.as_mut_ptr();
-    let mut state = [0 as BYTE; 256];
-    let state_ptr = state.as_mut_ptr();
-
-    let _shift = GetKeyState(VK_SHIFT);
-    let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
-    let thread_id = GetCurrentThreadId();
-    // Attach to active thread so we can get that keyboard state
-    let status = if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
-        // Current state of the modifiers in keyboard
-        let status = GetKeyboardState(state_ptr);
-
-        // Detach
-        winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
-        status
-    } else {
-        // Could not attach, perhaps it is this process?
-        GetKeyboardState(state_ptr)
-    };
-
-    if status != 1 {
-        return None;
-    }
-    let layout = GetKeyboardLayout(current_window_thread_id);
-    let len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
-
-    let mut is_dead = false;
-    let result = match len {
-        0 => None,
-        -1 => {
-            is_dead = true;
-            clear_keyboard_buffer(code, scan_code, layout);
-            None
-        }
-        len if len > 0 => String::from_utf16(&buff[..len as usize]).ok(),
-        _ => None,
-    };
-
-    if LAST_CODE != 0 && LAST_IS_DEAD {
-        buff = [0; 32];
-        let buff_ptr = buff.as_mut_ptr();
-        let last_state_ptr = LAST_STATE.as_mut_ptr();
-        ToUnicodeEx(
-            LAST_CODE,
-            LAST_SCAN_CODE,
-            last_state_ptr,
-            buff_ptr,
-            BUF_LEN,
-            0,
-            layout,
-        );
-        LAST_CODE = 0;
-    } else {
-        LAST_CODE = code;
-        LAST_SCAN_CODE = scan_code;
-        LAST_IS_DEAD = is_dead;
-        LAST_STATE.copy_from_slice(&state);
-    }
-    result
-}
-
-unsafe fn clear_keyboard_buffer(code: UINT, scan_code: UINT, layout: HKL) {
-    const BUF_LEN: i32 = 32;
-    let mut buff = [0 as WCHAR; BUF_LEN as usize];
-    let buff_ptr = buff.as_mut_ptr();
-    let mut state = [0 as BYTE; 256];
-    let state_ptr = state.as_mut_ptr();
-
-    let mut len = -1;
-    while len < 0 {
-        len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, BUF_LEN, 0, layout);
-    }
 }
 
 pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {

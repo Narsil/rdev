@@ -245,3 +245,29 @@ pub struct Event {
     pub name: Option<String>,
     pub event_type: EventType,
 }
+
+/// We can define a dummy Keyboard, that we will use to detect
+/// what kind of EventType trigger some String. We get the currently used
+/// layout for now !
+/// Caveat : This is layout dependent. If your app needs to support
+/// layout switching don't use this !
+/// Caveat: On Linux, the dead keys mechanism is not implemented.
+/// Caveat: Only shift and dead keys are implemented, Alt+unicode code on windows
+/// won't work.
+///
+/// ```no_run
+/// use rdev::{Keyboard, EventType, Key, KeyboardState};
+///
+/// let mut keyboard = Keyboard::new().unwrap();
+/// let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
+/// // string == Some("s")
+/// ```
+pub trait KeyboardState {
+    /// Changes the keyboard state as if this event happened. we don't
+    /// really hit the OS here, which might come handy to test what should happen
+    /// if we were to hit said key.
+    fn add(&mut self, event_type: &EventType) -> Option<String>;
+
+    /// Resets the keyboard state as if we never touched it (no shift, caps_lock and so on)
+    fn reset(&mut self);
+}

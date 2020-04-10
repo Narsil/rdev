@@ -1,9 +1,11 @@
-use crate::macos::keyboard_state::KeyboardState;
+use crate::macos::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType};
 use cocoa::base::id;
 use core_graphics::event::{CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, EventField};
+use lazy_static::lazy_static;
 use std::convert::TryInto;
 use std::os::raw::c_void;
+use std::sync::Mutex;
 use std::time::SystemTime;
 
 use crate::macos::keycodes::key_from_code;
@@ -32,7 +34,9 @@ pub enum CGEventTapOption {
 }
 
 pub static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
-pub static mut KEYBOARD_STATE: KeyboardState = KeyboardState { dead_state: 0 };
+lazy_static! {
+    pub static ref KEYBOARD_STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
+}
 
 // https://developer.apple.com/documentation/coregraphics/cgeventmask?language=objc
 pub type CGEventMask = u64;
@@ -84,7 +88,7 @@ pub type QCallback = unsafe extern "C" fn(
 pub unsafe fn convert(
     _type: CGEventType,
     cg_event: &CGEvent,
-    keyboard_state: &mut KeyboardState,
+    keyboard_state: &mut Keyboard,
 ) -> Option<Event> {
     let option_type = match _type {
         CGEventType::LeftMouseDown => Some(EventType::ButtonPress(Button::Left)),
