@@ -103,6 +103,8 @@ use crate::linux::{display_size as _display_size, listen as _listen, simulate as
 mod windows;
 
 #[cfg(target_os = "windows")]
+pub use crate::windows::KeyboardState;
+#[cfg(target_os = "windows")]
 use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen

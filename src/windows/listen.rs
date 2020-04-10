@@ -1,7 +1,10 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
-use crate::windows::common::{convert, get_name, set_key_hook, set_mouse_hook, HookError, HOOK};
+use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK};
+use crate::windows::keyboard_state::KeyboardState;
+use lazy_static::lazy_static;
 use std::os::raw::c_int;
 use std::ptr::null_mut;
+use std::sync::Mutex;
 use std::time::SystemTime;
 use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
@@ -10,6 +13,10 @@ fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 static mut GLOBAL_CALLBACK: Callback = default_callback;
+
+lazy_static! {
+    static ref STATE: Mutex<KeyboardState> = Mutex::new(KeyboardState::new().unwrap());
+}
 
 impl From<HookError> for ListenError {
     fn from(error: HookError) -> Self {
@@ -25,7 +32,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
-                EventType::KeyPress(_key) => get_name(lpdata),
+                EventType::KeyPress(_key) => (*STATE).lock().unwrap().get_name(lpdata),
                 _ => None,
             };
             let event = Event {
