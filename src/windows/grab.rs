@@ -19,6 +19,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                     Ok(mut keyboard) => keyboard.get_name(lpdata),
                     Err(_) => None,
                 },
+                _ => None,
             };
             let event = Event {
                 event_type,
