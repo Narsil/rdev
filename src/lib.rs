@@ -95,6 +95,8 @@ use crate::macos::{display_size as _display_size, listen as _listen, simulate as
 mod linux;
 
 #[cfg(target_os = "linux")]
+pub use crate::linux::KeyboardState;
+#[cfg(target_os = "linux")]
 use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
@@ -215,4 +217,36 @@ pub use crate::windows::grab as _grab;
 #[cfg(any(feature = "unstable_grab"))]
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     _grab(callback)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_keyboard_state() {
+        // S
+        let mut keyboard = KeyboardState::new().unwrap();
+        let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
+        assert_eq!(char_s, "s".to_string());
+        let n = keyboard.add(&EventType::KeyRelease(Key::KeyS));
+        assert_eq!(n, None);
+
+        // Shift + S
+        keyboard.add(&EventType::KeyPress(Key::ShiftLeft));
+        let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
+        assert_eq!(char_s, "S".to_string());
+        let n = keyboard.add(&EventType::KeyRelease(Key::KeyS));
+        assert_eq!(n, None);
+        keyboard.add(&EventType::KeyRelease(Key::ShiftLeft));
+
+        // Reset
+        keyboard.add(&EventType::KeyPress(Key::ShiftLeft));
+        keyboard.reset();
+        let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
+        assert_eq!(char_s, "s".to_string());
+        let n = keyboard.add(&EventType::KeyRelease(Key::KeyS));
+        assert_eq!(n, None);
+        keyboard.add(&EventType::KeyRelease(Key::ShiftLeft));
+    }
 }
