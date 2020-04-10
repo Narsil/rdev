@@ -1,6 +1,6 @@
 [package]
 name = "rdev"
-version = "0.3.6"
+version = "0.4.0"
 authors = ["Nicolas Patry <patry.nicolas@protonmail.com>"]
 edition = "2018"
 
