@@ -1,9 +1,7 @@
 use crate::rdev::{Callback, Event, EventType, ListenError};
 use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
-use crate::windows::keyboard::Keyboard;
 use std::os::raw::c_int;
 use std::ptr::null_mut;
-use std::sync::Mutex;
 use std::time::SystemTime;
 use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
