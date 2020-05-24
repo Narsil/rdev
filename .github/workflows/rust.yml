@@ -33,7 +33,9 @@ jobs:
     - name: Setup headless environment
       run: ${{matrix.headless}}
     - name: Check formatting
-      run: cargo fmt -- --check
+      run: |
+        rustup component add rustfmt
+        cargo fmt -- --check
     - name: Build
       run: cargo build --verbose
     - name: Run tests
