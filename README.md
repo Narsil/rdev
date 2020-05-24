@@ -2,25 +2,24 @@
 [![Crate](https://img.shields.io/crates/v/rdev.svg)](https://crates.io/crates/rdev)
 [![API](https://docs.rs/rdev/badge.svg)](https://docs.rs/rdev)
 
-Simple library to listen and send events to keyboard and mouse.
+# rdev
+
+Simple library to listen and send events to keyboard and mouse on MacOS, Windows and Linux
+(x11).
 
 You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
 crate which helped me write this one.
 
 This crate is so far a pet project for me to understand the rust ecosystem.
 
-## Simple Usage
-
-### Listening to global events
+## Listening to global events
 
 ```rust
 use rdev::{listen, Event};
 
-fn main() {
-    // This will block.
-    if let Err(error) = listen(callback) {
-        println!("Error: {:?}", error)
-    }
+// This will block.
+if let Err(error) = listen(callback) {
+    println!("Error: {:?}", error)
 }
 
 fn callback(event: Event) {
@@ -32,7 +31,7 @@ fn callback(event: Event) {
 }
 ```
 
-### Sending some events
+## Sending some events
 
 ```rust
 use rdev::{simulate, Button, EventType, Key, SimulateError};
@@ -50,95 +49,31 @@ fn send(event_type: &EventType) {
     thread::sleep(delay);
 }
 
-fn main() {
-    send(&EventType::KeyPress(Key::KeyS));
-    send(&EventType::KeyRelease(Key::KeyS));
+send(&EventType::KeyPress(Key::KeyS));
+send(&EventType::KeyRelease(Key::KeyS));
 
-    send(&EventType::MouseMove { x: 0.0, y: 0.0 });
-    send(&EventType::MouseMove { x: 400.0, y: 400.0 });
-    send(&EventType::ButtonPress(Button::Left));
-    send(&EventType::ButtonRelease(Button::Right));
-    send(&EventType::Wheel {
-        delta_x: 0,
-        delta_y: 1,
-    });
-}
+send(&EventType::MouseMove { x: 0.0, y: 0.0 });
+send(&EventType::MouseMove { x: 400.0, y: 400.0 });
+send(&EventType::ButtonPress(Button::Left));
+send(&EventType::ButtonRelease(Button::Right));
+send(&EventType::Wheel {
+    delta_x: 0,
+    delta_y: 1,
+});
 ```
-
-### Getting the main screen size
-
-```rust
-use rdev::{display_size};
-
-fn main() {
-    let (w, h) = display_size();
-    assert!(w > 0);
-    assert!(h > 0);
-}
-```
-
-### Keyboard state
-
-We can define a dummy Keyboard, that we will use to detect
-what kind of EventType trigger some String. We get the currently used
-layout for now !
-Caveat : This is layout dependent. If your app needs to support
-layout switching don't use this !
-Caveat: On Linux, the dead keys mechanism is not implemented.
-Caveat: Only shift and dead keys are implemented, Alt+unicode code on windows
-won't work.
-
-```rust
-use rdev::{Keyboard, EventType, Key, KeyboardState};
-
-let mut keyboard = Keyboard::new().unwrap();
-let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
-// string == Some("s")
-```
-
-### Grabbing global events.
-
-In the callback, returning None ignores the event
-and returning the event let's it pass. There is no modification of the event
-possible here.
-Caveat: On MacOS, you require the grab
-loop needs to be the primary app (no fork before) and need to have accessibility
-settings enabled.
-On Linux, this is not implemented, you will always receive an error.
-
-```rust
-use rdev::{grab, Event, EventType, Key};
-
-fn callback(event: Event) -> Option<Event> {
-    println!("My callback {:?}", event);
-    match event.event_type{
-        EventType::KeyPress(Key::Tab) => None,
-        _ => Some(event),
-    }
-}
-fn main(){
-    // This will block.
-    if let Err(error) = grab(callback) {
-        println!("Error: {:?}", error)
-    }
-}
-```
-
-### Serialization
-
-Serialization and deserialization is optional behind the feature "serialize".
-
-### Event struct
+## Main structs
+### Event
 
 In order to detect what a user types, we need to plug to the OS level management
 of keyboard state (modifiers like shift, ctrl, but also dead keys if they exist).
 
-In order to see what is the outcome of an event, you need to read the Event::name option.
+`EventType` corresponds to a *physical* event, corresponding to QWERTY layout
+`Event` corresponds to an actual event that was received and `Event.name` reflects
+what key was interpreted by the OS at that time, it will respect the layout.
 
 ```rust
 /// When events arrive from the system we can add some information
-/// time is when the event was received, name *will* be at some point changed
-/// to be mapped to the function of the key (Alt, s, Return and so on).
+/// time is when the event was received.
 #[derive(Debug)]
 pub struct Event {
     pub time: SystemTime,
@@ -152,7 +87,7 @@ not displayable unicode characters. We send exactly what the OS sends us so do s
 before using it.
 Caveat: Dead keys don't function yet on Linux
 
-### Events enum
+### EventType
 
 In order to manage different OS, the current EventType choices is a mix&match
 to account for all possible events.
@@ -194,3 +129,46 @@ pub enum EventType {
 For now the code only works for Linux (X11), MacOS and Windows. On MacOS, the listen
 loop needs to be the primary app (no fork before) and needs to have accessibility
 settings enabled (Terminal added in System Preferences > Security & Privacy > Privacy > Accessibility).
+
+## Getting the main screen size
+
+```rust
+use rdev::{display_size};
+
+let (w, h) = display_size().unwrap();
+assert!(w > 0);
+assert!(h > 0);
+```
+
+## Keyboard state
+
+We can define a dummy Keyboard, that we will use to detect
+what kind of EventType trigger some String. We get the currently used
+layout for now !
+Caveat : This is layout dependent. If your app needs to support
+layout switching don't use this !
+Caveat: On Linux, the dead keys mechanism is not implemented.
+Caveat: Only shift and dead keys are implemented, Alt+unicode code on windows
+won't work.
+
+```rust
+use rdev::{Keyboard, EventType, Key, KeyboardState};
+
+let mut keyboard = Keyboard::new().unwrap();
+let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
+// string == Some("s")
+```
+
+## Grabbing global events. (Requires `unstable_grab` feature)
+
+In the callback, returning None ignores the event
+and returning the event let's it pass. There is no modification of the event
+possible here.
+Caveat: On MacOS, you require the grab
+loop needs to be the primary app (no fork before) and need to have accessibility
+settings enabled.
+**Not implemented on Linux, you will always receive an error.**
+
+## Serialization
+
+Serialization and deserialization. (Requires `serialize` feature).
