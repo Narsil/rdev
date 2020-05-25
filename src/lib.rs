@@ -65,7 +65,9 @@
 //! `Event` corresponds to an actual event that was received and `Event.name` reflects
 //! what key was interpreted by the OS at that time, it will respect the layout.
 //!
-//! ```rust
+//! ```no_run
+//! # use crate::rdev::EventType;
+//! # use std::time::SystemTime;
 //! /// When events arrive from the system we can add some information
 //! /// time is when the event was received.
 //! #[derive(Debug)]
@@ -91,7 +93,8 @@
 //! try to send an unmapped key. Sending Unknown() variants will always work (the OS might
 //! still reject it).
 //!
-//! ```rust
+//! ```no_run
+//! # use crate::rdev::{Key, Button};
 //! /// In order to manage different OS, the current EventType choices is a mix&match
 //! /// to account for all possible events.
 //! #[derive(Debug)]
