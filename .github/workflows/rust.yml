@@ -41,4 +41,6 @@ jobs:
     - name: Run tests
       run: ${{matrix.test}}
     - name: Linter
-      run: cargo clippy --all-features --verbose -- -Dwarnings
+      run: |
+        rustup component add clippy
+        cargo clippy --all-features --verbose -- -Dwarnings
