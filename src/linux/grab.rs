@@ -10,6 +10,7 @@ use std::time::SystemTime;
 macro_rules! convert_keys {
     ($($ev_key:ident, $rdev_key:ident),*) => {
         //TODO: make const when rust lang issue #49146 is fixed
+        #[allow(unreachable_patterns)]
         fn evdev_key_to_rdev_key(key: &EV_KEY) -> Option<Key> {
             match key {
                 $(
@@ -44,6 +45,7 @@ macro_rules! convert_buttons {
         }
 
         //TODO: make const when rust lang issue #49146 is fixed
+        #[allow(unreachable_patterns)]
         fn rdev_button_to_evdev_key(event: &Button) -> Option<EV_KEY> {
             match event {
                 $(
@@ -166,7 +168,11 @@ convert_keys!(
     KEY_PAUSE, Pause,
     KEY_LEFTMETA, MetaLeft,
     KEY_RIGHTMETA, MetaRight,
-    KEY_PRINT, PrintScreen
+    KEY_PRINT, PrintScreen,
+    // KpDelete behaves like normal Delete most of the time
+    KEY_DELETE, KpDelete,
+    // Linux doesn't have an IntlBackslash key
+    KEY_BACKSLASH, IntlBackslash
 );
 
 fn evdev_event_to_rdev_event(event: &InputEvent) -> Option<EventType> {
@@ -264,22 +270,26 @@ fn rdev_event_to_evdev_event(event: &EventType, time: &TimeVal) -> Option<InputE
 
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     filter_map_events(|event| {
-        let time_val = &event.time;
-        if let Some(rdev_event) = evdev_event_to_rdev_event(&event) {
-            let rdev_event = Event {
-                time: SystemTime::now(),
-                name: None,
-                event_type: rdev_event,
-            };
-            match callback(rdev_event) {
-                Some(event) => {
-                    let evdev_event = rdev_event_to_evdev_event(&event.event_type, time_val);
-                    (evdev_event, GrabStatus::Continue)
-                }
-                None => (None, GrabStatus::Continue),
-            }
-        } else {
-            (Some(event), GrabStatus::Continue)
+        let event_type = match evdev_event_to_rdev_event(&event) {
+            Some(rdev_event) => rdev_event,
+            // If we can't convert event, simulate it
+            None => return (Some(event), GrabStatus::Continue)
+        };
+        let rdev_event = Event {
+            time: SystemTime::now(),
+            /* TODO: generate a name here */
+            name: None,
+            event_type,
+        };
+        let new_event = match callback(rdev_event) {
+            Some(rdev_event) => rdev_event,
+            // callback returns None, swallow the event
+            None => return (None, GrabStatus::Continue)
+        };
+        match rdev_event_to_evdev_event(&new_event.event_type, &event.time) {
+            Some(evdev_event) => (Some(evdev_event), GrabStatus::Continue),
+            // If we can't convert the event back, send the original event
+            None => (Some(event), GrabStatus::Continue)
         }
     }).map_err(|_| GrabError::SimulateError)?;
     Ok(())
