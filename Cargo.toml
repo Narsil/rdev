@@ -18,7 +18,7 @@ serde = {version = "1.0", features = ["derive"], optional=true}
 
 [features]
 serialize = ["serde"]
-unstable_grab = []
+unstable_grab = ["gel-o"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
 lazy_static = "1.4.0"
@@ -43,7 +43,6 @@ serde_json = "1.0"
 # because that leads to unexpected behavior and flaky tests, so we need
 # to run thoses tests in sequence instead.
 serial_test = "0.4"
-
 
 [[example]]
 name = "serialize"
