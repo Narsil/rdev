@@ -31,7 +31,7 @@ pub enum ListenError {
 /// Errors that occur when trying to grab OS events.
 /// Be careful on Mac, not setting accessibility does not cause an error
 /// it justs ignores events.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GrabError {
     /// MacOS
     EventTapError,

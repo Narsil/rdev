@@ -18,7 +18,7 @@ serde = {version = "1.0", features = ["derive"], optional=true}
 
 [features]
 serialize = ["serde"]
-unstable_grab = []
+unstable_grab = ["gel-o"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.20"
@@ -31,7 +31,8 @@ core-foundation-sys = {version = "0.7"}
 libc = "0.2"
 x11 = {version = "2.18", features = ["xlib", "xrecord", "xinput"]}
 xproto = "1.1"
-xcb = {version = "0.9"}
+#TODO: use crates.rs version
+gel-o = { git = "https://github.com/maxbla/gel-o", optional=true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthreadsapi"] }
@@ -39,7 +40,6 @@ winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthr
 [dev-dependencies]
 lazy_static = "1.4.0"
 serde_json = "1.0"
-
 
 [[example]]
 name = "serialize"
