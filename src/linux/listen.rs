@@ -1,6 +1,5 @@
 extern crate libc;
 extern crate x11;
-extern crate xproto;
 use crate::linux::common::{convert, FALSE};
 use crate::rdev::{Callback, Event, ListenError};
 use std::convert::TryInto;
@@ -64,41 +63,42 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
 
 // No idea how to do that properly relevant doc lives here:
 // https://www.x.org/releases/X11R7.7/doc/libXtst/recordlib.html#Datum_Flags
+// https://docs.rs/xproto/1.1.5/xproto/struct._xEvent__bindgen_ty_1.html
 #[repr(C)]
-union XRecordDatum {
-    type_: c_uchar,
-    event: xproto::xEvent,
-    // error: xError,
-    // req: xResourceReq,
-    // replay: xGenericReply,
-    // setup: xConnSetupPrefix,
+struct XRecordDatum {
+    type_: u8,
+    code: u8,
+    _rest: u64,
+    _1: bool,
+    _2: bool,
+    _3: bool,
+    root_x: i16,
+    root_y: i16,
+    event_x: i16,
+    event_y: i16,
+    state: u16,
 }
 
 unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    let ptr = raw_data.as_ref();
-    if let Some(data) = ptr {
-        // Skip server events
-        if data.category != xrecord::XRecordFromServer {
-            return;
-        }
+    let data = raw_data.as_ref().unwrap();
+    if data.category != xrecord::XRecordFromServer {
+        return;
+    }
 
-        debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
-        // Cast binary data
-        #[allow(clippy::cast_ptr_alignment)]
-        let xdatum_ptr = (data.data as *const XRecordDatum).as_ref();
+    debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
+    // Cast binary data
+    #[allow(clippy::cast_ptr_alignment)]
+    let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
 
-        if let Some(xdatum) = xdatum_ptr {
-            let code: c_uint = xdatum.event.u.u.as_ref().detail.into();
-            let type_: c_int = xdatum.type_.into();
-            let keypointer = xdatum.event.u.keyButtonPointer.as_ref();
-            let x = keypointer.rootX as f64;
-            let y = keypointer.rootY as f64;
-            let state = keypointer.state as c_uint;
+    let code: c_uint = xdatum.code.into();
+    let type_: c_int = xdatum.type_.into();
 
-            if let Some(event) = convert(code, state, type_, x, y) {
-                GLOBAL_CALLBACK(event);
-            }
-        }
+    let x = xdatum.root_x as f64;
+    let y = xdatum.root_y as f64;
+    let state = xdatum.state.into();
+
+    if let Some(event) = convert(code, state, type_, x, y) {
+        GLOBAL_CALLBACK(event);
     }
     xrecord::XRecordFreeData(raw_data);
 }

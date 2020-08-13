@@ -1,4 +1,5 @@
-use std::error::Error;
+#[cfg(feature = "serialize")]
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use std::{fmt, fmt::Display};
 
@@ -48,6 +49,9 @@ pub enum GrabError {
     KeyHookError(u32),
     /// Windows
     MouseHookError(u32),
+    /// All
+    SimulateError,
+    IoError(std::io::Error),
 }
 /// Errors that occur when trying to get display size.
 #[non_exhaustive]
@@ -55,6 +59,18 @@ pub enum GrabError {
 pub enum DisplayError {
     NoDisplay,
     ConversionError,
+}
+
+impl From<SimulateError> for GrabError {
+    fn from(_: SimulateError) -> GrabError {
+        GrabError::SimulateError
+    }
+}
+
+impl From<std::io::Error> for GrabError {
+    fn from(err: std::io::Error) -> GrabError {
+        GrabError::IoError(err)
+    }
 }
 
 /// Marking an error when we tried to simulate and event
@@ -67,7 +83,7 @@ impl Display for SimulateError {
     }
 }
 
-impl Error for SimulateError {}
+impl std::error::Error for SimulateError {}
 
 /// Key names based on physical location on the device
 /// Merge Option(MacOS) and Alt(Windows, Linux) into Alt
@@ -78,7 +94,7 @@ impl Error for SimulateError {}
 /// Careful, on Windows KpReturn does not exist, it' s strictly equivalent to Return, also Keypad keys
 /// get modified if NumLock is Off and ARE pagedown and so on.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub enum Key {
     /// Alt key on Linux and Windows (option key on macOS)
     Alt,
@@ -195,7 +211,7 @@ pub enum Key {
 /// Some mice have more than 3 buttons. These are not defined, and different
 /// OSs will give different `Button::Unknown` values.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub enum Button {
     Left,
     Right,
@@ -206,7 +222,7 @@ pub enum Button {
 /// In order to manage different OSs, the current EventType choices are a mix and
 /// match to account for all possible events.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub enum EventType {
     /// The keys correspond to a standard qwerty layout, they don't correspond
     /// To the actual letter a user would use, that requires some layout logic to be added.
@@ -239,7 +255,7 @@ pub enum EventType {
 /// Caveat: Dead keys don't function on Linux(X11) yet. You will receive None for
 /// a dead key, and the raw letter instead of accentuated letter.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Event {
     pub time: SystemTime,
     pub name: Option<String>,

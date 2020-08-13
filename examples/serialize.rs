@@ -1,5 +1,4 @@
 use rdev::{Event, EventType, Key};
-use serde_json;
 use std::time::SystemTime;
 
 fn main() {

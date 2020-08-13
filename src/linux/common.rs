@@ -35,7 +35,7 @@ pub fn convert_event(code: c_uchar, type_: c_int, x: f64, y: f64) -> Option<Even
                 delta_x: 0,
             }),
             #[allow(clippy::identity_conversion)]
-            code => Some(EventType::ButtonPress(Button::Unknown(code.into()))),
+            code => Some(EventType::ButtonPress(Button::Unknown(code))),
         },
         xlib::ButtonRelease => match code {
             1 => Some(EventType::ButtonRelease(Button::Left)),
@@ -43,7 +43,7 @@ pub fn convert_event(code: c_uchar, type_: c_int, x: f64, y: f64) -> Option<Even
             3 => Some(EventType::ButtonRelease(Button::Right)),
             4 | 5 => None,
             #[allow(clippy::identity_conversion)]
-            _ => Some(EventType::ButtonRelease(Button::Unknown(code.into()))),
+            _ => Some(EventType::ButtonRelease(Button::Unknown(code))),
         },
         xlib::MotionNotify => Some(EventType::MouseMove { x, y }),
         _ => None,
