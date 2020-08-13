@@ -1,10 +1,22 @@
+use crate::linux::keyboard_state::KeyboardState;
+use crate::linux::keycodes::code_from_key;
 use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key};
-use gelo::evdev_rs::{
+use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
+use evdev_rs::{
     enums::{EventCode, EV_KEY, EV_REL},
-    InputEvent, TimeVal,
+    Device, InputEvent, TimeVal, UInputDevice,
 };
-use gelo::{filter_map_events, GrabStatus};
-
+use inotify::{Inotify, WatchMask};
+use std::convert::TryFrom;
+use std::ffi::{OsStr, OsString};
+use std::fs::{read_dir, File};
+use std::io;
+use std::os::unix::{
+    ffi::OsStrExt,
+    fs::FileTypeExt,
+    io::{AsRawFd, IntoRawFd, RawFd},
+};
+use std::path::Path;
 use std::time::SystemTime;
 
 macro_rules! convert_keys {
@@ -213,11 +225,11 @@ fn evdev_event_to_rdev_event(event: &InputEvent) -> Option<EventType> {
                 delta_y: event.value.into(),
             }),
             // Other EV_REL events cannot be represented by rdev
-            _ => return None,
+            _ => None,
         },
         // Other event_codes cannot be represented by rdev,
         // and some never will e.g. EV_SYN
-        _ => return None,
+        _ => None,
     }
 }
 
@@ -269,28 +281,239 @@ fn rdev_event_to_evdev_event(event: &EventType, time: &TimeVal) -> Option<InputE
 }
 
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+    let mut state = 0;
     filter_map_events(|event| {
         let event_type = match evdev_event_to_rdev_event(&event) {
             Some(rdev_event) => rdev_event,
             // If we can't convert event, simulate it
-            None => return (Some(event), GrabStatus::Continue)
+            None => return (Some(event), GrabStatus::Continue),
         };
+        // Small monkey patching of the way state works.
+        match event_type {
+            EventType::KeyPress(Key::ShiftLeft) | EventType::KeyPress(Key::ShiftRight) => {
+                state |= 1;
+            }
+            EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
+                state &= !1;
+            }
+            EventType::KeyPress(Key::CapsLock) => {
+                state ^= 2;
+            }
+            _ => (),
+        };
+        let name = match event_type {
+            EventType::KeyPress(key) => {
+                let code = code_from_key(key).unwrap();
+                KeyboardState::new().map(|mut kboard| unsafe { kboard.name_from_code(code, state) })
+            }
+            _ => None,
+        }
+        .flatten();
         let rdev_event = Event {
             time: SystemTime::now(),
-            /* TODO: generate a name here */
-            name: None,
+            name,
             event_type,
         };
         let new_event = match callback(rdev_event) {
             Some(rdev_event) => rdev_event,
             // callback returns None, swallow the event
-            None => return (None, GrabStatus::Continue)
+            None => return (None, GrabStatus::Continue),
         };
         match rdev_event_to_evdev_event(&new_event.event_type, &event.time) {
             Some(evdev_event) => (Some(evdev_event), GrabStatus::Continue),
             // If we can't convert the event back, send the original event
-            None => (Some(event), GrabStatus::Continue)
+            None => (Some(event), GrabStatus::Continue),
         }
-    }).map_err(|_| GrabError::SimulateError)?;
+    })?;
     Ok(())
+}
+
+pub fn filter_map_events<F>(mut func: F) -> io::Result<()>
+where
+    F: FnMut(InputEvent) -> (Option<InputEvent>, GrabStatus),
+{
+    let (epoll_fd, mut devices, output_devices) = setup_devices()?;
+    let mut inotify = setup_inotify(epoll_fd, &devices)?;
+
+    //grab devices
+    let _grab = devices
+        .iter_mut()
+        .map(|device| device.grab(evdev_rs::GrabMode::Grab))
+        .collect::<io::Result<()>>()?;
+    // create buffer for epoll to fill
+    let mut epoll_buffer = [epoll::Event::new(epoll::Events::empty(), 0); 4];
+    let mut inotify_buffer = vec![0_u8; 4096];
+    'event_loop: loop {
+        let num_events = epoll::wait(epoll_fd, -1, &mut epoll_buffer)?;
+
+        //map and simulate events, dealing with
+        'events: for event in &epoll_buffer[0..num_events] {
+            // new device file created
+            if event.data == INOTIFY_DATA {
+                for event in inotify.read_events(&mut inotify_buffer)? {
+                    assert!(
+                        event.mask.contains(inotify::EventMask::CREATE),
+                        "inotify is listening for events other than file creation"
+                    );
+                    add_device_to_epoll_from_inotify_event(epoll_fd, event, &mut devices)?;
+                }
+            } else {
+                // Input device recieved event
+                let device_idx = event.data as usize;
+                let device = devices.get(device_idx).unwrap();
+                while device.has_event_pending() {
+                    //TODO: deal with EV_SYN::SYN_DROPPED
+                    let (_, event) = match device.next_event(evdev_rs::ReadFlag::NORMAL) {
+                        Ok(event) => event,
+                        Err(_) => {
+                            let device_fd = device.fd().unwrap().into_raw_fd();
+                            let empty_event = epoll::Event::new(epoll::Events::empty(), 0);
+                            epoll::ctl(epoll_fd, EPOLL_CTL_DEL, device_fd, empty_event)?;
+                            continue 'events;
+                        }
+                    };
+                    let (event, grab_status) = func(event);
+                    match (event, output_devices.get(device_idx)) {
+                        (Some(event), Some(out_device)) => out_device.write_event(&event)?,
+                        _ => {}
+                    }
+                    if grab_status == GrabStatus::Stop {
+                        break 'event_loop;
+                    }
+                }
+            }
+        }
+    }
+
+    for device in devices.iter_mut() {
+        //ungrab devices, ignore errors
+        device.grab(evdev_rs::GrabMode::Ungrab).ok();
+    }
+
+    epoll::close(epoll_fd)?;
+    Ok(())
+}
+
+static DEV_PATH: &str = "/dev/input";
+const INOTIFY_DATA: u64 = u64::max_value();
+const EPOLLIN: epoll::Events = epoll::Events::EPOLLIN;
+
+/// Whether to continue grabbing events or to stop
+/// Used in `filter_map_events` (and others)
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub enum GrabStatus {
+    /// Stop grabbing
+    Continue,
+    /// ungrab events
+    Stop,
+}
+
+fn get_device_files<T>(path: T) -> io::Result<Vec<File>>
+where
+    T: AsRef<Path>,
+{
+    let mut res = Vec::new();
+    for entry in read_dir(path)? {
+        let entry = entry?;
+        // /dev/input files are character devices
+        if !entry.file_type()?.is_char_device() {
+            continue;
+        }
+
+        let path = entry.path();
+        let file_name_bytes = match path.file_name() {
+            Some(file_name) => file_name.as_bytes(),
+            None => continue, // file_name was "..", should be impossible
+        };
+        // skip filenames matching "mouse.* or mice".
+        // these files don't play nice with libevdev, not sure why
+        // see: https://askubuntu.com/questions/1043832/difference-between-dev-input-mouse0-and-dev-input-mice
+        if file_name_bytes == OsStr::new("mice").as_bytes()
+            || file_name_bytes
+                .get(0..=1)
+                .map(|s| s == OsStr::new("js").as_bytes())
+                .unwrap_or(false)
+            || file_name_bytes
+                .get(0..=4)
+                .map(|s| s == OsStr::new("mouse").as_bytes())
+                .unwrap_or(false)
+        {
+            continue;
+        }
+        res.push(File::open(path)?);
+    }
+    Ok(res)
+}
+
+fn epoll_watch_all<'a, T>(device_files: T) -> io::Result<RawFd>
+where
+    T: Iterator<Item = &'a File>,
+{
+    let epoll_fd = epoll::create(true)?;
+    // add file descriptors to epoll
+    for (file_idx, file) in device_files.enumerate() {
+        let epoll_event = epoll::Event::new(EPOLLIN, file_idx as u64);
+        epoll::ctl(epoll_fd, EPOLL_CTL_ADD, file.as_raw_fd(), epoll_event)?;
+    }
+    Ok(epoll_fd)
+}
+
+fn inotify_devices() -> io::Result<Inotify> {
+    let mut inotify = Inotify::init()?;
+    inotify.add_watch(DEV_PATH, WatchMask::CREATE)?;
+    Ok(inotify)
+}
+
+fn add_device_to_epoll_from_inotify_event(
+    epoll_fd: RawFd,
+    event: inotify::Event<&OsStr>,
+    devices: &mut Vec<Device>,
+) -> io::Result<()> {
+    let mut device_path = OsString::from(DEV_PATH);
+    device_path.push(OsString::from("/"));
+    device_path.push(event.name.unwrap());
+    // new plug events
+    let file = File::open(device_path)?;
+    let fd = file.as_raw_fd();
+    let device = Device::new_from_fd(file)?;
+    let event = epoll::Event::new(EPOLLIN, devices.len() as u64);
+    devices.push(device);
+    epoll::ctl(epoll_fd, EPOLL_CTL_ADD, fd, event)?;
+    Ok(())
+}
+
+/// Returns tuple of epoll_fd, all devices, and uinput devices, where
+/// uinputdevices is the same length as devices, and each uinput device is
+/// a libevdev copy of its corresponding device.The epoll_fd is level-triggered
+/// on any available data in the original devices.
+fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>)> {
+    let device_files = get_device_files(DEV_PATH)?;
+    let epoll_fd = epoll_watch_all(device_files.iter())?;
+    let devices = device_files
+        .into_iter()
+        .map(|file| Device::new_from_fd(file))
+        .collect::<io::Result<Vec<Device>>>()?;
+    let output_devices = devices
+        .iter()
+        .map(|device| UInputDevice::create_from_device(device))
+        .collect::<io::Result<Vec<UInputDevice>>>()?;
+    Ok((epoll_fd, devices, output_devices))
+}
+
+/// Creates an inotify instance looking at /dev/input and adds it to an epoll instance.
+/// Ensures devices isnt too long, which would make the epoll data ambigious.
+fn setup_inotify(epoll_fd: RawFd, devices: &Vec<Device>) -> io::Result<Inotify> {
+    //Ensure there is space for inotify at last epoll index.
+    if u64::try_from(devices.len()).unwrap_or(u64::max_value()) >= INOTIFY_DATA {
+        eprintln!("number of devices: {}", devices.len());
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "too many device files!",
+        ))?
+    }
+    // Set up inotify to listen for new devices being plugged in
+    let inotify = inotify_devices()?;
+    let epoll_event = epoll::Event::new(EPOLLIN, INOTIFY_DATA);
+    epoll::ctl(epoll_fd, EPOLL_CTL_ADD, inotify.as_raw_fd(), epoll_event)?;
+    Ok(inotify)
 }

@@ -51,6 +51,7 @@ pub enum GrabError {
     MouseHookError(u32),
     /// All
     SimulateError,
+    IoError(std::io::Error),
 }
 /// Errors that occur when trying to get display size.
 #[non_exhaustive]
@@ -63,6 +64,12 @@ pub enum DisplayError {
 impl From<SimulateError> for GrabError {
     fn from(_: SimulateError) -> GrabError {
         GrabError::SimulateError
+    }
+}
+
+impl From<std::io::Error> for GrabError {
+    fn from(err: std::io::Error) -> GrabError {
+        GrabError::IoError(err)
     }
 }
 

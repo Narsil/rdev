@@ -9,8 +9,4 @@ fn main() {
 
 fn callback(event: Event) {
     println!("My callback {:?}", event);
-    match event.name {
-        Some(_) => (), // println!("User wrote {:?}", string),
-        None => (),
-    }
 }

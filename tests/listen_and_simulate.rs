@@ -69,6 +69,6 @@ fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
         x: pixel as f64,
         y: pixel as f64,
     });
-    let events = events.chain(click_events);
-    sim_then_listen(&mut events.into_iter())
+    let mut events = events.chain(click_events);
+    sim_then_listen(&mut events)
 }
