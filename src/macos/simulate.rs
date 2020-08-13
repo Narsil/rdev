@@ -52,10 +52,7 @@ unsafe fn convert_native_with_source(
             .ok()
         }
         EventType::MouseMove { x, y } => {
-            let point = CGPoint {
-                x: (*x).ok()?,
-                y: (*y).ok()?,
-            };
+            let point = CGPoint { x: (*x), y: (*y) };
             CGEvent::new_mouse_event(source, CGEventType::MouseMoved, point, CGMouseButton::Left)
                 .ok()
         }
