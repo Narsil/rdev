@@ -26,6 +26,7 @@ fn send_event(event: Event) {
 fn grab_tab(event: Event) -> Option<Event> {
     match event.event_type {
         EventType::KeyPress(Key::Tab) => None,
+        EventType::KeyRelease(Key::Tab) => None,
         _ => Some(event),
     }
 }
