@@ -1,4 +1,4 @@
-use crate::linux::keyboard_state::KeyboardState;
+use crate::linux::keyboard::Keyboard;
 use crate::linux::keycodes::code_from_key;
 use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
@@ -7,7 +7,6 @@ use evdev_rs::{
     Device, InputEvent, TimeVal, UInputDevice,
 };
 use inotify::{Inotify, WatchMask};
-use std::convert::TryFrom;
 use std::ffi::{OsStr, OsString};
 use std::fs::{read_dir, File};
 use std::io;
@@ -304,7 +303,7 @@ pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
         let name = match event_type {
             EventType::KeyPress(key) => {
                 let code = code_from_key(key).unwrap();
-                KeyboardState::new().map(|mut kboard| unsafe { kboard.name_from_code(code, state) })
+                Keyboard::new().map(|mut kboard| unsafe { kboard.name_from_code(code, state) })
             }
             _ => None,
         }
@@ -373,9 +372,10 @@ where
                         }
                     };
                     let (event, grab_status) = func(event);
-                    match (event, output_devices.get(device_idx)) {
-                        (Some(event), Some(out_device)) => out_device.write_event(&event)?,
-                        _ => {}
+
+                    if let (Some(event), Some(out_device)) = (event, output_devices.get(device_idx))
+                    {
+                        out_device.write_event(&event)?;
                     }
                     if grab_status == GrabStatus::Stop {
                         break 'event_loop;
@@ -491,7 +491,7 @@ fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>)> {
     let epoll_fd = epoll_watch_all(device_files.iter())?;
     let devices = device_files
         .into_iter()
-        .map(|file| Device::new_from_fd(file))
+        .map(Device::new_from_fd)
         .collect::<io::Result<Vec<Device>>>()?;
     let output_devices = devices
         .iter()
@@ -502,14 +502,14 @@ fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>)> {
 
 /// Creates an inotify instance looking at /dev/input and adds it to an epoll instance.
 /// Ensures devices isnt too long, which would make the epoll data ambigious.
-fn setup_inotify(epoll_fd: RawFd, devices: &Vec<Device>) -> io::Result<Inotify> {
+fn setup_inotify(epoll_fd: RawFd, devices: &[Device]) -> io::Result<Inotify> {
     //Ensure there is space for inotify at last epoll index.
-    if u64::try_from(devices.len()).unwrap_or(u64::max_value()) >= INOTIFY_DATA {
+    if devices.len() as u64 >= INOTIFY_DATA {
         eprintln!("number of devices: {}", devices.len());
-        Err(io::Error::new(
+        return Err(io::Error::new(
             io::ErrorKind::Other,
             "too many device files!",
-        ))?
+        ));
     }
     // Set up inotify to listen for new devices being plugged in
     let inotify = inotify_devices()?;
