@@ -80,7 +80,7 @@ struct XRecordDatum {
 }
 
 unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
-    let data = raw_data.as_ref();
+    let data = raw_data.as_ref().unwrap();
     if data.category != xrecord::XRecordFromServer {
         return;
     }
