@@ -28,6 +28,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: CargoFmt
+      run: rustup component add rustfmt
     - name: Dependencies
       run: ${{matrix.dependencies}}
     - name: Setup headless environment
