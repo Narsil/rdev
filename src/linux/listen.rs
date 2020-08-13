@@ -87,6 +87,7 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
 
     debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
     // Cast binary data
+    #[allow(cast_ptr_alignment)]
     let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
 
     let code: c_uint = xdatum.code.into();
