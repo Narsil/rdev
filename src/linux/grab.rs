@@ -1,6 +1,5 @@
 use crate::linux::keyboard::Keyboard;
-use crate::linux::keycodes::code_from_key;
-use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key};
+use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
     enums::{EventCode, EV_KEY, EV_REL},
@@ -280,34 +279,14 @@ fn rdev_event_to_evdev_event(event: &EventType, time: &TimeVal) -> Option<InputE
 }
 
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
-    let mut state = 0;
+    let mut kb = Keyboard::new().ok_or_else(|| GrabError::KeyboardError)?;
     filter_map_events(|event| {
         let event_type = match evdev_event_to_rdev_event(&event) {
             Some(rdev_event) => rdev_event,
             // If we can't convert event, simulate it
             None => return (Some(event), GrabStatus::Continue),
         };
-        // Small monkey patching of the way state works.
-        match event_type {
-            EventType::KeyPress(Key::ShiftLeft) | EventType::KeyPress(Key::ShiftRight) => {
-                state |= 1;
-            }
-            EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
-                state &= !1;
-            }
-            EventType::KeyPress(Key::CapsLock) => {
-                state ^= 2;
-            }
-            _ => (),
-        };
-        let name = match event_type {
-            EventType::KeyPress(key) => {
-                let code = code_from_key(key).unwrap();
-                Keyboard::new().map(|mut kboard| unsafe { kboard.name_from_code(code, state) })
-            }
-            _ => None,
-        }
-        .flatten();
+        let name = kb.add(&event_type);
         let rdev_event = Event {
             time: SystemTime::now(),
             name,

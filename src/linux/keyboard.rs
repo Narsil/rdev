@@ -54,15 +54,21 @@ impl State {
 
 #[derive(Debug)]
 pub struct Keyboard {
+    pub xim: Box<xlib::XIM>,
     pub xic: Box<xlib::XIC>,
     pub display: Box<*mut xlib::Display>,
+    window: Box<xlib::Window>,
     keysym: Box<u64>,
     status: Box<i32>,
     state: State,
+    serial: u64,
 }
+unsafe impl Send for Keyboard {}
 impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
+            xlib::XDestroyIC(*self.xic);
+            xlib::XCloseIM(*self.xim);
             xlib::XCloseDisplay(*self.display);
         }
     }
@@ -71,17 +77,17 @@ impl Drop for Keyboard {
 impl Keyboard {
     pub fn new() -> Option<Keyboard> {
         unsafe {
+            // https://stackoverflow.com/questions/18246848/get-utf-8-input-with-x11-display#
+            let string = CString::new("@im=none").expect("Can't creat CString");
+            let ret = xlib::XSetLocaleModifiers(string.as_ptr());
+            NonNull::new(ret)?;
+
             let dpy = xlib::XOpenDisplay(null());
             if dpy.is_null() {
                 return None;
             }
             let xim = xlib::XOpenIM(dpy, null_mut(), null_mut(), null_mut());
-            if xim.is_null() {
-                return None;
-            }
-            let style = xlib::XIMPreeditNothing | xlib::XIMStatusNothing;
-            let input_style = CString::new(xlib::XNInputStyle).expect("CString::new failed");
-            let window_client = CString::new(xlib::XNClientWindow).expect("CString::new failed");
+            NonNull::new(xim)?;
 
             let mut win_attr = xlib::XSetWindowAttributes {
                 background_pixel: 0,
@@ -112,9 +118,13 @@ impl Keyboard {
                 xlib::CopyFromParent,
                 xlib::InputOnly as c_uint,
                 null_mut(),
-                0,
+                xlib::CWOverrideRedirect,
                 &mut win_attr,
             );
+
+            let input_style = CString::new(xlib::XNInputStyle).expect("CString::new failed");
+            let window_client = CString::new(xlib::XNClientWindow).expect("CString::new failed");
+            let style = xlib::XIMPreeditNothing | xlib::XIMStatusNothing;
 
             let xic = xlib::XCreateIC(
                 xim,
@@ -125,12 +135,16 @@ impl Keyboard {
                 null::<c_void>(),
             );
             NonNull::new(xic)?;
+            xlib::XSetICFocus(xic);
             Some(Keyboard {
+                xim: Box::new(xim),
                 xic: Box::new(xic),
                 display: Box::new(dpy),
+                window: Box::new(window),
                 keysym: Box::new(0),
                 status: Box::new(0),
                 state: State::new(),
+                serial: 0,
             })
         }
     }
@@ -146,10 +160,10 @@ impl Keyboard {
         }
         const BUF_LEN: usize = 4;
         let mut buf = [0 as c_uchar; BUF_LEN];
-        let mut xkey = xlib::XKeyEvent {
+        let key = xlib::XKeyEvent {
             display: *self.display,
             root: 0,
-            window: 0,
+            window: *self.window,
             subwindow: 0,
             x: 0,
             y: 0,
@@ -159,18 +173,32 @@ impl Keyboard {
             keycode,
             same_screen: 0,
             send_event: 0,
-            serial: 0,
+            serial: self.serial,
             type_: xlib::KeyPress,
             time: xlib::CurrentTime,
         };
-        let _ret = xlib::Xutf8LookupString(
+        self.serial += 1;
+
+        let mut event = xlib::XEvent { key };
+
+        // -----------------------------------------------------------------
+        // XXX: This is **OMEGA IMPORTANT** This is what enables us to receive
+        // the correct keyvalue from the utf8LookupString !!
+        // https://stackoverflow.com/questions/18246848/get-utf-8-input-with-x11-display#
+        // -----------------------------------------------------------------
+        xlib::XFilterEvent(&mut event, 0);
+
+        let ret = xlib::Xutf8LookupString(
             *self.xic,
-            &mut xkey,
+            &mut event.key,
             buf.as_mut_ptr() as *mut c_char,
             BUF_LEN as c_int,
             &mut *self.keysym,
             &mut *self.status,
         );
+        if ret == xlib::NoSymbol {
+            return None;
+        }
 
         let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
         String::from_utf8(buf[..len].to_vec()).ok()
