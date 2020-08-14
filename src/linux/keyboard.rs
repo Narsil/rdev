@@ -78,11 +78,8 @@ impl Keyboard {
     pub fn new() -> Option<Keyboard> {
         unsafe {
             // https://stackoverflow.com/questions/18246848/get-utf-8-input-with-x11-display#
-            let ret = xlib::XSetLocaleModifiers(
-                CString::new("@im=none")
-                    .expect("Can't creat CString")
-                    .as_ptr(),
-            );
+            let string = CString::new("@im=none").expect("Can't creat CString");
+            let ret = xlib::XSetLocaleModifiers(string.as_ptr());
             NonNull::new(ret)?;
 
             let dpy = xlib::XOpenDisplay(null());
