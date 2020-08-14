@@ -1,14 +1,20 @@
 use crate::linux::keyboard::Keyboard;
 use crate::linux::keycodes::key_from_code;
-use crate::rdev::{Button, Event, EventType};
+use crate::rdev::{Button, Event, EventType, KeyboardState};
+use lazy_static::lazy_static;
 use std::convert::TryInto;
 use std::os::raw::{c_int, c_uchar, c_uint};
 use std::ptr::null;
+use std::sync::Mutex;
 use std::time::SystemTime;
 use x11::xlib;
 
 pub const TRUE: c_int = 1;
 pub const FALSE: c_int = 0;
+
+lazy_static! {
+    pub static ref KEYBOARD_STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
+}
 
 pub fn convert_event(code: c_uchar, type_: c_int, x: f64, y: f64) -> Option<EventType> {
     match type_ {
@@ -50,22 +56,14 @@ pub fn convert_event(code: c_uchar, type_: c_int, x: f64, y: f64) -> Option<Even
     }
 }
 
-pub fn convert(code: c_uint, state: c_uint, type_: c_int, x: f64, y: f64) -> Option<Event> {
-    unsafe {
-        let event_type = convert_event(code as c_uchar, type_, x, y)?;
-        let name = match event_type {
-            EventType::KeyPress(_) => {
-                Keyboard::new().map(|mut kboard| kboard.name_from_code(code, state))
-            }
-            _ => None,
-        }
-        .flatten();
-        Some(Event {
-            event_type,
-            time: SystemTime::now(),
-            name,
-        })
-    }
+pub fn convert(code: c_uint, type_: c_int, x: f64, y: f64) -> Option<Event> {
+    let event_type = convert_event(code as c_uchar, type_, x, y)?;
+    let name = (*KEYBOARD_STATE).lock().unwrap().add(&event_type);
+    Some(Event {
+        event_type,
+        time: SystemTime::now(),
+        name,
+    })
 }
 
 pub struct Display {

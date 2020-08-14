@@ -60,6 +60,69 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
     }
     Ok(())
 }
+// pub fn listen(callback: Callback) -> Result<(), ListenError> {
+//     unsafe {
+//         GLOBAL_CALLBACK = callback;
+//         // Open displays
+//         let dpy_control = xlib::XOpenDisplay(null());
+//         if dpy_control.is_null() {
+//             return Err(ListenError::MissingDisplayError);
+//         }
+//         let window = xlib::XDefaultRootWindow(dpy_control);
+//
+//         let mut event = xlib::XEvent {
+//             key: xlib::XKeyEvent {
+//                 display: dpy_control,
+//                 root: 0,
+//                 window,
+//                 subwindow: 0,
+//                 x: 0,
+//                 y: 0,
+//                 x_root: 0,
+//                 y_root: 0,
+//                 state: 0,
+//                 keycode: 0,
+//                 same_screen: 0,
+//                 send_event: 0,
+//                 serial: 0,
+//                 type_: xlib::KeyPress,
+//                 time: xlib::CurrentTime,
+//             },
+//         };
+//         let mut mask = [0u8; 4];
+//         let mut event_mask = xinput2::XIEventMask {
+//             deviceid: xinput2::XIAllDevices,
+//             mask_len: xinput2::XI_ButtonRelease,
+//             mask: mask.as_mut_ptr(),
+//         };
+//         xinput2::XISetMask(&mut mask, xinput2::XI_KeyPress);
+//         xinput2::XISetMask(&mut mask, xinput2::XI_KeyPress);
+//         xinput2::XISetMask(&mut mask, xinput2::XI_ButtonPress);
+//         xinput2::XISetMask(&mut mask, xinput2::XI_ButtonRelease);
+//         xinput2::XISelectEvents(dpy_control, window, &mut event_mask, 3);
+//         println!("HEre");
+//         loop {
+//             xlib::XNextEvent(dpy_control, &mut event);
+//             println!("HEre {:?}", event);
+//             if xlib::XFilterEvent(&mut event, window) != 0 {
+//                 continue;
+//             }
+//             match event.type_ {
+//                 xlib::MappingNotify => {
+//                     xlib::XRefreshKeyboardMapping(&mut event.mapping);
+//                 }
+//
+//                 xlib::KeyPress => {
+//                     println!("pressed KEY: {:?}", event);
+//                 }
+//                 xlib::KeyRelease => {
+//                     println!("released KEY: {:?}", event);
+//                 }
+//                 _ => (),
+//             }
+//         }
+//     }
+// }
 
 // No idea how to do that properly relevant doc lives here:
 // https://www.x.org/releases/X11R7.7/doc/libXtst/recordlib.html#Datum_Flags
@@ -95,9 +158,8 @@ unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRe
 
     let x = xdatum.root_x as f64;
     let y = xdatum.root_y as f64;
-    let state = xdatum.state.into();
 
-    if let Some(event) = convert(code, state, type_, x, y) {
+    if let Some(event) = convert(code, type_, x, y) {
         GLOBAL_CALLBACK(event);
     }
     xrecord::XRecordFreeData(raw_data);
