@@ -318,6 +318,7 @@ where
         .iter_mut()
         .map(|device| device.grab(evdev_rs::GrabMode::Grab))
         .collect::<io::Result<()>>()?;
+
     // create buffer for epoll to fill
     let mut epoll_buffer = [epoll::Event::new(epoll::Events::empty(), 0); 4];
     let mut inotify_buffer = vec![0_u8; 4096];
