@@ -22,6 +22,8 @@ pub enum ListenError {
     /// Linux
     MissingDisplayError,
     /// Linux
+    KeyboardError,
+    /// Linux
     RecordContextEnablingError,
     /// Linux
     RecordContextError,

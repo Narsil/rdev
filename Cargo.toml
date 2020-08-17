@@ -14,7 +14,6 @@ categories = ["development-tools::testing", "api-bindings", "hardware-support"]
 license = "MIT"
 
 [dependencies]
-lazy_static = "1.4.0"
 serde = {version = "1.0", features = ["derive"], optional=true}
 
 [features]
@@ -22,6 +21,7 @@ serialize = ["serde"]
 unstable_grab = ["evdev-rs", "epoll", "inotify"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
+lazy_static = "1.4"
 cocoa = "0.22"
 core-graphics = {version = "0.19.0", features = ["highsierra"]}
 core-foundation = {version = "0.7"}
@@ -36,6 +36,7 @@ epoll = {version = "4.1.0", optional=true}
 inotify = {version = "0.8.2", default-features=false, optional=true}
 
 [target.'cfg(target_os = "windows")'.dependencies]
+lazy_static = "1.4"
 winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthreadsapi"] }
 
 [dev-dependencies]

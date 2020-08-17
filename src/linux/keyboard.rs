@@ -63,7 +63,6 @@ pub struct Keyboard {
     state: State,
     serial: u64,
 }
-unsafe impl Send for Keyboard {}
 impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
