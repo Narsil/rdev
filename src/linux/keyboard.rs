@@ -66,8 +66,6 @@ pub struct Keyboard {
 impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
-            // xlib::XDestroyIC(*self.xic);
-            // xlib::XCloseIM(*self.xim);
             xlib::XCloseDisplay(*self.display);
         }
     }
@@ -234,5 +232,38 @@ impl KeyboardState for Keyboard {
     }
     fn reset(&mut self) {
         self.state = State::new();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    /// If the following tests run, they *will* cause a crash because xlib
+    /// is *not* thread safe. Ignoring the tests for now.
+    /// XCB *could* be an option but not even sure we can get dead keys again.
+    /// XCB doc is sparse on the web let's say.
+    fn test_thread_safety() {
+        let mut keyboard = Keyboard::new().unwrap();
+        let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
+        assert_eq!(
+            char_s,
+            "s".to_string(),
+            "This test should pass only on Qwerty layout !"
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn test_thread_safety_2() {
+        let mut keyboard = Keyboard::new().unwrap();
+        let char_s = keyboard.add(&EventType::KeyPress(Key::KeyS)).unwrap();
+        assert_eq!(
+            char_s,
+            "s".to_string(),
+            "This test should pass only on Qwerty layout !"
+        );
     }
 }
