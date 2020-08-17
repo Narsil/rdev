@@ -98,6 +98,31 @@ impl Display {
             ))
         }
     }
+
+    pub fn get_mouse_pos(&self) -> Option<(u64, u64)> {
+        unsafe {
+            let root_window = xlib::XRootWindow(self.display, 0);
+            let mut root_x = 0;
+            let mut root_y = 0;
+            let mut x = 0;
+            let mut y = 0;
+            let mut root = 0;
+            let mut child = 0;
+            let mut mask = 0;
+            let _screen_ptr = xlib::XQueryPointer(
+                self.display,
+                root_window,
+                &mut root,
+                &mut child,
+                &mut root_x,
+                &mut root_y,
+                &mut x,
+                &mut y,
+                &mut mask,
+            );
+            Some((root_x.try_into().ok()?, root_y.try_into().ok()?))
+        }
+    }
 }
 impl Drop for Display {
     fn drop(&mut self) {

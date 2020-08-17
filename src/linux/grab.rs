@@ -1,9 +1,10 @@
+use crate::linux::common::Display;
 use crate::linux::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
     enums::{EventCode, EV_KEY, EV_REL},
-    Device, InputEvent, TimeVal, UInputDevice,
+    Device, InputEvent, UInputDevice,
 };
 use inotify::{Inotify, WatchMask};
 use std::ffi::{OsStr, OsString};
@@ -16,6 +17,9 @@ use std::os::unix::{
 };
 use std::path::Path;
 use std::time::SystemTime;
+
+// TODO The x, y coordinates are currently wrong !! Is there mouse acceleration
+// to take into account ??
 
 macro_rules! convert_keys {
     ($($ev_key:ident, $rdev_key:ident),*) => {
@@ -30,15 +34,15 @@ macro_rules! convert_keys {
             }
         }
 
-        //TODO: make const when rust lang issue #49146 is fixed
-        fn rdev_key_to_evdev_key(key: &Key) -> Option<EV_KEY> {
-            match key {
-                $(
-                    Key::$rdev_key => Some(EV_KEY::$ev_key),
-                )*
-                _ => None
-            }
-        }
+        // //TODO: make const when rust lang issue #49146 is fixed
+        // fn rdev_key_to_evdev_key(key: &Key) -> Option<EV_KEY> {
+        //     match key {
+        //         $(
+        //             Key::$rdev_key => Some(EV_KEY::$ev_key),
+        //         )*
+        //         _ => None
+        //     }
+        // }
     };
 }
 
@@ -54,16 +58,15 @@ macro_rules! convert_buttons {
             }
         }
 
-        //TODO: make const when rust lang issue #49146 is fixed
-        #[allow(unreachable_patterns)]
-        fn rdev_button_to_evdev_key(event: &Button) -> Option<EV_KEY> {
-            match event {
-                $(
-                    Button::$rdev_key => Some(EV_KEY::$ev_key),
-                )*
-                _ => None
-            }
-        }
+        // //TODO: make const when rust lang issue #49146 is fixed
+        // fn rdev_button_to_evdev_key(event: &Button) -> Option<EV_KEY> {
+        //     match event {
+        //         $(
+        //             Button::$rdev_key => Some(EV_KEY::$ev_key),
+        //         )*
+        //         _ => None
+        //     }
+        // }
     };
 }
 
@@ -185,7 +188,13 @@ convert_keys!(
     KEY_BACKSLASH, IntlBackslash
 );
 
-fn evdev_event_to_rdev_event(event: &InputEvent) -> Option<EventType> {
+fn evdev_event_to_rdev_event(
+    event: &InputEvent,
+    x: &mut f64,
+    y: &mut f64,
+    w: f64,
+    h: f64,
+) -> Option<EventType> {
     match &event.event_code {
         EventCode::EV_KEY(key) => {
             if let Some(button) = evdev_key_to_rdev_button(&key) {
@@ -206,14 +215,28 @@ fn evdev_event_to_rdev_event(event: &InputEvent) -> Option<EventType> {
             }
         }
         EventCode::EV_REL(mouse) => match mouse {
-            EV_REL::REL_X => Some(EventType::MouseMove {
-                x: event.value as f64,
-                y: 0.0,
-            }),
-            EV_REL::REL_Y => Some(EventType::MouseMove {
-                x: 0.0,
-                y: event.value as f64,
-            }),
+            EV_REL::REL_X => {
+                let dx = event.value as f64;
+                *x += dx;
+                if *x < 0.0 {
+                    *x = 0.0;
+                }
+                if *x > w {
+                    *x = w;
+                }
+                Some(EventType::MouseMove { x: *x, y: *y })
+            }
+            EV_REL::REL_Y => {
+                let dy = event.value as f64;
+                *y += dy;
+                if *y < 0.0 {
+                    *y = 0.0;
+                }
+                if *y > h {
+                    *y = h;
+                }
+                Some(EventType::MouseMove { x: *x, y: *y })
+            }
             EV_REL::REL_HWHEEL => Some(EventType::Wheel {
                 delta_x: event.value.into(),
                 delta_y: 0,
@@ -231,57 +254,68 @@ fn evdev_event_to_rdev_event(event: &InputEvent) -> Option<EventType> {
     }
 }
 
-fn rdev_event_to_evdev_event(event: &EventType, time: &TimeVal) -> Option<InputEvent> {
-    match event {
-        EventType::KeyPress(key) => {
-            let key = rdev_key_to_evdev_key(&key)?;
-            Some(InputEvent::new(&time, &EventCode::EV_KEY(key), 1))
-        }
-        EventType::KeyRelease(key) => {
-            let key = rdev_key_to_evdev_key(&key)?;
-            Some(InputEvent::new(&time, &EventCode::EV_KEY(key), 0))
-        }
-        EventType::ButtonPress(button) => {
-            let button = rdev_button_to_evdev_key(&button)?;
-            Some(InputEvent::new(&time, &EventCode::EV_KEY(button), 1))
-        }
-        EventType::ButtonRelease(button) => {
-            let button = rdev_button_to_evdev_key(&button)?;
-            Some(InputEvent::new(&time, &EventCode::EV_KEY(button), 0))
-        }
-        EventType::MouseMove { x, y } => {
-            let (x, y) = (*x as i32, *y as i32);
-            //TODO allow both x and y movements simultaneously
-            if x != 0 {
-                Some(InputEvent::new(&time, &EventCode::EV_REL(EV_REL::REL_X), x))
-            } else {
-                Some(InputEvent::new(&time, &EventCode::EV_REL(EV_REL::REL_Y), y))
-            }
-        }
-        EventType::Wheel { delta_x, delta_y } => {
-            let (x, y) = (*delta_x as i32, *delta_y as i32);
-            //TODO allow both x and y movements simultaneously
-            if x != 0 {
-                Some(InputEvent::new(
-                    &time,
-                    &EventCode::EV_REL(EV_REL::REL_HWHEEL),
-                    x,
-                ))
-            } else {
-                Some(InputEvent::new(
-                    &time,
-                    &EventCode::EV_REL(EV_REL::REL_WHEEL),
-                    y,
-                ))
-            }
-        }
-    }
-}
+// fn rdev_event_to_evdev_event(event: &EventType, time: &TimeVal) -> Option<InputEvent> {
+//     match event {
+//         EventType::KeyPress(key) => {
+//             let key = rdev_key_to_evdev_key(&key)?;
+//             Some(InputEvent::new(&time, &EventCode::EV_KEY(key), 1))
+//         }
+//         EventType::KeyRelease(key) => {
+//             let key = rdev_key_to_evdev_key(&key)?;
+//             Some(InputEvent::new(&time, &EventCode::EV_KEY(key), 0))
+//         }
+//         EventType::ButtonPress(button) => {
+//             let button = rdev_button_to_evdev_key(&button)?;
+//             Some(InputEvent::new(&time, &EventCode::EV_KEY(button), 1))
+//         }
+//         EventType::ButtonRelease(button) => {
+//             let button = rdev_button_to_evdev_key(&button)?;
+//             Some(InputEvent::new(&time, &EventCode::EV_KEY(button), 0))
+//         }
+//         EventType::MouseMove { x, y } => {
+//             let (x, y) = (*x as i32, *y as i32);
+//             //TODO allow both x and y movements simultaneously
+//             if x != 0 {
+//                 Some(InputEvent::new(&time, &EventCode::EV_REL(EV_REL::REL_X), x))
+//             } else {
+//                 Some(InputEvent::new(&time, &EventCode::EV_REL(EV_REL::REL_Y), y))
+//             }
+//         }
+//         EventType::Wheel { delta_x, delta_y } => {
+//             let (x, y) = (*delta_x as i32, *delta_y as i32);
+//             //TODO allow both x and y movements simultaneously
+//             if x != 0 {
+//                 Some(InputEvent::new(
+//                     &time,
+//                     &EventCode::EV_REL(EV_REL::REL_HWHEEL),
+//                     x,
+//                 ))
+//             } else {
+//                 Some(InputEvent::new(
+//                     &time,
+//                     &EventCode::EV_REL(EV_REL::REL_WHEEL),
+//                     y,
+//                 ))
+//             }
+//         }
+//     }
+// }
 
 pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
     let mut kb = Keyboard::new().ok_or_else(|| GrabError::KeyboardError)?;
+    let display = Display::new().ok_or_else(|| GrabError::MissingDisplayError)?;
+    let (width, height) = display
+        .get_size()
+        .ok_or_else(|| GrabError::MissingDisplayError)?;
+    let (current_x, current_y) = display
+        .get_mouse_pos()
+        .ok_or_else(|| GrabError::MissingDisplayError)?;
+    let mut x = current_x as f64;
+    let mut y = current_y as f64;
+    let w = width as f64;
+    let h = height as f64;
     filter_map_events(|event| {
-        let event_type = match evdev_event_to_rdev_event(&event) {
+        let event_type = match evdev_event_to_rdev_event(&event, &mut x, &mut y, w, h) {
             Some(rdev_event) => rdev_event,
             // If we can't convert event, simulate it
             None => return (Some(event), GrabStatus::Continue),
@@ -292,15 +326,11 @@ pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
             name,
             event_type,
         };
-        let new_event = match callback(rdev_event) {
-            Some(rdev_event) => rdev_event,
+        if callback(rdev_event).is_some() {
+            (Some(event), GrabStatus::Continue)
+        } else {
             // callback returns None, swallow the event
-            None => return (None, GrabStatus::Continue),
-        };
-        match rdev_event_to_evdev_event(&new_event.event_type, &event.time) {
-            Some(evdev_event) => (Some(evdev_event), GrabStatus::Continue),
-            // If we can't convert the event back, send the original event
-            None => (Some(event), GrabStatus::Continue),
+            (None, GrabStatus::Continue)
         }
     })?;
     Ok(())

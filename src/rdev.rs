@@ -46,6 +46,8 @@ pub enum GrabError {
     /// MacOS
     LoopSourceError,
     /// Linux
+    MissingDisplayError,
+    /// Linux
     KeyboardError,
     /// Windows
     KeyHookError(u32),
