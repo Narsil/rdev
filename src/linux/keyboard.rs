@@ -66,8 +66,8 @@ pub struct Keyboard {
 impl Drop for Keyboard {
     fn drop(&mut self) {
         unsafe {
-            xlib::XDestroyIC(*self.xic);
-            xlib::XCloseIM(*self.xim);
+            // xlib::XDestroyIC(*self.xic);
+            // xlib::XCloseIM(*self.xim);
             xlib::XCloseDisplay(*self.display);
         }
     }
