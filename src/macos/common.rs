@@ -17,6 +17,7 @@ pub type CFRunLoopSourceRef = id;
 pub type CFRunLoopRef = id;
 pub type CFRunLoopMode = id;
 pub type CGEventTapProxy = id;
+#[repr(transparent)]
 pub type CGEventRef = CGEvent;
 
 // https://developer.apple.com/documentation/coregraphics/cgeventtapplacement?language=objc
