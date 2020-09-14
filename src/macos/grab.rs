@@ -1,3 +1,4 @@
+#![allow(improper_ctypes_definitions)]
 use crate::macos::common::*;
 use crate::rdev::{Event, GrabCallback, GrabError};
 use cocoa::base::nil;
