@@ -5,7 +5,7 @@ use crate::linux::keyboard::Keyboard;
 use crate::rdev::{Callback, Event, ListenError};
 use std::convert::TryInto;
 use std::ffi::CStr;
-use std::os::raw::{c_int, c_uchar, c_uint};
+use std::os::raw::{c_int, c_char, c_uchar, c_uint};
 use std::ptr::null;
 use x11::xlib;
 use x11::xrecord;
@@ -85,7 +85,7 @@ struct XRecordDatum {
     state: u16,
 }
 
-unsafe extern "C" fn record_callback(_null: *mut i8, raw_data: *mut xrecord::XRecordInterceptData) {
+unsafe extern "C" fn record_callback(_null: *mut c_char, raw_data: *mut xrecord::XRecordInterceptData) {
     let data = raw_data.as_ref().unwrap();
     if data.category != xrecord::XRecordFromServer {
         return;
