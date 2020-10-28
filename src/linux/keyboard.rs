@@ -2,7 +2,7 @@ extern crate x11;
 use crate::linux::keycodes::code_from_key;
 use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_void};
+use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_ulong, c_void};
 use std::ptr::{null, null_mut, NonNull};
 use x11::xlib;
 
@@ -58,10 +58,10 @@ pub struct Keyboard {
     pub xic: Box<xlib::XIC>,
     pub display: Box<*mut xlib::Display>,
     window: Box<xlib::Window>,
-    keysym: Box<u64>,
+    keysym: Box<c_ulong>,
     status: Box<i32>,
     state: State,
-    serial: u64,
+    serial: c_ulong,
 }
 impl Drop for Keyboard {
     fn drop(&mut self) {
