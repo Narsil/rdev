@@ -1,6 +1,6 @@
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
+use std::{convert::TryFrom, time::SystemTime};
 use std::{fmt, fmt::Display};
 
 /// Callback type to send to listen function.
@@ -88,6 +88,21 @@ impl Display for SimulateError {
 }
 
 impl std::error::Error for SimulateError {}
+
+/// Errors if a `Key` is attempted to be converted to a `char`,
+/// but no appropriate `char` could be found
+#[derive(Debug)]
+pub struct ConvertToCharError {
+    pub code: Option<u32>,
+}
+
+impl Display for ConvertToCharError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Could not convert Key to char")
+    }
+}
+
+impl std::error::Error for ConvertToCharError {}
 
 /// Key names based on physical location on the device
 /// Merge Option(MacOS) and Alt(Windows, Linux) into Alt
@@ -209,6 +224,79 @@ pub enum Key {
     KpDelete,
     Function,
     Unknown(u32),
+}
+
+impl TryFrom<Key> for char {
+    type Error = ConvertToCharError;
+
+    fn try_from(value: Key) -> Result<Self, Self::Error> {
+        match value {
+            Key::Space => Ok(' '),
+            Key::Num1 => Ok('1'),
+            Key::Num2 => Ok('2'),
+            Key::Num3 => Ok('3'),
+            Key::Num4 => Ok('4'),
+            Key::Num5 => Ok('5'),
+            Key::Num6 => Ok('6'),
+            Key::Num7 => Ok('7'),
+            Key::Num8 => Ok('8'),
+            Key::Num9 => Ok('9'),
+            Key::Num0 => Ok('0'),
+            Key::Minus => Ok('-'),
+            Key::Equal => Ok('='),
+            Key::KeyQ => Ok('q'),
+            Key::KeyW => Ok('w'),
+            Key::KeyE => Ok('e'),
+            Key::KeyR => Ok('r'),
+            Key::KeyT => Ok('t'),
+            Key::KeyY => Ok('y'),
+            Key::KeyU => Ok('u'),
+            Key::KeyI => Ok('i'),
+            Key::KeyO => Ok('o'),
+            Key::KeyP => Ok('p'),
+            Key::LeftBracket => Ok('('),
+            Key::RightBracket => Ok(')'),
+            Key::KeyA => Ok('a'),
+            Key::KeyS => Ok('s'),
+            Key::KeyD => Ok('d'),
+            Key::KeyF => Ok('f'),
+            Key::KeyG => Ok('g'),
+            Key::KeyH => Ok('h'),
+            Key::KeyJ => Ok('j'),
+            Key::KeyK => Ok('k'),
+            Key::KeyL => Ok('l'),
+            Key::SemiColon => Ok(';'),
+            Key::Quote => Ok('\''),
+            Key::BackSlash => Ok('\\'),
+            Key::IntlBackslash => Ok('\\'),
+            Key::KeyZ => Ok('z'),
+            Key::KeyX => Ok('x'),
+            Key::KeyC => Ok('c'),
+            Key::KeyV => Ok('v'),
+            Key::KeyB => Ok('b'),
+            Key::KeyN => Ok('n'),
+            Key::KeyM => Ok('m'),
+            Key::Comma => Ok(','),
+            Key::Dot => Ok('.'),
+            Key::Slash => Ok('/'),
+            Key::KpMinus => Ok('-'),
+            Key::KpPlus => Ok('+'),
+            Key::KpMultiply => Ok('*'),
+            Key::KpDivide => Ok('/'),
+            Key::Kp0 => Ok('0'),
+            Key::Kp1 => Ok('1'),
+            Key::Kp2 => Ok('2'),
+            Key::Kp3 => Ok('3'),
+            Key::Kp4 => Ok('4'),
+            Key::Kp5 => Ok('5'),
+            Key::Kp6 => Ok('6'),
+            Key::Kp7 => Ok('7'),
+            Key::Kp8 => Ok('8'),
+            Key::Kp9 => Ok('9'),
+            Key::Unknown(code) => Err(ConvertToCharError { code: Some(code) }),
+            _ => Err(ConvertToCharError { code: None }),
+        }
+    }
 }
 
 /// Standard mouse buttons
