@@ -1,6 +1,9 @@
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, time::SystemTime};
+use std::{
+    convert::{TryFrom, TryInto},
+    time::SystemTime,
+};
 use std::{fmt, fmt::Display};
 
 /// Callback type to send to listen function.
@@ -103,6 +106,19 @@ impl Display for ConvertToCharError {
 }
 
 impl std::error::Error for ConvertToCharError {}
+
+/// Errors if a `char` is attempted to be converted to a `Key`,
+/// but no appropriate `Key` could be found
+#[derive(Debug)]
+pub struct ConvertToKeyError;
+
+impl Display for ConvertToKeyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Could not convert char to Key")
+    }
+}
+
+impl std::error::Error for ConvertToKeyError {}
 
 /// Key names based on physical location on the device
 /// Merge Option(MacOS) and Alt(Windows, Linux) into Alt
@@ -296,6 +312,66 @@ impl TryFrom<Key> for char {
             Key::Kp9 => Ok('9'),
             Key::Unknown(code) => Err(ConvertToCharError { code: Some(code) }),
             _ => Err(ConvertToCharError { code: None }),
+        }
+    }
+}
+
+impl TryInto<Key> for char {
+    type Error = ConvertToKeyError;
+
+    fn try_into(self) -> Result<Key, Self::Error> {
+        match self {
+            '\n' => Ok(Key::Return),
+            ' ' => Ok(Key::Space),
+            '1' => Ok(Key::Num1),
+            '2' => Ok(Key::Num2),
+            '3' => Ok(Key::Num3),
+            '4' => Ok(Key::Num4),
+            '5' => Ok(Key::Num5),
+            '6' => Ok(Key::Num6),
+            '7' => Ok(Key::Num7),
+            '8' => Ok(Key::Num8),
+            '9' => Ok(Key::Num9),
+            '0' => Ok(Key::Num0),
+            '-' => Ok(Key::Minus),
+            '=' => Ok(Key::Equal),
+            'q' => Ok(Key::KeyQ),
+            'w' => Ok(Key::KeyW),
+            'e' => Ok(Key::KeyE),
+            'r' => Ok(Key::KeyR),
+            't' => Ok(Key::KeyT),
+            'y' => Ok(Key::KeyY),
+            'u' => Ok(Key::KeyU),
+            'i' => Ok(Key::KeyI),
+            'o' => Ok(Key::KeyO),
+            'p' => Ok(Key::KeyP),
+            '(' => Ok(Key::LeftBracket),
+            ')' => Ok(Key::RightBracket),
+            'a' => Ok(Key::KeyA),
+            's' => Ok(Key::KeyS),
+            'd' => Ok(Key::KeyD),
+            'f' => Ok(Key::KeyF),
+            'g' => Ok(Key::KeyG),
+            'h' => Ok(Key::KeyH),
+            'j' => Ok(Key::KeyJ),
+            'k' => Ok(Key::KeyK),
+            'l' => Ok(Key::KeyL),
+            ';' => Ok(Key::SemiColon),
+            '\'' => Ok(Key::Quote),
+            '\\' => Ok(Key::BackSlash),
+            'z' => Ok(Key::KeyZ),
+            'x' => Ok(Key::KeyX),
+            'c' => Ok(Key::KeyC),
+            'v' => Ok(Key::KeyV),
+            'b' => Ok(Key::KeyB),
+            'n' => Ok(Key::KeyN),
+            'm' => Ok(Key::KeyM),
+            ',' => Ok(Key::Comma),
+            '.' => Ok(Key::Dot),
+            '/' => Ok(Key::Slash),
+            '+' => Ok(Key::KpPlus),
+            '*' => Ok(Key::KpMultiply),
+            _ => Err(ConvertToKeyError),
         }
     }
 }
