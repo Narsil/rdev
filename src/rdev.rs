@@ -231,6 +231,7 @@ impl TryFrom<Key> for char {
 
     fn try_from(value: Key) -> Result<Self, Self::Error> {
         match value {
+            Key::Return => Ok('\n'),
             Key::Space => Ok(' '),
             Key::Num1 => Ok('1'),
             Key::Num2 => Ok('2'),
