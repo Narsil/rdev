@@ -45,7 +45,7 @@ impl Keyboard {
     }
 
     pub(crate) unsafe fn set_global_state(&mut self) -> Option<()> {
-        let mut state = [0 as BYTE; 256];
+        let mut state = [0_u8; 256];
         let state_ptr = state.as_mut_ptr();
 
         let _shift = GetKeyState(VK_SHIFT);
@@ -75,7 +75,7 @@ impl Keyboard {
         let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
         let state_ptr = self.last_state.as_mut_ptr();
         const BUF_LEN: i32 = 32;
-        let mut buff = [0 as WCHAR; BUF_LEN as usize];
+        let mut buff = [0_u16; BUF_LEN as usize];
         let buff_ptr = buff.as_mut_ptr();
         let layout = GetKeyboardLayout(current_window_thread_id);
         let len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, 8 - 1, 0, layout);
@@ -116,9 +116,9 @@ impl Keyboard {
 
     unsafe fn clear_keyboard_buffer(&self, code: UINT, scan_code: UINT, layout: HKL) {
         const BUF_LEN: i32 = 32;
-        let mut buff = [0 as WCHAR; BUF_LEN as usize];
+        let mut buff = [0_u16; BUF_LEN as usize];
         let buff_ptr = buff.as_mut_ptr();
-        let mut state = [0 as BYTE; 256];
+        let mut state = [0_u8; 256];
         let state_ptr = state.as_mut_ptr();
 
         let mut len = -1;
