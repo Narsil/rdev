@@ -93,7 +93,7 @@ impl Keyboard {
         let layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
         let layout_ptr = CFDataGetBytePtr(layout);
 
-        let mut buff = [0 as UniChar; BUF_LEN];
+        let mut buff = [0_u16; BUF_LEN];
         let kb_type = LMGetKbdType();
         let mut length = 0;
         let _retval = UCKeyTranslate(

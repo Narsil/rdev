@@ -99,6 +99,7 @@ impl Display {
         }
     }
 
+    #[cfg(feature = "unstable_grab")]
     pub fn get_mouse_pos(&self) -> Option<(u64, u64)> {
         unsafe {
             let root_window = xlib::XRootWindow(self.display, 0);

@@ -5,7 +5,7 @@ use crate::linux::keyboard::Keyboard;
 use crate::rdev::{Callback, Event, ListenError};
 use std::convert::TryInto;
 use std::ffi::CStr;
-use std::os::raw::{c_char, c_int, c_uchar, c_uint};
+use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_ulong};
 use std::ptr::null;
 use x11::xlib;
 use x11::xrecord;
@@ -14,10 +14,11 @@ fn default_callback(event: Event) {
     println!("Default : Event {:?}", event);
 }
 
+static mut RECORD_ALL_CLIENTS: c_ulong = xrecord::XRecordAllClients;
 static mut GLOBAL_CALLBACK: Callback = default_callback;
 
 pub fn listen(callback: Callback) -> Result<(), ListenError> {
-    let keyboard = Keyboard::new().ok_or_else(|| ListenError::KeyboardError)?;
+    let keyboard = Keyboard::new().ok_or(ListenError::KeyboardError)?;
 
     unsafe {
         KEYBOARD = Some(keyboard);
@@ -43,7 +44,7 @@ pub fn listen(callback: Callback) -> Result<(), ListenError> {
         let context = xrecord::XRecordCreateContext(
             dpy_control,
             0,
-            &mut xrecord::XRecordAllClients,
+            &mut RECORD_ALL_CLIENTS,
             1,
             &mut &mut record_range as *mut &mut xrecord::XRecordRange
                 as *mut *mut xrecord::XRecordRange,

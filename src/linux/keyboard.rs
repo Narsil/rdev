@@ -2,7 +2,7 @@ extern crate x11;
 use crate::linux::keycodes::code_from_key;
 use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
-use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_ulong, c_void};
+use std::os::raw::{c_char, c_int, c_uint, c_ulong, c_void};
 use std::ptr::{null, null_mut, NonNull};
 use x11::xlib;
 
@@ -156,7 +156,7 @@ impl Keyboard {
             return None;
         }
         const BUF_LEN: usize = 4;
-        let mut buf = [0 as c_uchar; BUF_LEN];
+        let mut buf = [0_u8; BUF_LEN];
         let key = xlib::XKeyEvent {
             display: *self.display,
             root: 0,
