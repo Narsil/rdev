@@ -3,7 +3,6 @@ use crate::windows::common::{get_code, get_scan_code, FALSE, TRUE};
 use crate::windows::keycodes::code_from_key;
 use std::ptr::null_mut;
 use winapi::shared::minwindef::{BYTE, HKL, LPARAM, UINT};
-use winapi::shared::ntdef::WCHAR;
 use winapi::um::processthreadsapi::GetCurrentThreadId;
 use winapi::um::winuser;
 use winapi::um::winuser::{
