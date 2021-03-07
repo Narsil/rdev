@@ -1,6 +1,6 @@
 use crate::linux::common::Display;
 use crate::linux::keyboard::Keyboard;
-use crate::rdev::{Button, Event, EventType, GrabCallback, GrabError, Key, KeyboardState};
+use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
     enums::{EventCode, EV_KEY, EV_REL},
@@ -301,7 +301,10 @@ fn evdev_event_to_rdev_event(
 //     }
 // }
 
-pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+pub fn grab<T>(callback: T) -> Result<(), GrabError>
+where
+    T: Fn(Event) -> Option<Event> + 'static,
+{
     let mut kb = Keyboard::new().ok_or(GrabError::KeyboardError)?;
     let display = Display::new().ok_or(GrabError::MissingDisplayError)?;
     let (width, height) = display.get_size().ok_or(GrabError::MissingDisplayError)?;

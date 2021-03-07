@@ -1,16 +1,12 @@
 #![allow(improper_ctypes_definitions)]
 use crate::macos::common::*;
-use crate::rdev::{Event, GrabCallback, GrabError};
+use crate::rdev::{Event, GrabError};
 use cocoa::base::nil;
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEventTapLocation, CGEventType};
 use std::os::raw::c_void;
 
-fn default_callback(event: Event) -> Option<Event> {
-    println!("Default {:?}", event);
-    Some(event)
-}
-static mut GLOBAL_CALLBACK: GrabCallback = default_callback;
+static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event) -> Option<Event>>> = None;
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
@@ -23,8 +19,10 @@ unsafe extern "C" fn raw_callback(
     let opt = KEYBOARD_STATE.lock();
     if let Ok(mut keyboard) = opt {
         if let Some(event) = convert(_type, &cg_event, &mut keyboard) {
-            if GLOBAL_CALLBACK(event).is_none() {
-                cg_event.set_type(CGEventType::Null);
+            if let Some(callback) = &GLOBAL_CALLBACK {
+                if callback(event).is_none() {
+                    cg_event.set_type(CGEventType::Null);
+                }
             }
         }
     }
@@ -32,9 +30,12 @@ unsafe extern "C" fn raw_callback(
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+pub fn grab<T>(callback: T) -> Result<(), GrabError>
+where
+    T: Fn(Event) -> Option<Event> + 'static,
+{
     unsafe {
-        GLOBAL_CALLBACK = callback;
+        GLOBAL_CALLBACK = Some(Box::new(callback));
         let _pool = NSAutoreleasePool::new(nil);
         let tap = CGEventTapCreate(
             CGEventTapLocation::HID, // HID, Session, AnnotatedSession,

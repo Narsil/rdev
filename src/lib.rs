@@ -171,7 +171,7 @@
 //! Serialization and deserialization. (Requires `serialize` feature).
 mod rdev;
 pub use crate::rdev::{
-    Button, Callback, DisplayError, Event, EventType, GrabCallback, GrabError, Key, KeyboardState,
+    Button, DisplayError, Event, EventType, GrabCallback, GrabError, Key, KeyboardState,
     ListenError, SimulateError,
 };
 
@@ -217,7 +217,10 @@ use crate::windows::{display_size as _display_size, listen as _listen, simulate 
 ///     }
 /// }
 /// ```
-pub fn listen(callback: Callback) -> Result<(), ListenError> {
+pub fn listen<T: 'static>(callback: T) -> Result<(), ListenError>
+where
+    T: Fn(Event) -> (),
+{
     _listen(callback)
 }
 
@@ -306,7 +309,10 @@ pub use crate::windows::grab as _grab;
 /// }
 /// ```
 #[cfg(any(feature = "unstable_grab"))]
-pub fn grab(callback: GrabCallback) -> Result<(), GrabError> {
+pub fn grab<T>(callback: T) -> Result<(), GrabError>
+where
+    T: Fn(Event) -> Option<Event> + 'static,
+{
     _grab(callback)
 }
 

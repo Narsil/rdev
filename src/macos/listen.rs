@@ -1,15 +1,12 @@
 #![allow(improper_ctypes_definitions)]
 use crate::macos::common::*;
-use crate::rdev::{Callback, Event, ListenError};
+use crate::rdev::{Event, ListenError};
 use cocoa::base::nil;
 use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEventTapLocation, CGEventType};
 use std::os::raw::c_void;
 
-fn default_callback(event: Event) {
-    println!("Default {:?}", event)
-}
-static mut GLOBAL_CALLBACK: Callback = default_callback;
+static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event) -> ()>> = None;
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
@@ -22,7 +19,9 @@ unsafe extern "C" fn raw_callback(
     let opt = KEYBOARD_STATE.lock();
     if let Ok(mut keyboard) = opt {
         if let Some(event) = convert(_type, &cg_event, &mut keyboard) {
-            GLOBAL_CALLBACK(event);
+            if let Some(callback) = &GLOBAL_CALLBACK {
+                callback(event);
+            }
         }
     }
     // println!("Event ref END {:?}", cg_event_ptr);
@@ -31,9 +30,12 @@ unsafe extern "C" fn raw_callback(
 }
 
 #[link(name = "Cocoa", kind = "framework")]
-pub fn listen(callback: Callback) -> Result<(), ListenError> {
+pub fn listen<T>(callback: T) -> Result<(), ListenError>
+where
+    T: Fn(Event) -> () + 'static,
+{
     unsafe {
-        GLOBAL_CALLBACK = callback;
+        GLOBAL_CALLBACK = Some(Box::new(callback));
         let _pool = NSAutoreleasePool::new(nil);
         let tap = CGEventTapCreate(
             CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
