@@ -11,11 +11,11 @@ use x11::xlib;
 use x11::xrecord;
 
 static mut RECORD_ALL_CLIENTS: c_ulong = xrecord::XRecordAllClients;
-static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event) -> ()>> = None;
+static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event)>> = None;
 
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
-    T: Fn(Event) -> () + 'static,
+    T: Fn(Event) + 'static,
 {
     let keyboard = Keyboard::new().ok_or(ListenError::KeyboardError)?;
 

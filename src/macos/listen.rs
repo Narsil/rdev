@@ -6,7 +6,7 @@ use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEventTapLocation, CGEventType};
 use std::os::raw::c_void;
 
-static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event) -> ()>> = None;
+static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event)>> = None;
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
@@ -32,7 +32,7 @@ unsafe extern "C" fn raw_callback(
 #[link(name = "Cocoa", kind = "framework")]
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
-    T: Fn(Event) -> () + 'static,
+    T: Fn(Event) + 'static,
 {
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
