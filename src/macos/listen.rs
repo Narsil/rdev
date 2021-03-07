@@ -6,7 +6,7 @@ use cocoa::foundation::NSAutoreleasePool;
 use core_graphics::event::{CGEventTapLocation, CGEventType};
 use std::os::raw::c_void;
 
-static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event)>> = None;
+static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
@@ -19,7 +19,7 @@ unsafe extern "C" fn raw_callback(
     let opt = KEYBOARD_STATE.lock();
     if let Ok(mut keyboard) = opt {
         if let Some(event) = convert(_type, &cg_event, &mut keyboard) {
-            if let Some(callback) = &GLOBAL_CALLBACK {
+            if let Some(callback) = &mut GLOBAL_CALLBACK {
                 callback(event);
             }
         }
@@ -32,7 +32,7 @@ unsafe extern "C" fn raw_callback(
 #[link(name = "Cocoa", kind = "framework")]
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
-    T: Fn(Event) + 'static,
+    T: FnMut(Event) + 'static,
 {
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));

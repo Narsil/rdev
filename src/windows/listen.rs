@@ -6,7 +6,7 @@ use std::time::SystemTime;
 use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
 
-static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event)>> = None;
+static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
 
 impl From<HookError> for ListenError {
     fn from(error: HookError) -> Self {
@@ -33,7 +33,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
                 time: SystemTime::now(),
                 name,
             };
-            if let Some(callback) = &GLOBAL_CALLBACK {
+            if let Some(callback) = &mut GLOBAL_CALLBACK {
                 callback(event);
             }
         }
@@ -43,7 +43,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
 
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
-    T: Fn(Event) + 'static,
+    T: FnMut(Event) + 'static,
 {
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
