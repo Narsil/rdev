@@ -217,9 +217,9 @@ use crate::windows::{display_size as _display_size, listen as _listen, simulate 
 ///     }
 /// }
 /// ```
-pub fn listen<T: 'static>(callback: T) -> Result<(), ListenError>
+pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
-    T: Fn(Event) -> (),
+    T: FnMut(Event) + 'static,
 {
     _listen(callback)
 }

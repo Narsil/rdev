@@ -4,7 +4,7 @@ use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
 
-static mut GLOBAL_CALLBACK: Option<Box<dyn Fn(Event) -> Option<Event>>> = None;
+static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
     if code == HC_ACTION {
@@ -22,7 +22,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                 time: SystemTime::now(),
                 name,
             };
-            if let Some(callback) = &GLOBAL_CALLBACK {
+            if let Some(callback) = &mut GLOBAL_CALLBACK {
                 if callback(event).is_none() {
                     // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
                     // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
@@ -46,7 +46,7 @@ impl From<HookError> for GrabError {
 
 pub fn grab<T>(callback: T) -> Result<(), GrabError>
 where
-    T: Fn(Event) -> Option<Event> + 'static,
+    T: FnMut(Event) -> Option<Event> + 'static,
 {
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
