@@ -4,7 +4,7 @@
 
 # rdev
 
-Simple library to listen and send events to keyboard and mouse on MacOS, Windows and Linux
+Simple library to listen **globally** and send events to keyboard and mouse on MacOS, Windows and Linux
 (x11).
 
 You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
