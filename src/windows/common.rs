@@ -13,8 +13,8 @@ use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::winuser::{
     SetWindowsHookExA, KBDLLHOOKSTRUCT, MSLLHOOKSTRUCT, WHEEL_DELTA, WH_KEYBOARD_LL, WH_MOUSE_LL,
     WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
-    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN,
-    WM_XBUTTONUP,
+    WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_SYSKEYDOWN,
+    WM_SYSKEYUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
 pub const TRUE: i32 = 1;
 pub const FALSE: i32 = 0;
@@ -50,12 +50,12 @@ pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
 
 pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
     match param.try_into() {
-        Ok(WM_KEYDOWN) => {
+        Ok(WM_KEYDOWN) | Ok(WM_SYSKEYDOWN) => {
             let code = get_code(lpdata);
             let key = key_from_code(code as u16);
             Some(EventType::KeyPress(key))
         }
-        Ok(WM_KEYUP) => {
+        Ok(WM_KEYUP) | Ok(WM_SYSKEYUP) => {
             let code = get_code(lpdata);
             let key = key_from_code(code as u16);
             Some(EventType::KeyRelease(key))
