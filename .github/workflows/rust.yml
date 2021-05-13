@@ -16,7 +16,7 @@ jobs:
         - os: ubuntu-latest
           headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         - os: ubuntu-latest
-          dependencies: sudo apt-get install libxtst-dev --assume-yes
+          dependencies: sudo apt-get install libxtst-dev libevdev-dev --assume-yes
         - os: macos-latest
           # TODO: We can't test this on github, we can't set accessibility yet.
           test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab
