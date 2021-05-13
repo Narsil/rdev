@@ -1,3 +1,4 @@
+#[allow(clippy::upper-case-acronym)]
 use crate::macos::keycodes::code_from_key;
 use crate::rdev::{EventType, Key, KeyboardState};
 use core_foundation::base::{CFRelease, OSStatus};

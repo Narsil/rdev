@@ -44,6 +44,7 @@ serde_json = "1.0"
 # because that leads to unexpected behavior and flaky tests, so we need
 # to run thoses tests in sequence instead.
 serial_test = "0.4"
+tokio = {version = "1.5", features=["sync", "macros", "rt-multi-thread"]}
 
 [[example]]
 name = "serialize"
@@ -51,6 +52,10 @@ required-features = ["serialize"]
 
 [[example]]
 name = "grab"
+required-features = ["unstable_grab"]
+
+[[example]]
+name = "tokio_channel"
 required-features = ["unstable_grab"]
 
 [[test]]
