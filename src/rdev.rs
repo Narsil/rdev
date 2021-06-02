@@ -1,5 +1,6 @@
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 use std::time::SystemTime;
 use std::{fmt, fmt::Display};
 
@@ -209,6 +210,64 @@ pub enum Key {
     KpDelete,
     Function,
     Unknown(u32),
+}
+
+impl Display for Key {
+
+    
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            &Key::BackQuote => f.write_char('`'),
+            &Key::Num1 => f.write_char('1'),
+            &Key::Num2 => f.write_char('2'),
+            &Key::Num3 => f.write_char('3'),
+            &Key::Num4 => f.write_char('4'),
+            &Key::Num5 => f.write_char('5'),
+            &Key::Num6 => f.write_char('6'),
+            &Key::Num7 => f.write_char('7'),
+            &Key::Num8 => f.write_char('8'),
+            &Key::Num9 => f.write_char('9'),
+            &Key::Num0 => f.write_char('0'),
+            &Key::Minus => f.write_char('-'),
+            &Key::Equal => f.write_char('='),
+            &Key::KeyQ => f.write_char('Q'),
+            &Key::KeyW => f.write_char('W'),
+            &Key::KeyE => f.write_char('E'),
+            &Key::KeyR => f.write_char('R'),
+            &Key::KeyT => f.write_char('T'),
+            &Key::KeyY => f.write_char('Y'),
+            &Key::KeyU => f.write_char('U'),
+            &Key::KeyI => f.write_char('I'),
+            &Key::KeyO => f.write_char('O'),
+            &Key::KeyP => f.write_char('P'),
+            &Key::LeftBracket => f.write_char('['),
+            &Key::RightBracket => f.write_char(']'),
+            &Key::KeyA => f.write_char('A'),
+            &Key::KeyS => f.write_char('S'),
+            &Key::KeyD => f.write_char('D'),
+            &Key::KeyF => f.write_char('F'),
+            &Key::KeyG => f.write_char('G'),
+            &Key::KeyH => f.write_char('H'),
+            &Key::KeyJ => f.write_char('J'),
+            &Key::KeyK => f.write_char('K'),
+            &Key::KeyL => f.write_char('L'),
+            &Key::SemiColon => f.write_char(';'),
+            &Key::Quote => f.write_char('\''),
+            &Key::BackSlash => f.write_char('\\'),
+            &Key::KeyZ => f.write_char('Z'),
+            &Key::KeyX => f.write_char('X'),
+            &Key::KeyC => f.write_char('C'),
+            &Key::KeyV => f.write_char('V'),
+            &Key::KeyB => f.write_char('B'),
+            &Key::KeyN => f.write_char('N'),
+            &Key::KeyM => f.write_char('M'),
+            &Key::Comma => f.write_char(','),
+            &Key::Dot => f.write_char('.'),
+            &Key::Slash => f.write_char('/'),
+            _ => f.write_fmt(format_args!("{:?}", &self))
+        }
+    }
+
 }
 
 /// Standard mouse buttons
