@@ -1,5 +1,5 @@
-//! Simple library to listen and send events to keyboard and mouse on MacOS, Windows and Linux
-//! (x11).
+//! Simple library to create **global** keyboard and mouse event listeners / hooks, and create new keyboard and mouse events.
+//! Cross-platform, works on MacOS, Windows and Linux
 //!
 //! You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
 //! crate which helped me write this one.
@@ -121,11 +121,6 @@
 //! }
 //! ```
 //!
-//! ## OS Specificities
-//!
-//! For now the code only works for Linux (X11), MacOS and Windows. On MacOS, the listen
-//! loop needs to be the primary app (no fork before) and needs to have accessibility
-//! settings enabled (Terminal added in System Preferences > Security & Privacy > Privacy > Accessibility).
 //!
 //! # Getting the main screen size
 //!
@@ -158,17 +153,48 @@
 //!
 //! # Grabbing global events. (Requires `unstable_grab` feature)
 //!
-//! In the callback, returning None ignores the event
-//! and returning the event let's it pass. There is no modification of the event
-//! possible here.
-//! Caveat: On MacOS, you require the grab
-//! loop needs to be the primary app (no fork before) and need to have accessibility
-//! settings enabled.
-//! **Not implemented on Linux, you will always receive an error.**
+//! Installing this library with the `unstable_grab` feature adds the `grab` function which hooks into the global input device event stream.
+//! by suppling this function with a callback, you can intercept all keyboard and mouse events before they are delivered to applications / window managers.
+//! In the callback, returning None ignores the event and returning the event let's it pass. 
+//! There is no modification of the event possible here (yet).
+//!
+//! ```no_run
+//! use rdev::{grab, Event, EventType, Key};
+//! 
+//! fn main() {
+//!     let callback = |event: Event| -> Option<Event> {
+//!         if let EventType::KeyPress(Key::CapsLock) = event.event_type {
+//!             println!("Consuming and cancelling CapsLock")
+//!             None  // CapsLock is now effectively disabled
+//!         }
+//!     }
+//!     // This will block.
+//!     if let Err(error) = grab(callback) {
+//!         println!("Error: {:?}", error)
+//!     }
+//! }
+//! ```
+//!
+//! # OS Caveats: 
+//! When using the `listen` and/or `grab` functions, the following caveats apply:
+//!
+//! ## Mac OS
+//! The process running the blocking grab function (loop) needs to be the parent process (no fork before).
+//! The process needs to be granted access to the Accessibility API (ie. if you're running your process 
+//! inside Terminal.app, then Terminal.app needs to be added in 
+//! System Preferences > Security & Privacy > Privacy > Accessibility)
+//! 
+//! ## Linux
+//! The `listen` and `grab` functions use the `evdev` library to intercept events, so they will work with both X11 and Wayland
+//! In order for this to work, the process runnign the `listen` or `grab` loop needs to either run as root (not recommended), 
+//! or run as a user who's a member of the `input` group (recommended)
+//! Note: on some distros, the group name for evdev access is called `plugdev`, and on some systems, both groups can exist. 
+//! When in doubt, add your user to both groups if they exist.
 //!
 //! # Serialization
 //!
-//! Serialization and deserialization. (Requires `serialize` feature).
+//! Event data returned by the `listen` and `grab` functions can be serialized and de-serialized with
+//! Serde if you install this library with the `serialize` feature.
 mod rdev;
 pub use crate::rdev::{
     Button, DisplayError, Event, EventType, GrabCallback, GrabError, Key, KeyboardState,
@@ -289,7 +315,7 @@ pub use crate::windows::grab as _grab;
 /// Caveat: On MacOS, you require the grab
 /// loop needs to be the primary app (no fork before) and need to have accessibility
 /// settings enabled.
-/// On Linux, this is not implemented, you will always receive an error.
+/// On Linux, you need rw access to evdev devices in /etc/input/ (usually group membership in `input` group is enough)
 ///
 /// ```no_run
 /// use rdev::{grab, Event, EventType, Key};
