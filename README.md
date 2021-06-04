@@ -4,8 +4,8 @@
 
 # rdev
 
-Simple library to create **global** keyboard and mouse event listeners / hooks, and create new keyboard and mouse events.
-Cross-platform, works on MacOS, Windows and Linux
+Simple library to listen and send events to keyboard and mouse on MacOS, Windows and Linux
+(x11).
 
 You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
 crate which helped me write this one.
@@ -30,6 +30,20 @@ fn callback(event: Event) {
     }
 }
 ```
+
+### OS Caveats:
+When using the `listen` function, the following caveats apply:
+
+### Mac OS
+The process running the blocking `listen` function (loop) needs to be the parent process (no fork before).
+The process needs to be granted access to the Accessibility API (ie. if you're running your process
+inside Terminal.app, then Terminal.app needs to be added in
+System Preferences > Security & Privacy > Privacy > Accessibility)
+If the process is not granted access to the Accessibility API, MacOS will silently ignore rdev's
+`listen` calleback and will not trigger it with events. No error will be generated.
+
+### Linux
+The `listen` function uses X11 APIs, and so will not work in Wayland or in the linux kernel virtual console
 
 ## Sending some events
 
@@ -156,10 +170,14 @@ let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
 
 ## Grabbing global events. (Requires `unstable_grab` feature)
 
-Installing this library with the `unstable_grab` feature adds the `grab` function which hooks into the global input device event stream.
-by suppling this function with a callback, you can intercept all keyboard and mouse events before they are delivered to applications / window managers.
+Installing this library with the `unstable_grab` feature adds the `grab` function
+which hooks into the global input device event stream.
+by suppling this function with a callback, you can intercept
+all keyboard and mouse events before they are delivered to applications / window managers.
 In the callback, returning None ignores the event and returning the event let's it pass.
 There is no modification of the event possible here (yet).
+
+Note: the use of the word `unstable` here refers specifically to the fact that the `grab` API is unstable and subject to change
 
 ```rust
 use rdev::{grab, Event, EventType, Key};
@@ -170,6 +188,7 @@ fn main() {
             println!("Consuming and cancelling CapsLock")
             None  // CapsLock is now effectively disabled
         }
+        else { event }
     }
     // This will block.
     if let Err(error) = grab(callback) {
@@ -178,17 +197,19 @@ fn main() {
 }
 ```
 
-## OS Caveats:
+### OS Caveats:
 When using the `listen` and/or `grab` functions, the following caveats apply:
 
-### Mac OS
-The process running the blocking grab function (loop) needs to be the parent process (no fork before).
+#### Mac OS
+The process running the blocking `grab` function (loop) needs to be the parent process (no fork before).
 The process needs to be granted access to the Accessibility API (ie. if you're running your process
 inside Terminal.app, then Terminal.app needs to be added in
 System Preferences > Security & Privacy > Privacy > Accessibility)
+If the process is not granted access to the Accessibility API, the `grab` call will fail with an
+EventTapError (at least in MacOS 10.15, possibly other versions as well)
 
-### Linux
-The `listen` and `grab` functions use the `evdev` library to intercept events, so they will work with both X11 and Wayland
+#### Linux
+The `grab` function use the `evdev` library to intercept events, so they will work with both X11 and Wayland
 In order for this to work, the process runnign the `listen` or `grab` loop needs to either run as root (not recommended),
 or run as a user who's a member of the `input` group (recommended)
 Note: on some distros, the group name for evdev access is called `plugdev`, and on some systems, both groups can exist.
