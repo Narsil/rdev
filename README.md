@@ -182,18 +182,16 @@ Note: the use of the word `unstable` here refers specifically to the fact that t
 ```rust
 use rdev::{grab, Event, EventType, Key};
 
-fn main() {
-    let callback = |event: Event| -> Option<Event> {
-        if let EventType::KeyPress(Key::CapsLock) = event.event_type {
-            println!("Consuming and cancelling CapsLock")
-            None  // CapsLock is now effectively disabled
-        }
-        else { event }
+let callback = |event: Event| -> Option<Event> {
+    if let EventType::KeyPress(Key::CapsLock) = event.event_type {
+        println!("Consuming and cancelling CapsLock")
+        None  // CapsLock is now effectively disabled
     }
-    // This will block.
-    if let Err(error) = grab(callback) {
-        println!("Error: {:?}", error)
-    }
+    else { Some(event) }
+}
+// This will block.
+if let Err(error) = grab(callback) {
+    println!("Error: {:?}", error)
 }
 ```
 
