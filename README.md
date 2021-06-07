@@ -188,7 +188,7 @@ let callback = |event: Event| -> Option<Event> {
         None  // CapsLock is now effectively disabled
     }
     else { Some(event) }
-}
+};
 // This will block.
 if let Err(error) = grab(callback) {
     println!("Error: {:?}", error)
