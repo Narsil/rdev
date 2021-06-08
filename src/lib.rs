@@ -177,8 +177,10 @@
 //! Note: the use of the word `unstable` here refers specifically to the fact that the `grab` API is unstable and subject to change
 //!
 //! ```no_run
+//! #[cfg(feature = "unstable_grab")]
 //! use rdev::{grab, Event, EventType, Key};
 //!
+//! #[cfg(feature = "unstable_grab")]
 //! let callback = |event: Event| -> Option<Event> {
 //!     if let EventType::KeyPress(Key::CapsLock) = event.event_type {
 //!         println!("Consuming and cancelling CapsLock");
@@ -187,6 +189,7 @@
 //!     else { Some(event) }
 //! };
 //! // This will block.
+//! #[cfg(feature = "unstable_grab")]
 //! if let Err(error) = grab(callback) {
 //!     println!("Error: {:?}", error)
 //! }
