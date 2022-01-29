@@ -281,6 +281,15 @@ where
 ///
 /// ```no_run
 /// use rdev::{listen_non_blocking, Event};
+/// use cacao::{
+///   macos::{
+///       menu::{Menu, MenuItem},
+///       window::Window,
+///       App, AppDelegate,
+///   },
+///   notification_center::Dispatcher,
+///   view::View,
+/// };
 ///
 /// #[derive(Default)]
 /// pub struct BaseApp {
@@ -294,6 +303,7 @@ where
 ///         None => ()
 ///     }
 /// }
+///
 /// impl AppDelegate for BaseApp {
 ///     fn did_finish_launching(&self) {
 ///         self.window.set_title("RDev");
