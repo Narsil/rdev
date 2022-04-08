@@ -147,7 +147,6 @@ impl KeyboardState for Keyboard {
                 }
                 key => {
                     let code = code_from_key(*key)?;
-                    println!("Code {:?}", code);
                     unsafe { self.get_code_name(code.into(), 0) }
                 }
             },
