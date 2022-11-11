@@ -8,6 +8,7 @@ use std::os::raw::c_void;
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
 
+#[link(name = "Cocoa", kind = "framework")]
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
     _type: CGEventType,
@@ -29,7 +30,6 @@ unsafe extern "C" fn raw_callback(
     cg_event
 }
 
-#[link(name = "Cocoa", kind = "framework")]
 pub fn grab<T>(callback: T) -> Result<(), GrabError>
 where
     T: FnMut(Event) -> Option<Event> + 'static,
