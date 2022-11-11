@@ -87,13 +87,13 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
             Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0),
             Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0),
-            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XDOWN, 0, 0, (*code).into()),
+            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XDOWN, (*code).into(), 0, 0),
         },
         EventType::ButtonRelease(button) => match button {
             Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0),
             Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0),
             Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0),
-            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XUP, 0, 0, (*code).into()),
+            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XUP, (*code).into(), 0, 0),
         },
         EventType::Wheel { delta_x, delta_y } => {
             if *delta_x != 0 {
