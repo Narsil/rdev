@@ -197,13 +197,13 @@ fn evdev_event_to_rdev_event(
 ) -> Option<EventType> {
     match &event.event_code {
         EventCode::EV_KEY(key) => {
-            if let Some(button) = evdev_key_to_rdev_button(&key) {
+            if let Some(button) = evdev_key_to_rdev_button(key) {
                 // first check if pressed key is a mouse button
                 match event.value {
                     0 => Some(EventType::ButtonRelease(button)),
                     _ => Some(EventType::ButtonPress(button)),
                 }
-            } else if let Some(key) = evdev_key_to_rdev_key(&key) {
+            } else if let Some(key) = evdev_key_to_rdev_key(key) {
                 // check if pressed key is a keyboard key
                 match event.value {
                     0 => Some(EventType::KeyRelease(key)),
@@ -345,7 +345,7 @@ where
     let mut inotify = setup_inotify(epoll_fd, &devices)?;
 
     //grab devices
-    let _grab = devices
+    devices
         .iter_mut()
         .try_for_each(|device| device.grab(evdev_rs::GrabMode::Grab))?;
 
@@ -505,7 +505,7 @@ fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>)> {
         .collect::<io::Result<Vec<Device>>>()?;
     let output_devices = devices
         .iter()
-        .map(|device| UInputDevice::create_from_device(device))
+        .map(UInputDevice::create_from_device)
         .collect::<io::Result<Vec<UInputDevice>>>()?;
     Ok((epoll_fd, devices, output_devices))
 }
