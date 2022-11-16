@@ -228,7 +228,10 @@ mod macos;
 #[cfg(target_os = "macos")]
 pub use crate::macos::Keyboard;
 #[cfg(target_os = "macos")]
-use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::macos::{
+    display_size as _display_size, listen as _listen, listen_non_blocking as _listen_non_blocking,
+    simulate as _simulate,
+};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -270,6 +273,59 @@ where
     T: FnMut(Event) + 'static,
 {
     _listen(callback)
+}
+
+/// Listening to global events. Caveat: On MacOS, you require the listen
+/// loop needs to be the primary app (no fork before) and need to have accessibility
+/// settings enabled.
+///
+/// ```no_run
+/// use rdev::{listen_non_blocking, Event};
+/// use cacao::{
+///   macos::{
+///       menu::{Menu, MenuItem},
+///       window::Window,
+///       App, AppDelegate,
+///   },
+///   notification_center::Dispatcher,
+///   view::View,
+/// };
+///
+/// #[derive(Default)]
+/// pub struct BaseApp {
+///     pub window: Window,
+/// }
+///
+/// fn callback(event: Event) {
+///     println!("My callback {:?}", event);
+///     match event.name{
+///         Some(string) => println!("User wrote {:?}", string),
+///         None => ()
+///     }
+/// }
+///
+/// impl AppDelegate for BaseApp {
+///     fn did_finish_launching(&self) {
+///         self.window.set_title("RDev");
+///         self.window.show();
+///
+///         // This will not block
+///         if let Err(error) = listen(callback) {
+///             println!("Error: {:?}", error)
+///         }
+///     }
+///
+///     fn should_terminate_after_last_window_closed(&self) -> bool {
+///         false
+///     }
+/// }
+/// ```
+#[cfg(target_os = "macos")]
+pub fn listen_non_blocking<T>(callback: T) -> Result<(), ListenError>
+where
+    T: FnMut(Event) + 'static,
+{
+    _listen_non_blocking(callback)
 }
 
 /// Sending some events
