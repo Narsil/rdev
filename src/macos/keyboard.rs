@@ -95,7 +95,7 @@ impl Keyboard {
         let mut layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
 
         if layout.is_null() {
-            // TISGetInputSourceProperty returns NULL when using CJK input methods, 
+            // TISGetInputSourceProperty returns NULL when using CJK input methods,
             // using TISCopyCurrentKeyboardLayoutInputSource to fix it.
             keyboard = TISCopyCurrentKeyboardLayoutInputSource();
             layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
@@ -103,7 +103,6 @@ impl Keyboard {
                 return None;
             }
         }
-        
         let layout_ptr = CFDataGetBytePtr(layout);
 
         let mut buff = [0_u16; BUF_LEN];
