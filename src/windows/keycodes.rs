@@ -1,11 +1,10 @@
 use crate::rdev::Key;
 use std::convert::TryInto;
-use winapi::shared::minwindef::WORD;
 
 macro_rules! decl_keycodes {
     ($($key:ident, $code:literal),*) => {
         //TODO: make const when rust lang issue #49146 is fixed
-        pub fn code_from_key(key: Key) -> Option<WORD> {
+        pub fn code_from_key(key: Key) -> Option<u16> {
             match key {
                 $(
                     Key::$key => Some($code),
@@ -16,7 +15,7 @@ macro_rules! decl_keycodes {
         }
 
         //TODO: make const when rust lang issue #49146 is fixed
-        pub fn key_from_code(code: WORD) -> Key {
+        pub fn key_from_code(code: u16) -> Key {
             match code {
                 $(
                     $code => Key::$key,

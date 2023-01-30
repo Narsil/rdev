@@ -2,12 +2,12 @@ use crate::rdev::{Event, EventType, GrabError};
 use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
+use windows_sys::Win32::UI::WindowsAndMessaging::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
-    if code == HC_ACTION {
+    if code == HC_ACTION as i32 {
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
             let name = match &event_type {
@@ -53,7 +53,7 @@ where
         set_key_hook(raw_callback)?;
         set_mouse_hook(raw_callback)?;
 
-        GetMessageA(null_mut(), null_mut(), 0, 0);
+        GetMessageA(null_mut(), 0, 0, 0);
     }
     Ok(())
 }

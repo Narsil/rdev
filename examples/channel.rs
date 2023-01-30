@@ -9,14 +9,14 @@ fn main() {
         listen(move |event| {
             schan
                 .send(event)
-                .unwrap_or_else(|e| println!("Could not send event {:?}", e));
+                .unwrap_or_else(|e| println!("Could not send event {e:?}"));
         })
         .expect("Could not listen");
     });
 
     let mut events = Vec::new();
     for event in rchan.iter() {
-        println!("Received {:?}", event);
+        println!("Received {event:?}");
         events.push(event);
     }
 }
