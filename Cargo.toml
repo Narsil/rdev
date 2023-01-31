@@ -36,7 +36,13 @@ epoll = {version = "4.1.0", optional=true}
 inotify = {version = "0.8.2", default-features=false, optional=true}
 
 [target.'cfg(target_os = "windows")'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthreadsapi"] }
+windows-sys = { version = "0.45.0", features = [
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_TextServices"
+] }
 
 [dev-dependencies]
 serde_json = "1.0"

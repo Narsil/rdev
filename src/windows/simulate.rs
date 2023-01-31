@@ -1,24 +1,28 @@
 use crate::rdev::{Button, EventType, SimulateError};
 use crate::windows::keycodes::code_from_key;
 use std::convert::TryFrom;
+use std::ffi::c_int;
 use std::mem::size_of;
-use winapi::ctypes::{c_int, c_short};
-use winapi::shared::minwindef::{DWORD, UINT, WORD};
-use winapi::shared::ntdef::LONG;
-use winapi::um::winuser::{
-    GetSystemMetrics, INPUT_u, SendInput, INPUT, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT,
-    KEYEVENTF_KEYUP, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN,
-    MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE,
-    MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL,
-    MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN,
-    WHEEL_DELTA,
+use windows_sys::Win32::UI::WindowsAndMessaging::{
+    GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, WHEEL_DELTA,
 };
-/// Not defined in win32 but define here for clarity
-static KEYEVENTF_KEYDOWN: DWORD = 0;
 
-fn sim_mouse_event(flags: DWORD, data: DWORD, dx: LONG, dy: LONG) -> Result<(), SimulateError> {
-    let mut union: INPUT_u = unsafe { std::mem::zeroed() };
-    let inner_union = unsafe { union.mi_mut() };
+use crate::windows::keyboard::UINT;
+use crate::windows::{DWORD, LONG, WORD};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP,
+    MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP,
+    MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
+    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL, MOUSEEVENTF_XDOWN,
+    MOUSEEVENTF_XUP, MOUSEINPUT,
+};
+
+/// Not defined in win32 but define here for clarity
+static KEYEVENTF_KEYDOWN: u32 = 0;
+
+fn sim_mouse_event(flags: DWORD, data: LONG, dx: LONG, dy: LONG) -> Result<(), SimulateError> {
+    let mut union: INPUT_0 = unsafe { std::mem::zeroed() };
+    let inner_union = unsafe { &mut union.mi };
     *inner_union = MOUSEINPUT {
         dx,
         dy,
@@ -28,8 +32,8 @@ fn sim_mouse_event(flags: DWORD, data: DWORD, dx: LONG, dy: LONG) -> Result<(), 
         dwExtraInfo: 0,
     };
     let mut input = [INPUT {
-        type_: INPUT_MOUSE,
-        u: union,
+        r#type: INPUT_MOUSE,
+        Anonymous: union,
     }; 1];
     let value = unsafe {
         SendInput(
@@ -46,8 +50,8 @@ fn sim_mouse_event(flags: DWORD, data: DWORD, dx: LONG, dy: LONG) -> Result<(), 
 }
 
 fn sim_keyboard_event(flags: DWORD, vk: WORD, scan: WORD) -> Result<(), SimulateError> {
-    let mut union: INPUT_u = unsafe { std::mem::zeroed() };
-    let inner_union = unsafe { union.ki_mut() };
+    let mut union: INPUT_0 = unsafe { std::mem::zeroed() };
+    let inner_union = unsafe { &mut union.ki };
     *inner_union = KEYBDINPUT {
         wVk: vk,
         wScan: scan,
@@ -56,8 +60,8 @@ fn sim_keyboard_event(flags: DWORD, vk: WORD, scan: WORD) -> Result<(), Simulate
         dwExtraInfo: 0,
     };
     let mut input = [INPUT {
-        type_: INPUT_KEYBOARD,
-        u: union,
+        r#type: INPUT_KEYBOARD,
+        Anonymous: union,
     }; 1];
     let value = unsafe {
         SendInput(
@@ -99,7 +103,7 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             if *delta_x != 0 {
                 sim_mouse_event(
                     MOUSEEVENTF_HWHEEL,
-                    (c_short::try_from(*delta_x).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (u32::try_from(*delta_x).map_err(|_| SimulateError)? * WHEEL_DELTA) as LONG,
                     0,
                     0,
                 )?;
@@ -108,7 +112,7 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             if *delta_y != 0 {
                 sim_mouse_event(
                     MOUSEEVENTF_WHEEL,
-                    (c_short::try_from(*delta_y).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (u32::try_from(*delta_y).map_err(|_| SimulateError)? * WHEEL_DELTA) as LONG,
                     0,
                     0,
                 )?;
