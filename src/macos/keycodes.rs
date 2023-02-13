@@ -8,8 +8,8 @@ const ALT: CGKeyCode = 58;
 const ALT_GR: CGKeyCode = 61;
 const BACKSPACE: CGKeyCode = 51;
 const CAPS_LOCK: CGKeyCode = 57;
-/// Control Right does not exist on Mac
 const CONTROL_LEFT: CGKeyCode = 59;
+const CONTROL_RIGHT: CGKeyCode = 62;
 const DOWN_ARROW: CGKeyCode = 125;
 const ESCAPE: CGKeyCode = 53;
 const F1: CGKeyCode = 122;
@@ -90,6 +90,7 @@ pub fn code_from_key(key: Key) -> Option<CGKeyCode> {
         Key::Backspace => Some(BACKSPACE),
         Key::CapsLock => Some(CAPS_LOCK),
         Key::ControlLeft => Some(CONTROL_LEFT),
+        Key::ControlRight => Some(CONTROL_RIGHT),
         Key::DownArrow => Some(DOWN_ARROW),
         Key::Escape => Some(ESCAPE),
         Key::F1 => Some(F1),
