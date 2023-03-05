@@ -4,13 +4,13 @@
 
 # rdev
 
-Simple library to listen and send events **globally** to keyboard and mouse on MacOS, Windows and Linux
+Simple library to listen and send events **globally** to keyboard and mouse on macOS, Windows and Linux
 (x11).
 
 You can also check out [Enigo](https://github.com/Enigo-rs/Enigo) which is another
 crate which helped me write this one.
 
-This crate is so far a pet project for me to understand the rust ecosystem.
+This crate is so far a pet project for me to understand the Rust ecosystem.
 
 ## Listening to global events
 
@@ -34,16 +34,16 @@ fn callback(event: Event) {
 ### OS Caveats:
 When using the `listen` function, the following caveats apply:
 
-### Mac OS
+### macOS
 The process running the blocking `listen` function (loop) needs to be the parent process (no fork before).
-The process needs to be granted access to the Accessibility API (ie. if you're running your process
+The process needs to be granted access to the Accessibility API (i.e. if you're running your process
 inside Terminal.app, then Terminal.app needs to be added in
 System Preferences > Security & Privacy > Privacy > Accessibility)
-If the process is not granted access to the Accessibility API, MacOS will silently ignore rdev's
-`listen` calleback and will not trigger it with events. No error will be generated.
+If the process is not granted access to the Accessibility API, macOS will silently ignore rdev's
+`listen` callback and will not trigger it with events. No error will be generated.
 
 ### Linux
-The `listen` function uses X11 APIs, and so will not work in Wayland or in the linux kernel virtual console
+The `listen` function uses X11 APIs, and so will not work in Wayland or in the Linux kernel virtual console
 
 ## Sending some events
 
@@ -79,7 +79,7 @@ send(&EventType::Wheel {
 ### Event
 
 In order to detect what a user types, we need to plug to the OS level management
-of keyboard state (modifiers like shift, ctrl, but also dead keys if they exist).
+of keyboard state (modifiers like shift, CTRL, but also dead keys if they exist).
 
 `EventType` corresponds to a *physical* event, corresponding to QWERTY layout
 `Event` corresponds to an actual event that was received and `Event.name` reflects
@@ -97,17 +97,16 @@ pub struct Event {
 ```
 
 Be careful, Event::name, might be None, but also String::from(""), and might contain
-not displayable unicode characters. We send exactly what the OS sends us so do some sanity checking
+not displayable Unicode characters. We send exactly what the OS sends us, so do some sanity checking
 before using it.
 Caveat: Dead keys don't function yet on Linux
 
 ### EventType
 
-In order to manage different OS, the current EventType choices is a mix&match
-to account for all possible events.
+In order to manage different OS, the current EventType choices is a mix and match to account for all possible events.
 There is a safe mechanism to detect events no matter what, which are the
 Unknown() variant of the enum which will contain some OS specific value.
-Also not that not all keys are mapped to an OS code, so simulate might fail if you
+Also, not that not all keys are mapped to an OS code, so simulate might fail if you
 try to send an unmapped key. Sending Unknown() variants will always work (the OS might
 still reject it).
 
@@ -155,10 +154,9 @@ We can define a dummy Keyboard, that we will use to detect
 what kind of EventType trigger some String. We get the currently used
 layout for now !
 Caveat : This is layout dependent. If your app needs to support
-layout switching don't use this !
+layout switching, don't use this!
 Caveat: On Linux, the dead keys mechanism is not implemented.
-Caveat: Only shift and dead keys are implemented, Alt+unicode code on windows
-won't work.
+Caveat: Only shift and dead keys are implemented, Alt+Unicode code on Windows won't work.
 
 ```rust
 use rdev::{Keyboard, EventType, Key, KeyboardState};
@@ -172,9 +170,9 @@ let string = keyboard.add(&EventType::KeyPress(Key::KeyS));
 
 Installing this library with the `unstable_grab` feature adds the `grab` function
 which hooks into the global input device event stream.
-by suppling this function with a callback, you can intercept
+By supplying this function with a callback, you can intercept
 all keyboard and mouse events before they are delivered to applications / window managers.
-In the callback, returning None ignores the event and returning the event let's it pass.
+In the callback, returning None ignores the event and returning the event lets it pass.
 There is no modification of the event possible here (yet).
 
 Note: the use of the word `unstable` here refers specifically to the fact that the `grab` API is unstable and subject to change
@@ -201,23 +199,22 @@ if let Err(error) = grab(callback) {
 ### OS Caveats:
 When using the `listen` and/or `grab` functions, the following caveats apply:
 
-#### Mac OS
+#### macOS
 The process running the blocking `grab` function (loop) needs to be the parent process (no fork before).
-The process needs to be granted access to the Accessibility API (ie. if you're running your process
+The process needs to be granted access to the Accessibility API (i.e. if you're running your process
 inside Terminal.app, then Terminal.app needs to be added in
 System Preferences > Security & Privacy > Privacy > Accessibility)
 If the process is not granted access to the Accessibility API, the `grab` call will fail with an
-EventTapError (at least in MacOS 10.15, possibly other versions as well)
+EventTapError (at least in macOS 10.15, possibly other versions as well)
 
 #### Linux
 The `grab` function use the `evdev` library to intercept events, so they will work with both X11 and Wayland
-In order for this to work, the process runnign the `listen` or `grab` loop needs to either run as root (not recommended),
+In order for this to work, the process running the `listen` or `grab` loop needs to either run as root (not recommended),
 or run as a user who's a member of the `input` group (recommended)
 Note: on some distros, the group name for evdev access is called `plugdev`, and on some systems, both groups can exist.
 When in doubt, add your user to both groups if they exist.
 
 ## Serialization
 
-Event data returned by the `listen` and `grab` functions can be serialized and de-serialized with
+Event data returned by the `listen` and `grab` functions can be serialized and deserialized with
 Serde if you install this library with the `serialize` feature.
-
