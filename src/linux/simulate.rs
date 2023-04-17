@@ -52,10 +52,22 @@ unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Op
             xtest::XTestFakeMotionEvent(display, 0, x, y, 0)
             //     xlib::XWarpPointer(display, 0, root, 0, 0, 0, 0, *x as i32, *y as i32);
         }
-        EventType::Wheel { delta_y, .. } => {
-            let code = if *delta_y > 0 { 4 } else { 5 };
-            xtest::XTestFakeButtonEvent(display, code, TRUE, 0)
-                & xtest::XTestFakeButtonEvent(display, code, FALSE, 0)
+        EventType::Wheel { delta_x, delta_y } => {
+            let code_x = if *delta_x > 0 { 7 } else { 6 };
+            let code_y = if *delta_y > 0 { 4 } else { 5 };
+
+            let mut result: c_int = 1;
+            for _ in 0..delta_x.abs() {
+                result = result
+                    & xtest::XTestFakeButtonEvent(display, code_x, TRUE, 0)
+                    & xtest::XTestFakeButtonEvent(display, code_x, FALSE, 0)
+            }
+            for _ in 0..delta_y.abs() {
+                result = result
+                    & xtest::XTestFakeButtonEvent(display, code_y, TRUE, 0)
+                    & xtest::XTestFakeButtonEvent(display, code_y, FALSE, 0)
+            }
+            result
         }
     };
     if res == 0 {

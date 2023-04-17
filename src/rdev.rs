@@ -244,8 +244,6 @@ pub enum EventType {
     /// `delta_y` represents vertical scroll and `delta_x` represents horizontal scroll.
     /// Positive values correspond to scrolling up or right and negative values
     /// correspond to scrolling down or left
-    /// Note: Linux does not support horizontal scroll. When simulating scroll on Linux,
-    /// only the sign of delta_y is considered, and not the magnitude to determine wheelup or wheeldown.
     Wheel {
         delta_x: i64,
         delta_y: i64,
