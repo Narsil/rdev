@@ -142,7 +142,7 @@ impl KeyboardState for Keyboard {
                     None
                 }
                 Key::CapsLock => {
-                    self.last_state[VK_CAPITAL_] ^= HIGHBIT;
+                    self.last_state[VK_CAPITAL_] ^= 1;
                     None
                 }
                 key => {
