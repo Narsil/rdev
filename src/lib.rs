@@ -398,6 +398,22 @@ mod tests {
         assert_eq!(n, None);
         keyboard.add(&EventType::KeyRelease(Key::ShiftLeft));
 
+        // CapsLock
+        let char_c = keyboard.add(&EventType::KeyPress(Key::KeyC)).unwrap();
+        assert_eq!(char_c, "c".to_string());
+        keyboard.add(&EventType::KeyPress(Key::CapsLock));
+        keyboard.add(&EventType::KeyRelease(Key::CapsLock));
+        let char_c = keyboard.add(&EventType::KeyPress(Key::KeyC)).unwrap();
+        assert_eq!(char_c, "C".to_string());
+        let n = keyboard.add(&EventType::KeyRelease(Key::KeyS));
+        assert_eq!(n, None);
+        keyboard.add(&EventType::KeyPress(Key::CapsLock));
+        keyboard.add(&EventType::KeyRelease(Key::CapsLock));
+        let char_c = keyboard.add(&EventType::KeyPress(Key::KeyC)).unwrap();
+        assert_eq!(char_c, "c".to_string());
+        let n = keyboard.add(&EventType::KeyRelease(Key::KeyS));
+        assert_eq!(n, None);
+
         // UsIntl layout required
         // let n = keyboard.add(&EventType::KeyPress(Key::Quote));
         // assert_eq!(n, Some("".to_string()));
