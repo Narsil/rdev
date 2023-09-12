@@ -1,5 +1,5 @@
 use crate::rdev::{Button, EventType, SimulateError};
-use crate::windows::keycodes::code_from_key;
+use crate::windows::keycodes::{code_from_key, scan_from_code};
 use std::convert::TryFrom;
 use std::mem::size_of;
 use winapi::ctypes::{c_int, c_short};
@@ -77,11 +77,13 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
     match event_type {
         EventType::KeyPress(key) => {
             let code = code_from_key(*key).ok_or(SimulateError)?;
-            sim_keyboard_event(KEYEVENTF_KEYDOWN, code, 0)
+            let scan = scan_from_code(code).ok_or(SimulateError)?;
+            sim_keyboard_event(KEYEVENTF_KEYDOWN, code, scan)
         }
         EventType::KeyRelease(key) => {
             let code = code_from_key(*key).ok_or(SimulateError)?;
-            sim_keyboard_event(KEYEVENTF_KEYUP, code, 0)
+            let scan = scan_from_code(code).ok_or(SimulateError)?;
+            sim_keyboard_event(KEYEVENTF_KEYUP, code, scan)
         }
         EventType::ButtonPress(button) => match button {
             Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
