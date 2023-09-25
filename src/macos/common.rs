@@ -79,6 +79,11 @@ extern "C" {
     pub static kCFRunLoopCommonModes: CFRunLoopMode;
 
 }
+
+// TODO Remove this, this was added as the coded
+// existed and worked, but clippy is complaining.
+// There's probably a better fix.
+#[allow(improper_ctypes_definitions)]
 pub type QCallback = unsafe extern "C" fn(
     proxy: CGEventTapProxy,
     _type: CGEventType,
