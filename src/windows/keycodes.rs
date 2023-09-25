@@ -1,6 +1,18 @@
 use crate::rdev::Key;
 use std::convert::TryInto;
 use winapi::shared::minwindef::WORD;
+use winapi::um::winuser::{MapVirtualKeyA, MAPVK_VK_TO_VSC};
+
+pub fn scan_from_code(code: WORD) -> Option<WORD> {
+    let scan = unsafe { MapVirtualKeyA(code as u32, MAPVK_VK_TO_VSC) } as WORD;
+
+    if scan != 0 {
+        Some(scan)
+    }
+    else {
+        None
+    }
+}
 
 macro_rules! decl_keycodes {
     ($($key:ident, $code:literal),*) => {
