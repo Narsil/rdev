@@ -79,6 +79,8 @@ extern "C" {
     pub static kCFRunLoopCommonModes: CFRunLoopMode;
 
 }
+
+#[repr(C)]
 pub type QCallback = unsafe extern "C" fn(
     proxy: CGEventTapProxy,
     _type: CGEventType,
