@@ -2,19 +2,23 @@ use crate::rdev::{EventType, Key, KeyboardState};
 use crate::windows::common::{get_code, get_scan_code, FALSE, TRUE};
 use crate::windows::keycodes::code_from_key;
 use std::ptr::null_mut;
-use winapi::shared::minwindef::{BYTE, HKL, LPARAM, UINT};
-use winapi::um::processthreadsapi::GetCurrentThreadId;
-use winapi::um::winuser;
-use winapi::um::winuser::{
-    GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
-    GetWindowThreadProcessId, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT, VK_RSHIFT, VK_SHIFT,
+use windows_sys::Win32::Foundation::LPARAM;
+use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    GetKeyState, GetKeyboardLayout, GetKeyboardState, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT,
+    VK_RSHIFT, VK_SHIFT,
 };
+use windows_sys::Win32::UI::TextServices::HKL;
+use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
 const VK_SHIFT_: usize = VK_SHIFT as usize;
 const VK_CAPITAL_: usize = VK_CAPITAL as usize;
 const VK_LSHIFT_: usize = VK_LSHIFT as usize;
 const VK_RSHIFT_: usize = VK_RSHIFT as usize;
 const HIGHBIT: u8 = 0x80;
+
+pub type UINT = u32;
+pub type BYTE = u8;
 
 pub struct Keyboard {
     last_code: UINT,
@@ -47,16 +51,16 @@ impl Keyboard {
         let mut state = [0_u8; 256];
         let state_ptr = state.as_mut_ptr();
 
-        let _shift = GetKeyState(VK_SHIFT);
+        let _shift = GetKeyState(VK_SHIFT as i32);
         let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
         let thread_id = GetCurrentThreadId();
         // Attach to active thread so we can get that keyboard state
-        let status = if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
+        let status = if AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
             // Current state of the modifiers in keyboard
             let status = GetKeyboardState(state_ptr);
 
             // Detach
-            winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
+            AttachThreadInput(thread_id, current_window_thread_id, FALSE);
             status
         } else {
             // Could not attach, perhaps it is this process?

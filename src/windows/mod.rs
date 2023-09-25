@@ -1,5 +1,3 @@
-extern crate winapi;
-
 mod common;
 mod display;
 #[cfg(feature = "unstable_grab")]
@@ -15,3 +13,8 @@ pub use crate::windows::grab::grab;
 pub use crate::windows::keyboard::Keyboard;
 pub use crate::windows::listen::listen;
 pub use crate::windows::simulate::simulate;
+
+// types not defined by windows-sys
+pub type DWORD = u32;
+pub type WORD = u16;
+pub type LONG = i32;

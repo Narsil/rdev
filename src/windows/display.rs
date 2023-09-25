@@ -1,6 +1,6 @@
 use crate::rdev::DisplayError;
 use std::convert::TryInto;
-use winapi::um::winuser::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
+use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
 
 pub fn display_size() -> Result<(u64, u64), DisplayError> {
     let w = unsafe {

@@ -1,6 +1,6 @@
 use crate::rdev::Key;
+use crate::windows::WORD;
 use std::convert::TryInto;
-use winapi::shared::minwindef::WORD;
 
 macro_rules! decl_keycodes {
     ($($key:ident, $code:literal),*) => {
