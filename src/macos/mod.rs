@@ -12,4 +12,5 @@ pub use crate::macos::display::display_size;
 pub use crate::macos::grab::grab;
 pub use crate::macos::keyboard::Keyboard;
 pub use crate::macos::listen::listen;
+pub use crate::macos::listen::listen_non_blocking;
 pub use crate::macos::simulate::simulate;
