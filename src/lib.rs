@@ -351,11 +351,17 @@ pub use crate::windows::grab as _grab;
 /// }
 /// ```
 #[cfg(feature = "unstable_grab")]
-pub fn grab<T>(callback: T) -> Result<(), GrabError>
+pub fn grab<T>(event_types: EventTypes, callback: T) -> Result<(), GrabError>
 where
     T: Fn(Event) -> Option<Event> + 'static,
 {
-    _grab(callback)
+    _grab(event_types, callback)
+}
+
+#[cfg(feature = "unstable_grab")]
+pub struct EventTypes {
+    pub keyboard: bool,
+    pub mouse: bool,
 }
 
 #[cfg(test)]

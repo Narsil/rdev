@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use rdev::{grab, listen, simulate, Event, EventType, Key};
+use rdev::{grab, listen, simulate, Event, EventType, EventTypes, Key};
 use serial_test::serial;
 use std::error::Error;
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
@@ -45,7 +45,14 @@ fn test_grab() -> Result<(), Box<dyn Error>> {
     // Make sure grab ends up on top of listen so it can properly discard.
     thread::sleep(Duration::from_secs(1));
     let _grab = thread::spawn(move || {
-        grab(grab_tab).expect("Could not grab");
+        grab(
+            EventTypes {
+                keyboard: true,
+                mouse: true,
+            },
+            grab_tab,
+        )
+        .expect("Could not grab");
     });
 
     let recv = EVENT_CHANNEL.1.lock().expect("Failed to unlock Mutex");
