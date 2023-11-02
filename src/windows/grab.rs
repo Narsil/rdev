@@ -1,5 +1,6 @@
 use crate::rdev::{Event, EventType, GrabError};
 use crate::windows::common::{convert, set_key_hook, set_mouse_hook, HookError, HOOK, KEYBOARD};
+use crate::EventTypes;
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
@@ -44,15 +45,18 @@ impl From<HookError> for GrabError {
     }
 }
 
-pub fn grab<T>(callback: T) -> Result<(), GrabError>
+pub fn grab<T>(event_types: EventTypes, callback: T) -> Result<(), GrabError>
 where
     T: FnMut(Event) -> Option<Event> + 'static,
 {
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
-        set_key_hook(raw_callback)?;
-        set_mouse_hook(raw_callback)?;
-
+        if event_types.keyboard {
+            set_key_hook(raw_callback)?;
+        }
+        if event_types.mouse {
+            set_mouse_hook(raw_callback)?;
+        }
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }
     Ok(())

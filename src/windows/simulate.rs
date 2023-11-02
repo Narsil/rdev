@@ -1,4 +1,4 @@
-use crate::rdev::{Button, EventType, SimulateError};
+use crate::rdev::{Button, EventType, MouseScrollDelta, SimulateError};
 use crate::windows::keycodes::code_from_key;
 use std::convert::TryFrom;
 use std::mem::size_of;
@@ -95,20 +95,22 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0),
             Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XUP, (*code).into(), 0, 0),
         },
-        EventType::Wheel { delta_x, delta_y } => {
-            if *delta_x != 0 {
+        EventType::Wheel(MouseScrollDelta::LineDelta(delta_x, delta_y)) => {
+            if *delta_x != 0.0 {
+                let delta_x = *delta_x * WHEEL_DELTA as f32;
                 sim_mouse_event(
                     MOUSEEVENTF_HWHEEL,
-                    (c_short::try_from(*delta_x).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (c_short::try_from(delta_x as i16).map_err(|_| SimulateError)?) as u32,
                     0,
                     0,
                 )?;
             }
 
-            if *delta_y != 0 {
+            if *delta_y != 0.0 {
+                let delta_y = *delta_y * WHEEL_DELTA as f32;
                 sim_mouse_event(
                     MOUSEEVENTF_WHEEL,
-                    (c_short::try_from(*delta_y).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (c_short::try_from(delta_y as i16).map_err(|_| SimulateError)?) as u32,
                     0,
                     0,
                 )?;
