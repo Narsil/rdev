@@ -1,4 +1,4 @@
-use rdev::{simulate, Button, EventType, Key, SimulateError};
+use rdev::{simulate, Button, EventType, Key, MouseScrollDelta, SimulateError};
 use std::{thread, time};
 
 fn send(event_type: &EventType) {
@@ -21,8 +21,5 @@ fn main() {
     send(&EventType::MouseMove { x: 400.0, y: 400.0 });
     send(&EventType::ButtonPress(Button::Left));
     send(&EventType::ButtonRelease(Button::Right));
-    send(&EventType::Wheel {
-        delta_x: 0,
-        delta_y: 1,
-    });
+    send(&EventType::Wheel(MouseScrollDelta::LineDelta(0.0, 1.0)));
 }

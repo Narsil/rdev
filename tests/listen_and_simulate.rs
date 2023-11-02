@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use rdev::{listen, simulate, Button, Event, EventType, Key};
+use rdev::{listen, simulate, Button, Event, EventType, Key, MouseScrollDelta};
 use serial_test::serial;
 use std::error::Error;
 use std::iter::Iterator;
@@ -55,14 +55,8 @@ fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
         EventType::KeyRelease(Key::KeyS),
         EventType::ButtonPress(Button::Right),
         EventType::ButtonRelease(Button::Right),
-        EventType::Wheel {
-            delta_x: 0,
-            delta_y: 1,
-        },
-        EventType::Wheel {
-            delta_x: 0,
-            delta_y: -1,
-        },
+        EventType::Wheel(MouseScrollDelta::LineDelta(0.0, 1.0)),
+        EventType::Wheel(MouseScrollDelta::LineDelta(0.0, -1.0)),
     ]
     .into_iter();
     let click_events = (0..480).map(|pixel| EventType::MouseMove {
