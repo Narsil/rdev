@@ -230,12 +230,12 @@ pub use crate::macos::Keyboard;
 #[cfg(target_os = "macos")]
 use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
-#[cfg(target_os = "linux")]
-mod linux;
-#[cfg(target_os = "linux")]
-pub use crate::linux::Keyboard;
-#[cfg(target_os = "linux")]
-use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+mod x11;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+pub use crate::x11::Keyboard;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+use crate::x11::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -322,8 +322,8 @@ pub fn display_size() -> Result<(u64, u64), DisplayError> {
 }
 
 #[cfg(feature = "unstable_grab")]
-#[cfg(target_os = "linux")]
-pub use crate::linux::grab as _grab;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+pub use crate::x11::grab as _grab;
 #[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "macos")]
 pub use crate::macos::grab as _grab;
