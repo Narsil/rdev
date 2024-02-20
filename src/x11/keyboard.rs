@@ -1,5 +1,5 @@
 extern crate x11;
-use crate::linux::keycodes::code_from_key;
+use crate::x11::keycodes::code_from_key;
 use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int, c_uint, c_ulong, c_void};
