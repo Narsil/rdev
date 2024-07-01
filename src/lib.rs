@@ -9,7 +9,7 @@
 //! # Listening to global events
 //!
 //! ```no_run
-//! use rdev::{listen, Event};
+//! use rdev::{listen, Event, stop_listen};
 //!
 //! // This will block.
 //! if let Err(error) = listen(callback) {
@@ -217,6 +217,7 @@
 //!
 //! Event data returned by the `listen` and `grab` functions can be serialized and de-serialized with
 //! Serde if you install this library with the `serialize` feature.
+#![feature(thread_id_value)]
 mod rdev;
 pub use crate::rdev::{
     Button, DisplayError, Event, EventType, GrabCallback, GrabError, Key, KeyboardState,
@@ -245,7 +246,10 @@ mod windows;
 #[cfg(target_os = "windows")]
 pub use crate::windows::Keyboard;
 #[cfg(target_os = "windows")]
-use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::windows::{
+    display_size as _display_size, listen as _listen, simulate as _simulate,
+    stop_listen as _stop_listen,
+};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
