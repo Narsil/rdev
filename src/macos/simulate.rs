@@ -22,7 +22,7 @@ unsafe fn convert_native_with_source(
             CGEvent::new_keyboard_event(source, code, false).ok()
         }
         EventType::ButtonPress { button, x, y } => {
-            let point = get_current_mouse_location()?;
+            let point = CGPoint::new(*x, *y);
             let event = match button {
                 Button::Left => CGEventType::LeftMouseDown,
                 Button::Right => CGEventType::RightMouseDown,
@@ -37,7 +37,7 @@ unsafe fn convert_native_with_source(
             .ok()
         }
         EventType::ButtonRelease { button, x, y } => {
-            let point = get_current_mouse_location()?;
+            let point = CGPoint::new(*x, *y);
             let event = match button {
                 Button::Left => CGEventType::LeftMouseUp,
                 Button::Right => CGEventType::RightMouseUp,
