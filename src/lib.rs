@@ -217,7 +217,6 @@
 //!
 //! Event data returned by the `listen` and `grab` functions can be serialized and de-serialized with
 //! Serde if you install this library with the `serialize` feature.
-#![feature(thread_id_value)]
 mod rdev;
 pub use crate::rdev::{
     Button, DisplayError, Event, EventType, GrabCallback, GrabError, Key, KeyboardState,
