@@ -32,6 +32,14 @@ unsafe extern "C" fn raw_callback(
     cg_event
 }
 
+pub fn stop_listen() {
+    unsafe {
+        if let Some(stop_loop) = STOP_LOOP.as_ref() {
+            stop_loop();
+        }
+    }
+}
+
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
     T: FnMut(Event) + 'static,
@@ -50,16 +58,20 @@ where
         if tap.is_null() {
             return Err(ListenError::EventTapError);
         }
-        let _loop = CFMachPortCreateRunLoopSource(nil, tap, 0);
+        let _loop: CFRunLoopSourceRef = CFMachPortCreateRunLoopSource(nil, tap, 0);
         if _loop.is_null() {
             return Err(ListenError::LoopSourceError);
         }
-
         let current_loop = CFRunLoopGetCurrent();
         CFRunLoopAddSource(current_loop, _loop, kCFRunLoopCommonModes);
-
         CGEventTapEnable(tap, true);
+        STOP_LOOP = Some(Box::new(move || {
+            CFRunLoopStop(current_loop);
+        }));
         CFRunLoopRun();
     }
     Ok(())
 }
+
+type DynFn = dyn Fn() + 'static;
+pub static mut STOP_LOOP: Option<Box<DynFn>> = None;
