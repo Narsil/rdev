@@ -95,18 +95,32 @@ pub unsafe fn convert(
     cg_event: &CGEvent,
     keyboard_state: &mut Keyboard,
 ) -> Option<Event> {
+    let point = cg_event.location();
     let option_type = match _type {
-        CGEventType::LeftMouseDown => Some(EventType::ButtonPress(Button::Left)),
-        CGEventType::LeftMouseUp => Some(EventType::ButtonRelease(Button::Left)),
-        CGEventType::RightMouseDown => Some(EventType::ButtonPress(Button::Right)),
-        CGEventType::RightMouseUp => Some(EventType::ButtonRelease(Button::Right)),
-        CGEventType::MouseMoved => {
-            let point = cg_event.location();
-            Some(EventType::MouseMove {
-                x: point.x,
-                y: point.y,
-            })
-        }
+        CGEventType::LeftMouseDown => Some(EventType::ButtonPress {
+            button: Button::Left,
+            x: point.x,
+            y: point.y,
+        }),
+        CGEventType::LeftMouseUp => Some(EventType::ButtonRelease {
+            button: Button::Left,
+            x: point.x,
+            y: point.y,
+        }),
+        CGEventType::RightMouseDown => Some(EventType::ButtonPress {
+            button: Button::Right,
+            x: point.x,
+            y: point.y,
+        }),
+        CGEventType::RightMouseUp => Some(EventType::ButtonRelease {
+            button: Button::Right,
+            x: point.x,
+            y: point.y,
+        }),
+        CGEventType::MouseMoved => Some(EventType::MouseMove {
+            x: point.x,
+            y: point.y,
+        }),
         CGEventType::KeyDown => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
             Some(EventType::KeyPress(key_from_code(code.try_into().ok()?)))
