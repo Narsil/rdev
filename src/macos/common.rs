@@ -75,7 +75,7 @@ extern "C" {
     pub fn CFRunLoopGetCurrent() -> CFRunLoopRef;
     pub fn CGEventTapEnable(tap: CFMachPortRef, enable: bool);
     pub fn CFRunLoopRun();
-
+    pub fn CFRunLoopStop(rl: CFRunLoopRef);
     pub static kCFRunLoopCommonModes: CFRunLoopMode;
 
 }

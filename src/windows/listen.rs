@@ -4,7 +4,7 @@ use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::time::SystemTime;
 use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
-use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
+use winapi::um::winuser::{CallNextHookEx, PeekMessageA, HC_ACTION};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
 
@@ -50,7 +50,30 @@ where
         set_key_hook(raw_callback)?;
         set_mouse_hook(raw_callback)?;
 
-        GetMessageA(null_mut(), null_mut(), 0, 0);
+        let (sender, receiver) = mpsc::channel();
+        STOP_LOOP = Some(Box::new(move || {
+            sender.send(true).unwrap();
+        }));
+        loop {
+            if let Ok(stop_listen) = receiver.try_recv() {
+                if stop_listen {
+                    println!("stop loop successed");
+                    break;
+                }
+            }
+            PeekMessageA(null_mut(), null_mut(), 0, 0, 0);
+        }
     }
     Ok(())
 }
+
+pub fn stop_listen() {
+    unsafe {
+        if let Some(stop_loop) = STOP_LOOP.as_ref() {
+            stop_loop();
+        }
+    }
+}
+
+type DynFn = dyn Fn() + 'static;
+pub static mut STOP_LOOP: Option<Box<DynFn>> = None;

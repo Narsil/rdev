@@ -59,7 +59,21 @@ where
         CFRunLoopAddSource(current_loop, _loop, kCFRunLoopCommonModes);
 
         CGEventTapEnable(tap, true);
+        STOP_LOOP = Some(Box::new(move || {
+            CFRunLoopStop(current_loop);
+        }));
         CFRunLoopRun();
     }
     Ok(())
 }
+
+pub fn stop_listen() {
+    unsafe {
+        if let Some(stop_loop) = STOP_LOOP.as_ref() {
+            stop_loop();
+        }
+    }
+}
+
+type DynFn = dyn Fn() + 'static;
+pub static mut STOP_LOOP: Option<Box<DynFn>> = None;

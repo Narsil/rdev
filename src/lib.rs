@@ -228,7 +228,10 @@ mod macos;
 #[cfg(target_os = "macos")]
 pub use crate::macos::Keyboard;
 #[cfg(target_os = "macos")]
-use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::macos::{
+    display_size as _display_size, listen as _listen, simulate as _simulate,
+    stop_listen as _stop_listen,
+};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -242,7 +245,10 @@ mod windows;
 #[cfg(target_os = "windows")]
 pub use crate::windows::Keyboard;
 #[cfg(target_os = "windows")]
-use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::windows::{
+    display_size as _display_size, listen as _listen, simulate as _simulate,
+    stop_listen as _stop_listen,
+};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -270,6 +276,10 @@ where
     T: FnMut(Event) + 'static,
 {
     _listen(callback)
+}
+
+pub fn stop_listen() {
+    _stop_listen();
 }
 
 /// Sending some events
