@@ -19,8 +19,16 @@ fn main() {
 
     send(&EventType::MouseMove { x: 0.0, y: 0.0 });
     send(&EventType::MouseMove { x: 400.0, y: 400.0 });
-    send(&EventType::ButtonPress(Button::Left));
-    send(&EventType::ButtonRelease(Button::Right));
+    send(&EventType::ButtonPress {
+        button: Button::Left,
+        x: None,
+        y: None,
+    });
+    send(&EventType::ButtonRelease {
+        button: Button::Right,
+        x: None,
+        y: None,
+    });
     send(&EventType::Wheel {
         delta_x: 0,
         delta_y: 1,

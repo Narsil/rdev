@@ -83,18 +83,38 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             let code = code_from_key(*key).ok_or(SimulateError)?;
             sim_keyboard_event(KEYEVENTF_KEYUP, code, 0)
         }
-        EventType::ButtonPress(button) => match button {
-            Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
-            Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0),
-            Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0),
-            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XDOWN, (*code).into(), 0, 0),
-        },
-        EventType::ButtonRelease(button) => match button {
-            Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0),
-            Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0),
-            Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0),
-            Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XUP, (*code).into(), 0, 0),
-        },
+        EventType::ButtonPress { button, x, y } => {
+            let mut dx = 0;
+            let mut dy = 0;
+            if let Some(x) = x {
+                if let Some(y) = y {
+                    dx = *x as i32;
+                    dy = *y as i32;
+                }
+            }
+            match button {
+                Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, dx, dy),
+                Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, dx, dy),
+                Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, dx, dy),
+                Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XDOWN, (*code).into(), dx, dy),
+            }
+        }
+        EventType::ButtonRelease { button, x, y } => {
+            let mut dx = 0;
+            let mut dy = 0;
+            if let Some(x) = x {
+                if let Some(y) = y {
+                    dx = *x as i32;
+                    dy = *y as i32;
+                }
+            }
+            match button {
+                Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTUP, 0, dx, dy),
+                Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEUP, 0, dx, dy),
+                Button::Right => sim_mouse_event(MOUSEEVENTF_RIGHTUP, 0, dx, dy),
+                Button::Unknown(code) => sim_mouse_event(MOUSEEVENTF_XUP, (*code).into(), dx, dy),
+            }
+        }
         EventType::Wheel { delta_x, delta_y } => {
             if *delta_x != 0 {
                 sim_mouse_event(
