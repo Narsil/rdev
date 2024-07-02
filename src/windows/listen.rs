@@ -34,7 +34,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
                 time: SystemTime::now(),
                 name,
             };
-            if let Some(callback) = &mut GLOBAL_CALLBACK {
+            if let Some(ref mut callback) = GLOBAL_CALLBACK {
                 callback(event);
             }
         }
@@ -58,7 +58,6 @@ where
         loop {
             if let Ok(stop_listen) = receiver.try_recv() {
                 if stop_listen {
-                    println!("stop loop successed");
                     break;
                 }
             }
