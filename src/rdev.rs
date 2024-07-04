@@ -235,13 +235,18 @@ pub enum EventType {
     /// Mouse Button
     ButtonPress {
         button: Button,
-        x: Option<f64>,
-        y: Option<f64>,
+        x: f64,
+        y: f64,
     },
     ButtonRelease {
         button: Button,
-        x: Option<f64>,
-        y: Option<f64>,
+        x: f64,
+        y: f64,
+    },
+    Drag {
+        button: Button,
+        x: f64,
+        y: f64,
     },
     /// Values in pixels. `EventType::MouseMove{x: 0, y: 0}` corresponds to the
     /// top left corner, with x increasing downward and y increasing rightward

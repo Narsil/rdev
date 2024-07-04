@@ -22,12 +22,7 @@ unsafe fn convert_native_with_source(
             CGEvent::new_keyboard_event(source, code, false).ok()
         }
         EventType::ButtonPress { button, x, y } => {
-            let mut point = get_current_mouse_location()?;
-            if let Some(x) = x {
-                if let Some(y) = y {
-                    point = CGPoint { x: *x, y: *y };
-                }
-            }
+            let point = CGPoint { x: *x, y: *y };
             let event = match button {
                 Button::Left => CGEventType::LeftMouseDown,
                 Button::Right => CGEventType::RightMouseDown,
@@ -42,12 +37,7 @@ unsafe fn convert_native_with_source(
             .ok()
         }
         EventType::ButtonRelease { button, x, y } => {
-            let mut point = get_current_mouse_location()?;
-            if let Some(x) = x {
-                if let Some(y) = y {
-                    point = CGPoint { x: *x, y: *y };
-                }
-            }
+            let point = CGPoint { x: *x, y: *y };
             let event = match button {
                 Button::Left => CGEventType::LeftMouseUp,
                 Button::Right => CGEventType::RightMouseUp,
@@ -62,7 +52,7 @@ unsafe fn convert_native_with_source(
             .ok()
         }
         EventType::MouseMove { x, y } => {
-            let point = CGPoint { x: (*x), y: (*y) };
+            let point = CGPoint { x: *x, y: *y };
             CGEvent::new_mouse_event(source, CGEventType::MouseMoved, point, CGMouseButton::Left)
                 .ok()
         }
@@ -78,6 +68,17 @@ unsafe fn convert_native_with_source(
             )
             .ok()
         }
+        EventType::Drag {
+            button: _,
+            x: _,
+            y: _,
+        } => {
+            //https://developer.apple.com/documentation/coregraphics/quartz_event_services?language=objc
+            //no drag event in quartz_event_services of coregraphics
+            //you need to use button press, mouse move and release event to simulate drag event
+            //there also has no drag event on windows, so it's fine to replace drag events into press, mouse move and release events.
+            None
+        }
     }
 }
 
@@ -86,6 +87,9 @@ unsafe fn convert_native(event_type: &EventType) -> Option<CGEvent> {
     convert_native_with_source(event_type, source)
 }
 
+///cause all of button events contain coordinate which can be used when they be simulated.
+///so you don't need this fn when button press/release anymore.
+#[allow(dead_code)]
 unsafe fn get_current_mouse_location() -> Option<CGPoint> {
     let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState).ok()?;
     let event = CGEvent::new(source).ok()?;

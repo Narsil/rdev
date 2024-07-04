@@ -101,23 +101,23 @@ pub unsafe fn convert(
     let option_type = match _type {
         CGEventType::LeftMouseDown => Some(EventType::ButtonPress {
             button: Button::Left,
-            x: Some(x),
-            y: Some(y),
+            x,
+            y,
         }),
         CGEventType::LeftMouseUp => Some(EventType::ButtonRelease {
             button: Button::Left,
-            x: Some(x),
-            y: Some(y),
+            x,
+            y,
         }),
         CGEventType::RightMouseDown => Some(EventType::ButtonPress {
             button: Button::Right,
-            x: Some(x),
-            y: Some(y),
+            x,
+            y,
         }),
         CGEventType::RightMouseUp => Some(EventType::ButtonRelease {
             button: Button::Right,
-            x: Some(x),
-            y: Some(y),
+            x,
+            y,
         }),
         CGEventType::MouseMoved => Some(EventType::MouseMove { x, y }),
         CGEventType::KeyDown => {
@@ -147,6 +147,16 @@ pub unsafe fn convert(
                 cg_event.get_integer_value_field(EventField::SCROLL_WHEEL_EVENT_POINT_DELTA_AXIS_2);
             Some(EventType::Wheel { delta_x, delta_y })
         }
+        CGEventType::LeftMouseDragged => Some(EventType::Drag {
+            button: Button::Left,
+            x,
+            y,
+        }),
+        CGEventType::RightMouseDragged => Some(EventType::Drag {
+            button: Button::Right,
+            x,
+            y,
+        }),
         _ => None,
     };
     if let Some(event_type) = option_type {
