@@ -70,6 +70,7 @@ where
 pub fn stop_listen() {
     unsafe {
         if let Some(stop_loop) = STOP_LOOP.as_ref() {
+            STOP_LOOP = None;
             stop_loop();
         }
     }
