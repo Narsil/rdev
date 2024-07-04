@@ -68,12 +68,26 @@ unsafe fn convert_native_with_source(
             )
             .ok()
         }
-        EventType::Drag { button: _, x, y } => {
-            //https://developer.apple.com/documentation/coregraphics/quartz_event_services?language=objc
-            //no drag event in quartz_event_services of coregraphics
-            //simulate drag event into mousemove event
-            let event_type = EventType::MouseMove { x: *x, y: *y };
-            convert_native_with_source(&event_type, source)
+        EventType::Drag { button, x, y } => {
+            let point = CGPoint { x: *x, y: *y };
+            match button {
+                Button::Left => {
+                    let mouse_type = CGEventType::LeftMouseDragged;
+                    CGEvent::new_mouse_event(source, mouse_type, point, CGMouseButton::Left).ok()
+                }
+                Button::Right => {
+                    let mouse_type = CGEventType::RightMouseDragged;
+                    CGEvent::new_mouse_event(source, mouse_type, point, CGMouseButton::Right).ok()
+                }
+                Button::Middle => {
+                    let mouse_type = CGEventType::OtherMouseDragged;
+                    CGEvent::new_mouse_event(source, mouse_type, point, CGMouseButton::Center).ok()
+                }
+                Button::Unknown(_) => {
+                    let mouse_type = CGEventType::OtherMouseDragged;
+                    CGEvent::new_mouse_event(source, mouse_type, point, CGMouseButton::Center).ok()
+                }
+            }
         }
     }
 }
