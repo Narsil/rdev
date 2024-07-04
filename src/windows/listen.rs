@@ -71,6 +71,7 @@ pub fn stop_listen() {
     unsafe {
         if let Some(stop_loop) = STOP_LOOP.as_ref() {
             stop_loop();
+            STOP_LOOP = None;
         }
     }
 }
