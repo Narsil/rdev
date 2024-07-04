@@ -50,6 +50,8 @@ pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
 
 pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
     let (x, y) = get_point(lpdata);
+    let x = x as f64;
+    let y = y as f64;
     match param.try_into() {
         Ok(WM_KEYDOWN) | Ok(WM_SYSKEYDOWN) => {
             let code = get_code(lpdata);
@@ -63,48 +65,48 @@ pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
         }
         Ok(WM_LBUTTONDOWN) => Some(EventType::ButtonPress {
             button: Button::Left,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_LBUTTONUP) => Some(EventType::ButtonRelease {
             button: Button::Left,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_MBUTTONDOWN) => Some(EventType::ButtonPress {
             button: Button::Middle,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_MBUTTONUP) => Some(EventType::ButtonRelease {
             button: Button::Middle,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_RBUTTONDOWN) => Some(EventType::ButtonPress {
             button: Button::Right,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_RBUTTONUP) => Some(EventType::ButtonRelease {
             button: Button::Right,
-            x: Some(x as f64),
-            y: Some(y as f64),
+            x,
+            y,
         }),
         Ok(WM_XBUTTONDOWN) => {
             let code = get_button_code(lpdata) as u8;
             Some(EventType::ButtonPress {
                 button: Button::Unknown(code),
-                x: Some(x as f64),
-                y: Some(y as f64),
+                x,
+                y,
             })
         }
         Ok(WM_XBUTTONUP) => {
             let code = get_button_code(lpdata) as u8;
             Some(EventType::ButtonRelease {
                 button: Button::Unknown(code),
-                x: Some(x as f64),
-                y: Some(y as f64),
+                x,
+                y,
             })
         }
         Ok(WM_MOUSEMOVE) => Some(EventType::MouseMove {

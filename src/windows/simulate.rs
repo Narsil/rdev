@@ -84,14 +84,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             sim_keyboard_event(KEYEVENTF_KEYUP, code, 0)
         }
         EventType::ButtonPress { button, x, y } => {
-            let mut dx = 0;
-            let mut dy = 0;
-            if let Some(x) = x {
-                if let Some(y) = y {
-                    dx = *x as i32;
-                    dy = *y as i32;
-                }
-            }
+            let dx = *x as i32;
+            let dy = *y as i32;
             match button {
                 Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, dx, dy),
                 Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, dx, dy),
@@ -100,14 +94,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             }
         }
         EventType::ButtonRelease { button, x, y } => {
-            let mut dx = 0;
-            let mut dy = 0;
-            if let Some(x) = x {
-                if let Some(y) = y {
-                    dx = *x as i32;
-                    dy = *y as i32;
-                }
-            }
+            let dx = *x as i32;
+            let dy = *y as i32;
             match button {
                 Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTUP, 0, dx, dy),
                 Button::Middle => sim_mouse_event(MOUSEEVENTF_MIDDLEUP, 0, dx, dy),
@@ -148,6 +136,11 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
                 (*x as i32 + 1) * 65535 / width,
                 (*y as i32 + 1) * 65535 / height,
             )
+        }
+        EventType::Drag { button: _, x, y } => {
+            //if someone copy events from macos to windows, in order to ensure the operation, run drag event as mousemove
+            let event_type = EventType::MouseMove { x: *x, y: *y };
+            simulate(&event_type)
         }
     }
 }
