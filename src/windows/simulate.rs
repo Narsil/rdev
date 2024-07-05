@@ -5,6 +5,8 @@ use std::mem::size_of;
 use winapi::ctypes::{c_int, c_short};
 use winapi::shared::minwindef::{DWORD, UINT, WORD};
 use winapi::shared::ntdef::LONG;
+use winapi::shared::windef::POINT;
+use winapi::um::winuser::GetCursorPos;
 use winapi::um::winuser::{
     GetSystemMetrics, INPUT_u, SendInput, INPUT, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT,
     KEYEVENTF_KEYUP, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN,
@@ -13,6 +15,7 @@ use winapi::um::winuser::{
     MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN,
     WHEEL_DELTA,
 };
+
 /// Not defined in win32 but define here for clarity
 static KEYEVENTF_KEYDOWN: DWORD = 0;
 
@@ -141,6 +144,26 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             //if someone copy events from macos to windows, in order to ensure the operation, run drag event as mousemove
             let event_type = EventType::MouseMove { x: *x, y: *y };
             simulate(&event_type)
+        }
+    }
+}
+
+type CGFloat = f64;
+pub struct CGPoint {
+    pub x: CGFloat,
+    pub y: CGFloat,
+}
+
+pub unsafe fn get_current_mouse_location() -> Option<CGPoint> {
+    let mut point = POINT { x: 0, y: 0 };
+    unsafe {
+        if GetCursorPos(&mut point as *mut POINT) == 0 {
+            return None;
+        } else {
+            return Some(CGPoint {
+                x: point.x as f64,
+                y: point.y as f64,
+            });
         }
     }
 }

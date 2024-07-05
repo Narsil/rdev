@@ -15,4 +15,5 @@ pub use crate::windows::grab::grab;
 pub use crate::windows::keyboard::Keyboard;
 pub use crate::windows::listen::listen;
 pub use crate::windows::listen::stop_listen;
+pub use crate::windows::simulate::get_current_mouse_location;
 pub use crate::windows::simulate::simulate;
