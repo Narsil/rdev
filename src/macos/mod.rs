@@ -13,4 +13,5 @@ pub use crate::macos::grab::grab;
 pub use crate::macos::keyboard::Keyboard;
 pub use crate::macos::listen::listen;
 pub use crate::macos::listen::stop_listen;
+pub use crate::macos::simulate::get_current_mouse_location;
 pub use crate::macos::simulate::simulate;

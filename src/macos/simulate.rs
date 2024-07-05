@@ -100,7 +100,7 @@ unsafe fn convert_native(event_type: &EventType) -> Option<CGEvent> {
 ///cause all of button events contain coordinate which can be used when they be simulated.
 ///so you don't need this fn when button press/release anymore.
 #[allow(dead_code)]
-unsafe fn get_current_mouse_location() -> Option<CGPoint> {
+pub unsafe fn get_current_mouse_location() -> Option<CGPoint> {
     let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState).ok()?;
     let event = CGEvent::new(source).ok()?;
     Some(event.location())

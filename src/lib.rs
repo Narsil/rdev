@@ -229,8 +229,8 @@ mod macos;
 pub use crate::macos::Keyboard;
 #[cfg(target_os = "macos")]
 use crate::macos::{
-    display_size as _display_size, listen as _listen, simulate as _simulate,
-    stop_listen as _stop_listen,
+    display_size as _display_size, get_current_mouse_location as _get_current_mouse_location,
+    listen as _listen, simulate as _simulate, stop_listen as _stop_listen,
 };
 
 #[cfg(target_os = "linux")]
