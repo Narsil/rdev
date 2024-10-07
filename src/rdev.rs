@@ -217,7 +217,6 @@ pub enum Key {
     PlayPause,
     NextTrack,
     Unknown(u32),
-    UnknownSpecialKey(u32),
 }
 
 /// Standard mouse buttons

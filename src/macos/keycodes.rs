@@ -292,21 +292,21 @@ const NX_NUMSPECIALKEYS: u32 = 24; /* Maximum number of special keys */
 const NX_NUM_SCANNED_SPECIALKEYS: u32 = 24; /* First 24 special keys are */
 /* actively scanned in kernel */
 
-pub fn key_from_special_key(code: u32) -> Key {
+pub fn key_from_special_key(code: u32) -> Option<Key> {
     match code {
-        NX_KEYTYPE_SOUND_UP => Key::VolumeUp,
-        NX_KEYTYPE_SOUND_DOWN => Key::VolumeDown,
-        NX_KEYTYPE_MUTE => Key::VolumeMute,
-        NX_KEYTYPE_BRIGHTNESS_UP => Key::BrightnessUp,
-        NX_KEYTYPE_BRIGHTNESS_DOWN => Key::BrightnessDown,
-        NX_KEYTYPE_PLAY => Key::PlayPause,
-        NX_KEYTYPE_NEXT => Key::NextTrack,
-        NX_KEYTYPE_PREVIOUS => Key::PreviousTrack,
-        NX_KEYTYPE_CAPS_LOCK => Key::CapsLock,
-        NX_UP_ARROW_KEY => Key::UpArrow,
-        NX_DOWN_ARROW_KEY => Key::DownArrow,
-        NX_KEYTYPE_NUM_LOCK => Key::NumLock,
-        code => Key::UnknownSpecialKey(code.into()),
+        NX_KEYTYPE_SOUND_UP => Some(Key::VolumeUp),
+        NX_KEYTYPE_SOUND_DOWN => Some(Key::VolumeDown),
+        NX_KEYTYPE_MUTE => Some(Key::VolumeMute),
+        NX_KEYTYPE_BRIGHTNESS_UP => Some(Key::BrightnessUp),
+        NX_KEYTYPE_BRIGHTNESS_DOWN => Some(Key::BrightnessDown),
+        NX_KEYTYPE_PLAY => Some(Key::PlayPause),
+        NX_KEYTYPE_NEXT => Some(Key::NextTrack),
+        NX_KEYTYPE_PREVIOUS => Some(Key::PreviousTrack),
+        NX_KEYTYPE_CAPS_LOCK => Some(Key::CapsLock),
+        NX_UP_ARROW_KEY => Some(Key::UpArrow),
+        NX_DOWN_ARROW_KEY => Some(Key::DownArrow),
+        NX_KEYTYPE_NUM_LOCK => Some(Key::NumLock),
+        _ => None,
     }
 }
 
