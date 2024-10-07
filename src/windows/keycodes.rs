@@ -133,12 +133,12 @@ decl_keycodes! {
     Kp8, 104,
     Kp9, 105,
     KpDelete, 110,
-    VolumeMute: 173,
-    VolumeDown: 174,
-    VolumeUp: 175,
-    NextTrack: 176,
-    PreviousTrack: 177,
-    PlayPause: 179,
+    VolumeMute, 173,
+    VolumeDown, 174,
+    VolumeUp, 175,
+    NextTrack, 176,
+    PreviousTrack, 177,
+    PlayPause, 179,
 }
 
 #[cfg(test)]
