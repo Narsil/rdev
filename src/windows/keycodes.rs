@@ -138,7 +138,7 @@ decl_keycodes! {
     VolumeUp, 175,
     NextTrack, 176,
     PreviousTrack, 177,
-    PlayPause, 179,
+    PlayPause, 179
 }
 
 #[cfg(test)]
