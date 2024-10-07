@@ -9,7 +9,7 @@ use std::os::raw::c_void;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
-use crate::macos::keycodes::key_from_code;
+use crate::macos::keycodes::{key_from_code, key_from_special_key};
 
 pub type CFMachPortRef = *const c_void;
 pub type CFIndex = u64;
@@ -135,7 +135,30 @@ pub unsafe fn convert(
                 cg_event.get_integer_value_field(EventField::SCROLL_WHEEL_EVENT_POINT_DELTA_AXIS_2);
             Some(EventType::Wheel { delta_x, delta_y })
         }
-        _ => None,
+        o => {
+            // Core graphics doesnt support NX_SYSDEFINED yet
+            let int_type = o as u32;
+
+            const NX_SYSDEFINED: u32 = 14;
+
+            if int_type == NX_SYSDEFINED {
+                let data1 = cg_event.get_integer_value_field(149);
+                let key_flags = data1 & 0x0000ffff;
+                let key_pressed = ((key_flags & 0xff00) >> 8) == 0xa;
+                let _key_repeat = (key_flags & 0x1) == 0x1;
+                let key_code = (data1 & 0xffff0000) >> 16;
+
+                let code = key_from_special_key(key_code.try_into().ok()?);
+                if key_pressed {
+                    Some(EventType::KeyPress(code))
+                } else {
+                    Some(EventType::KeyRelease(code))
+                }
+            } else {
+                println!("Unknown event type: {:?}", o as i32);
+                None
+            }
+        }
     };
     if let Some(event_type) = option_type {
         let name = match event_type {

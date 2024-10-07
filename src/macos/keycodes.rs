@@ -251,6 +251,65 @@ pub fn key_from_code(code: CGKeyCode) -> Key {
     }
 }
 
+//https://opensource.apple.com/source/IOHIDFamily/IOHIDFamily-308/IOHIDSystem/IOKit/hidsystem/ev_keymap.h
+
+/*
+ * Special keys currently known to and understood by the system.
+ * If new specialty keys are invented, extend this list as appropriate.
+ * The presence of these keys in a particular implementation is not
+ * guaranteed.
+ */
+const NX_NOSPECIALKEY: u32 = 0xFFFF;
+const NX_KEYTYPE_SOUND_UP: u32 = 0;
+const NX_KEYTYPE_SOUND_DOWN: u32 = 1;
+const NX_KEYTYPE_BRIGHTNESS_UP: u32 = 2;
+const NX_KEYTYPE_BRIGHTNESS_DOWN: u32 = 3;
+const NX_KEYTYPE_CAPS_LOCK: u32 = 4;
+const NX_KEYTYPE_HELP: u32 = 5;
+const NX_POWER_KEY: u32 = 6;
+const NX_KEYTYPE_MUTE: u32 = 7;
+const NX_UP_ARROW_KEY: u32 = 8;
+const NX_DOWN_ARROW_KEY: u32 = 9;
+const NX_KEYTYPE_NUM_LOCK: u32 = 10;
+
+const NX_KEYTYPE_CONTRAST_UP: u32 = 11;
+const NX_KEYTYPE_CONTRAST_DOWN: u32 = 12;
+const NX_KEYTYPE_LAUNCH_PANEL: u32 = 13;
+const NX_KEYTYPE_EJECT: u32 = 14;
+const NX_KEYTYPE_VIDMIRROR: u32 = 15;
+
+const NX_KEYTYPE_PLAY: u32 = 16;
+const NX_KEYTYPE_NEXT: u32 = 17;
+const NX_KEYTYPE_PREVIOUS: u32 = 18;
+const NX_KEYTYPE_FAST: u32 = 19;
+const NX_KEYTYPE_REWIND: u32 = 20;
+
+const NX_KEYTYPE_ILLUMINATION_UP: u32 = 21;
+const NX_KEYTYPE_ILLUMINATION_DOWN: u32 = 22;
+const NX_KEYTYPE_ILLUMINATION_TOGGLE: u32 = 23;
+
+const NX_NUMSPECIALKEYS: u32 = 24; /* Maximum number of special keys */
+const NX_NUM_SCANNED_SPECIALKEYS: u32 = 24; /* First 24 special keys are */
+/* actively scanned in kernel */
+
+pub fn key_from_special_key(code: u32) -> Key {
+    match code {
+        NX_KEYTYPE_SOUND_UP => Key::VolumeUp,
+        NX_KEYTYPE_SOUND_DOWN => Key::VolumeDown,
+        NX_KEYTYPE_MUTE => Key::VolumeMute,
+        NX_KEYTYPE_BRIGHTNESS_UP => Key::BrightnessUp,
+        NX_KEYTYPE_BRIGHTNESS_DOWN => Key::BrightnessDown,
+        NX_KEYTYPE_PLAY => Key::PlayPause,
+        NX_KEYTYPE_NEXT => Key::NextTrack,
+        NX_KEYTYPE_PREVIOUS => Key::PreviousTrack,
+        NX_KEYTYPE_CAPS_LOCK => Key::CapsLock,
+        NX_UP_ARROW_KEY => Key::UpArrow,
+        NX_DOWN_ARROW_KEY => Key::DownArrow,
+        NX_KEYTYPE_NUM_LOCK => Key::NumLock,
+        code => Key::UnknownSpecialKey(code.into()),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::{code_from_key, key_from_code};

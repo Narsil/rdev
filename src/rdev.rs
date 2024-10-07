@@ -208,7 +208,16 @@ pub enum Key {
     Kp9,
     KpDelete,
     Function,
+    VolumeUp,
+    VolumeDown,
+    VolumeMute,
+    BrightnessUp,
+    BrightnessDown,
+    PreviousTrack,
+    PlayPause,
+    NextTrack,
     Unknown(u32),
+    UnknownSpecialKey(u32),
 }
 
 /// Standard mouse buttons
