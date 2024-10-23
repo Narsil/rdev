@@ -91,6 +91,10 @@ pub type QCallback = unsafe extern "C" fn(
     user_info: *mut c_void,
 ) -> CGEventRef;
 
+pub fn set_is_main_thread(b: bool) {
+    KEYBOARD_STATE.lock().unwrap().set_is_main_thread(b);
+}
+
 pub unsafe fn convert(
     _type: CGEventType,
     cg_event: &CGEvent,
