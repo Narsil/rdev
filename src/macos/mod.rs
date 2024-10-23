@@ -7,6 +7,7 @@ mod keycodes;
 mod listen;
 mod simulate;
 
+pub use crate::macos::common::set_is_main_thread;
 pub use crate::macos::display::display_size;
 #[cfg(feature = "unstable_grab")]
 pub use crate::macos::grab::grab;
