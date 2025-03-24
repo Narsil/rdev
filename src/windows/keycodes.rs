@@ -55,6 +55,7 @@ decl_keycodes! {
     Home, 36,
     LeftArrow, 37,
     MetaLeft, 91,
+    MetaRight, 92,
     PageDown, 34,
     PageUp, 33,
     Return, 0x0D,
