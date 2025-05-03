@@ -20,6 +20,8 @@ lazy_static = "1.4"
 [features]
 serialize = ["serde"]
 unstable_grab = ["evdev-rs", "epoll", "inotify"]
+wayland = ["input", "input-linux"]
+default = ["wayland"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"
@@ -35,6 +37,8 @@ x11 = {version = "2.18", features = ["xlib", "xrecord", "xinput"]}
 evdev-rs = {version = "0.6", optional=true}
 epoll = {version = "4.1.0", optional=true}
 inotify = {version = "0.11", default-features=false, optional=true}
+input = {version = "0.9", optional=true}
+input-linux = { version = "0.7.1", optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "errhandlingapi", "processthreadsapi"] }
@@ -57,7 +61,7 @@ required-features = ["unstable_grab"]
 
 [[example]]
 name = "tokio_channel"
-required-features = ["unstable_grab"]
+required-features = []
 
 [[test]]
 name = "grab"
