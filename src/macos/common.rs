@@ -128,23 +128,49 @@ pub unsafe fn convert(
         }
         CGEventType::KeyDown => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyPress(key_from_code(code.try_into().ok()?)))
+            let key = key_from_code(code.try_into().ok()?);
+            Some(EventType::KeyPress(key))
         }
         CGEventType::KeyUp => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyRelease(key_from_code(code.try_into().ok()?)))
+            let key = key_from_code(code.try_into().ok()?);
+            Some(EventType::KeyRelease(key))
         }
         CGEventType::FlagsChanged => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
             let code = code.try_into().ok()?;
             let flags = cg_event.get_flags();
-            if flags < LAST_FLAGS {
+            let key = key_from_code(code);
+            
+            // Determine if this is a press or release based on flag changes
+            let event = if flags.contains(CGEventFlags::CGEventFlagShift) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift) {
                 LAST_FLAGS = flags;
-                Some(EventType::KeyRelease(key_from_code(code)))
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagShift) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagControl) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagControl) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagAlternate) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagAlternate) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagCommand) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagCommand) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand) {
+                LAST_FLAGS = flags;
+                Some(EventType::KeyRelease(key))
             } else {
-                LAST_FLAGS = flags;
-                Some(EventType::KeyPress(key_from_code(code)))
-            }
+                None
+            };
+            event
         }
         CGEventType::ScrollWheel => {
             let delta_y =
