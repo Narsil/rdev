@@ -226,9 +226,9 @@ pub use crate::rdev::{
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
-pub use crate::macos::{set_is_main_thread, Keyboard};
-#[cfg(target_os = "macos")]
 use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
+#[cfg(target_os = "macos")]
+pub use crate::macos::{set_is_main_thread, Keyboard};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -305,7 +305,8 @@ where
 /// }
 /// ```
 pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
-    _simulate(event_type)
+    _simulate(event_type)?;
+    Ok(())
 }
 
 /// Returns the size in pixels of the main screen.

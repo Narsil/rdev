@@ -18,6 +18,9 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
             // println!("Key {}", key.key());
             let k = key_from_code(key.key());
             let state: KeyState = key.key_state();
+            if state == KeyState::Pressed {
+                println!("{},", key.key());
+            }
             match state {
                 KeyState::Pressed => Some(EventType::KeyPress(k)),
                 KeyState::Released => Some(EventType::KeyRelease(k)),
