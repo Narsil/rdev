@@ -37,6 +37,8 @@
                     xorg.libXtst
                     libevdev
                     libnotify
+                    libinput
+                    udev
                   ]
                 else
                   [ ]
