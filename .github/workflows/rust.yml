@@ -29,7 +29,8 @@ jobs:
           dependencies: sudo apt-get install libudev-dev libinput-dev weston --assume-yes
 
           build: cargo build --verbose --no-default-features --features wayland
-          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland
+          # Keyboard not implemented in wayland
+          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland -- --skip test_keyboard_state
         - variant: macos-latest
           os: macos-latest
           build: cargo build --verbose
