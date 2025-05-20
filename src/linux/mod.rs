@@ -9,3 +9,6 @@ mod wayland;
 
 #[cfg(feature = "wayland")]
 pub use wayland::*;
+
+#[cfg(not(any(feature = "wayland", feature = "x11")))]
+compile_error!("Need to activate either wayland or x11 feature on linux");

@@ -9,6 +9,7 @@ use libc::{input_event, O_NONBLOCK};
 use std::fs::{File, OpenOptions};
 use std::os::unix::fs::OpenOptionsExt;
 use std::sync::{LazyLock, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 static HANDLE: LazyLock<Mutex<Option<UInputHandle<File>>>> = LazyLock::new(|| Mutex::new(None));
 
@@ -48,18 +49,25 @@ impl Handle {
         Handle
     }
 
+    fn get_current_time() -> EventTime {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default();
+        EventTime::new(now.as_secs() as i64, now.subsec_micros() as i64)
+    }
+
     fn send_key_event(
         &self,
         handle: &UInputHandle<File>,
         ukey: UKey,
         state: KeyState,
     ) -> Result<(), SimulateError> {
-        const ZERO: EventTime = EventTime::new(0, 0);
-        let event = KeyEvent::new(ZERO, ukey, state);
+        let time = Self::get_current_time();
+        let event = KeyEvent::new(time, ukey, state);
         let event: input_event = InputEvent::from(event).into();
-        let sync = SynchronizeEvent::new(ZERO, SynchronizeKind::Report, 0);
+        let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
         let sync: input_event = InputEvent::from(sync).into();
-
+        
         handle.write(&[event, sync]).map_err(|_| SimulateError)?;
         Ok(())
     }
@@ -67,7 +75,6 @@ impl Handle {
     pub fn send(&self, event: &EventType) -> Result<(), SimulateError> {
         let handle = HANDLE.lock().unwrap();
         if let Some(handle) = handle.as_ref() {
-            const ZERO: EventTime = EventTime::new(0, 0);
             match event {
                 EventType::KeyPress(key) => {
                     if let Some(ukey) = ukey_from_key(*key) {
@@ -86,9 +93,10 @@ impl Handle {
                         Button::Middle => UKey::ButtonMiddle,
                         Button::Unknown(_) => return Err(SimulateError),
                     };
-                    let event = KeyEvent::new(ZERO, ukey, KeyState::PRESSED);
+                    let time = Self::get_current_time();
+                    let event = KeyEvent::new(time, ukey, KeyState::PRESSED);
                     let event: input_event = InputEvent::from(event).into();
-                    let sync = SynchronizeEvent::new(ZERO, SynchronizeKind::Report, 0);
+                    let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle.write(&[event, sync]).map_err(|_| SimulateError)?;
                 }
@@ -99,29 +107,32 @@ impl Handle {
                         Button::Middle => UKey::ButtonMiddle,
                         Button::Unknown(_) => return Err(SimulateError),
                     };
-                    let event = KeyEvent::new(ZERO, ukey, KeyState::RELEASED);
+                    let time = Self::get_current_time();
+                    let event = KeyEvent::new(time, ukey, KeyState::RELEASED);
                     let event: input_event = InputEvent::from(event).into();
-                    let sync = SynchronizeEvent::new(ZERO, SynchronizeKind::Report, 0);
+                    let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle.write(&[event, sync]).map_err(|_| SimulateError)?;
                 }
                 EventType::MouseMove { x, y } => {
-                    let event_x = RelativeEvent::new(ZERO, RelativeAxis::X, *x as i32);
+                    let time = Self::get_current_time();
+                    let event_x = RelativeEvent::new(time, RelativeAxis::X, *x as i32);
                     let event_x: input_event = InputEvent::from(event_x).into();
-                    let event_y = RelativeEvent::new(ZERO, RelativeAxis::Y, *y as i32);
+                    let event_y = RelativeEvent::new(time, RelativeAxis::Y, *y as i32);
                     let event_y: input_event = InputEvent::from(event_y).into();
-                    let sync = SynchronizeEvent::new(ZERO, SynchronizeKind::Report, 0);
+                    let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle
                         .write(&[event_x, event_y, sync])
                         .map_err(|_| SimulateError)?;
                 }
                 EventType::Wheel { delta_x, delta_y } => {
-                    let event_x = RelativeEvent::new(ZERO, RelativeAxis::Wheel, *delta_x as i32);
+                    let time = Self::get_current_time();
+                    let event_x = RelativeEvent::new(time, RelativeAxis::Wheel, *delta_x as i32);
                     let event_x: input_event = InputEvent::from(event_x).into();
-                    let event_y = RelativeEvent::new(ZERO, RelativeAxis::Wheel, *delta_y as i32);
+                    let event_y = RelativeEvent::new(time, RelativeAxis::Wheel, *delta_y as i32);
                     let event_y: input_event = InputEvent::from(event_y).into();
-                    let sync = SynchronizeEvent::new(ZERO, SynchronizeKind::Report, 0);
+                    let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle
                         .write(&[event_x, event_y, sync])
