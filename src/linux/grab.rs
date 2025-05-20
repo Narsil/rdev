@@ -375,7 +375,7 @@ where
                     let (_, event) = match device.next_event(evdev_rs::ReadFlag::NORMAL) {
                         Ok(event) => event,
                         Err(_) => {
-                            let device_fd = device.fd().unwrap().into_raw_fd();
+                            let device_fd = device.file().unwrap().into_raw_fd();
                             let empty_event = epoll::Event::new(epoll::Events::empty(), 0);
                             epoll::ctl(epoll_fd, EPOLL_CTL_DEL, device_fd, empty_event)?;
                             continue 'events;
@@ -405,7 +405,7 @@ where
 }
 
 static DEV_PATH: &str = "/dev/input";
-const INOTIFY_DATA: u64 = u64::max_value();
+const INOTIFY_DATA: u64 = u64::MAX;
 const EPOLLIN: epoll::Events = epoll::Events::EPOLLIN;
 
 /// Whether to continue grabbing events or to stop
@@ -470,7 +470,7 @@ where
 
 fn inotify_devices() -> io::Result<Inotify> {
     let mut inotify = Inotify::init()?;
-    inotify.add_watch(DEV_PATH, WatchMask::CREATE)?;
+    inotify.watches().add(DEV_PATH, WatchMask::CREATE)?;
     Ok(inotify)
 }
 
@@ -485,7 +485,7 @@ fn add_device_to_epoll_from_inotify_event(
     // new plug events
     let file = File::open(device_path)?;
     let fd = file.as_raw_fd();
-    let device = Device::new_from_fd(file)?;
+    let device = Device::new_from_file(file)?;
     let event = epoll::Event::new(EPOLLIN, devices.len() as u64);
     devices.push(device);
     epoll::ctl(epoll_fd, EPOLL_CTL_ADD, fd, event)?;
@@ -501,7 +501,7 @@ fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>)> {
     let epoll_fd = epoll_watch_all(device_files.iter())?;
     let devices = device_files
         .into_iter()
-        .map(Device::new_from_fd)
+        .map(Device::new_from_file)
         .collect::<io::Result<Vec<Device>>>()?;
     let output_devices = devices
         .iter()

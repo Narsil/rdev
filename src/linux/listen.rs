@@ -40,10 +40,11 @@ where
         record_range.device_events.last = xlib::MotionNotify as c_uchar;
 
         // Create context
+        let ptr = &raw mut RECORD_ALL_CLIENTS;
         let context = xrecord::XRecordCreateContext(
             dpy_control,
             0,
-            &mut RECORD_ALL_CLIENTS,
+            &mut *ptr,
             1,
             &mut &mut record_range as *mut &mut xrecord::XRecordRange
                 as *mut *mut xrecord::XRecordRange,
@@ -105,8 +106,10 @@ unsafe extern "C" fn record_callback(
     let x = xdatum.root_x as f64;
     let y = xdatum.root_y as f64;
 
-    if let Some(event) = convert(&mut KEYBOARD, code, type_, x, y) {
-        if let Some(callback) = &mut GLOBAL_CALLBACK {
+    let ptr = &raw mut KEYBOARD;
+    if let Some(event) = convert(&mut &ptr, code, type_, x, y) {
+        let ptr = &raw mut GLOBAL_CALLBACK;
+        if let Some(callback) = &mut *ptr {
             callback(event);
         }
     }

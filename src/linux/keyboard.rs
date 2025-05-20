@@ -220,13 +220,10 @@ impl KeyboardState for Keyboard {
                     unsafe { self.name_from_code(keycode, state) }
                 }
             },
-            EventType::KeyRelease(key) => match key {
-                Key::ShiftLeft | Key::ShiftRight => {
-                    self.state.shift = false;
-                    None
-                }
-                _ => None,
-            },
+            EventType::KeyRelease(Key::ShiftLeft | Key::ShiftRight) => {
+                self.state.shift = false;
+                None
+            }
             _ => None,
         }
     }
