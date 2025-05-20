@@ -33,7 +33,7 @@ const BUF_LEN: usize = 4;
 
 #[cfg(target_os = "macos")]
 #[link(name = "Cocoa", kind = "framework")]
-#[link(name = "Carbon", kind = "framework")]
+#[link(name = "Carbon")]
 extern "C" {
     fn TISCopyCurrentKeyboardLayoutInputSource() -> TISInputSourceRef;
     fn TISCopyCurrentKeyboardInputSource() -> TISInputSourceRef;
@@ -143,13 +143,10 @@ impl KeyboardState for Keyboard {
                     unsafe { self.string_from_code(code.into(), self.modifier_state()) }
                 }
             },
-            EventType::KeyRelease(key) => match key {
-                Key::ShiftLeft | Key::ShiftRight => {
-                    self.shift = false;
-                    None
-                }
-                _ => None,
-            },
+            EventType::KeyRelease(Key::ShiftLeft | Key::ShiftRight) => {
+                self.shift = false;
+                None
+            }
             _ => None,
         }
     }
