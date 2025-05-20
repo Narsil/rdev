@@ -67,7 +67,7 @@ impl Handle {
         let event: input_event = InputEvent::from(event).into();
         let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
         let sync: input_event = InputEvent::from(sync).into();
-        
+
         handle.write(&[event, sync]).map_err(|_| SimulateError)?;
         Ok(())
     }

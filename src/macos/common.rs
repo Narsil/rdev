@@ -141,30 +141,46 @@ pub unsafe fn convert(
             let code = code.try_into().ok()?;
             let flags = cg_event.get_flags();
             let key = key_from_code(code);
-            
+
             // Determine if this is a press or release based on flag changes
-            let event = if flags.contains(CGEventFlags::CGEventFlagShift) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift) {
+            let event = if flags.contains(CGEventFlags::CGEventFlagShift)
+                && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyPress(key))
-            } else if !flags.contains(CGEventFlags::CGEventFlagShift) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift) {
+            } else if !flags.contains(CGEventFlags::CGEventFlagShift)
+                && LAST_FLAGS.contains(CGEventFlags::CGEventFlagShift)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyRelease(key))
-            } else if flags.contains(CGEventFlags::CGEventFlagControl) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl) {
+            } else if flags.contains(CGEventFlags::CGEventFlagControl)
+                && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyPress(key))
-            } else if !flags.contains(CGEventFlags::CGEventFlagControl) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl) {
+            } else if !flags.contains(CGEventFlags::CGEventFlagControl)
+                && LAST_FLAGS.contains(CGEventFlags::CGEventFlagControl)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyRelease(key))
-            } else if flags.contains(CGEventFlags::CGEventFlagAlternate) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate) {
+            } else if flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyPress(key))
-            } else if !flags.contains(CGEventFlags::CGEventFlagAlternate) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate) {
+            } else if !flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && LAST_FLAGS.contains(CGEventFlags::CGEventFlagAlternate)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyRelease(key))
-            } else if flags.contains(CGEventFlags::CGEventFlagCommand) && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand) {
+            } else if flags.contains(CGEventFlags::CGEventFlagCommand)
+                && !LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyPress(key))
-            } else if !flags.contains(CGEventFlags::CGEventFlagCommand) && LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand) {
+            } else if !flags.contains(CGEventFlags::CGEventFlagCommand)
+                && LAST_FLAGS.contains(CGEventFlags::CGEventFlagCommand)
+            {
                 LAST_FLAGS = flags;
                 Some(EventType::KeyRelease(key))
             } else {
