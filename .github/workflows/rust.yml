@@ -16,20 +16,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix: 
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        variant: [macos-latest, ubuntu-x11-latest, ubuntu-wayland-latest, windows-latest]
         include:
-        - os: ubuntu-latest
+        - variant: ubuntu-x11-latest
+          os: ubuntu-latest
           headless: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           dependencies: sudo apt-get install libxtst-dev libevdev-dev libudev-dev --assume-yes
           test: cargo test --verbose --features=serialize,x11
-        - os: ubuntu-latest
+        - variant: ubuntu-x11-latest
+          os: ubuntu-latest
           headless: weston --no-config --socket=wl-test-env --backend=headless
           dependencies: sudo apt-get install libxtst-dev libevdev-dev libudev-dev --assume-yes
           test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland
-        - os: macos-latest
+        - variant: macos-latest
+          os: macos-latest
           # TODO: We can't test this on github, we can't set accessibility yet.
           test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab
-        - os: windows-latest
+        - variant: windows-latest
+          os: windows-latest
           test: cargo test --verbose --all-features
 
     steps:
