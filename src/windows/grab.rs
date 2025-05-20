@@ -22,7 +22,8 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                 time: SystemTime::now(),
                 name,
             };
-            if let Some(callback) = &mut GLOBAL_CALLBACK {
+            let ptr = &raw mut GLOBAL_CALLBACK;
+            if let Some(callback) = &mut *ptr {
                 if callback(event).is_none() {
                     // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
                     // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
