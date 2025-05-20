@@ -39,24 +39,29 @@ where
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
         let _pool = NSAutoreleasePool::new(nil);
+
+        // To capture media keys
+        const NX_SYSDEFINED: i64 = 14;
+
         let tap = CGEventTapCreate(
             CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
             kCGHeadInsertEventTap,
             CGEventTapOption::Default,
-            kCGEventMaskForAllEvents,
+            (1 << NX_SYSDEFINED) | kCGEventMaskForAllEvents,
             raw_callback,
             nil,
         );
         if tap.is_null() {
             return Err(GrabError::EventTapError);
         }
-        let _loop = CFMachPortCreateRunLoopSource(nil, tap, 0);
-        if _loop.is_null() {
+
+        let source = CFMachPortCreateRunLoopSource(nil, tap, 0);
+        if source.is_null() {
             return Err(GrabError::LoopSourceError);
         }
 
         let current_loop = CFRunLoopGetCurrent();
-        CFRunLoopAddSource(current_loop, _loop, kCFRunLoopCommonModes);
+        CFRunLoopAddSource(current_loop, source, kCFRunLoopCommonModes);
 
         CGEventTapEnable(tap, true);
         CFRunLoopRun();
