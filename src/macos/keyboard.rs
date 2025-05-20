@@ -32,6 +32,7 @@ static NSEventModifierFlagCommand: u64 = 1 << 20;
 const BUF_LEN: usize = 4;
 
 #[cfg(target_os = "macos")]
+#[allow(clippy::duplicated_attributes)]
 #[link(name = "Cocoa", kind = "framework")]
 #[link(name = "Carbon", kind = "framework")]
 extern "C" {
@@ -143,13 +144,10 @@ impl KeyboardState for Keyboard {
                     unsafe { self.string_from_code(code.into(), self.modifier_state()) }
                 }
             },
-            EventType::KeyRelease(key) => match key {
-                Key::ShiftLeft | Key::ShiftRight => {
-                    self.shift = false;
-                    None
-                }
-                _ => None,
-            },
+            EventType::KeyRelease(Key::ShiftLeft | Key::ShiftRight) => {
+                self.shift = false;
+                None
+            }
             _ => None,
         }
     }

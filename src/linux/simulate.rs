@@ -1,7 +1,6 @@
 use crate::linux::common::{FALSE, TRUE};
 use crate::linux::keycodes::code_from_key;
 use crate::rdev::{Button, EventType, SimulateError};
-use std::convert::TryInto;
 use std::os::raw::c_int;
 use std::ptr::null;
 use x11::xlib;
@@ -21,31 +20,23 @@ unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Op
             Button::Left => xtest::XTestFakeButtonEvent(display, 1, TRUE, 0),
             Button::Middle => xtest::XTestFakeButtonEvent(display, 2, TRUE, 0),
             Button::Right => xtest::XTestFakeButtonEvent(display, 3, TRUE, 0),
-            Button::Unknown(code) => {
-                xtest::XTestFakeButtonEvent(display, (*code).try_into().ok()?, TRUE, 0)
-            }
+            Button::Unknown(code) => xtest::XTestFakeButtonEvent(display, (*code).into(), TRUE, 0),
         },
         EventType::ButtonRelease(button) => match button {
             Button::Left => xtest::XTestFakeButtonEvent(display, 1, FALSE, 0),
             Button::Middle => xtest::XTestFakeButtonEvent(display, 2, FALSE, 0),
             Button::Right => xtest::XTestFakeButtonEvent(display, 3, FALSE, 0),
-            Button::Unknown(code) => {
-                xtest::XTestFakeButtonEvent(display, (*code).try_into().ok()?, FALSE, 0)
-            }
+            Button::Unknown(code) => xtest::XTestFakeButtonEvent(display, (*code).into(), FALSE, 0),
         },
         EventType::MouseMove { x, y } => {
             //TODO: replace with clamp if it is stabalized
             let x = if x.is_finite() {
-                x.min(c_int::max_value().into())
-                    .max(c_int::min_value().into())
-                    .round() as c_int
+                x.min(c_int::MAX.into()).max(c_int::MIN.into()).round() as c_int
             } else {
                 0
             };
             let y = if y.is_finite() {
-                y.min(c_int::max_value().into())
-                    .max(c_int::min_value().into())
-                    .round() as c_int
+                y.min(c_int::MAX.into()).max(c_int::MIN.into()).round() as c_int
             } else {
                 0
             };
