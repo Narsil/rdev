@@ -32,8 +32,9 @@ static NSEventModifierFlagCommand: u64 = 1 << 20;
 const BUF_LEN: usize = 4;
 
 #[cfg(target_os = "macos")]
+#[allow(clippy::duplicated_attributes)]
 #[link(name = "Cocoa", kind = "framework")]
-#[link(name = "Carbon")]
+#[link(name = "Carbon", kind = "framework")]
 extern "C" {
     fn TISCopyCurrentKeyboardLayoutInputSource() -> TISInputSourceRef;
     fn TISCopyCurrentKeyboardInputSource() -> TISInputSourceRef;
