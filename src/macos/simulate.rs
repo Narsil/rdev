@@ -25,7 +25,7 @@ unsafe fn convert_native_with_source(
                 event.set_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE, code as i64);
 
                 // Get current flags and update them
-                let mut new_flags = LAST_FLAGS;
+                let mut new_flags = LAST_FLAGS.lock().unwrap();
                 match key {
                     Key::ShiftLeft | Key::ShiftRight => {
                         new_flags.insert(CGEventFlags::CGEventFlagShift);
@@ -41,12 +41,12 @@ unsafe fn convert_native_with_source(
                     }
                     _ => {}
                 }
-                event.set_flags(new_flags);
+                event.set_flags(*new_flags);
                 Some(event)
             } else {
                 // For non-modifier keys, use regular key events
                 let event = CGEvent::new_keyboard_event(source, code, true).ok()?;
-                event.set_flags(LAST_FLAGS);
+                event.set_flags(*LAST_FLAGS.lock().unwrap());
                 Some(event)
             }
         }
@@ -59,7 +59,7 @@ unsafe fn convert_native_with_source(
                 event.set_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE, code as i64);
 
                 // Get current flags and update them
-                let mut new_flags = LAST_FLAGS;
+                let mut new_flags = LAST_FLAGS.lock().unwrap();
                 match key {
                     Key::ShiftLeft | Key::ShiftRight => {
                         new_flags.remove(CGEventFlags::CGEventFlagShift);
@@ -75,12 +75,12 @@ unsafe fn convert_native_with_source(
                     }
                     _ => {}
                 }
-                event.set_flags(new_flags);
+                event.set_flags(*new_flags);
                 Some(event)
             } else {
                 // For non-modifier keys, use regular key events
                 let event = CGEvent::new_keyboard_event(source, code, false).ok()?;
-                event.set_flags(LAST_FLAGS);
+                event.set_flags(*LAST_FLAGS.lock().unwrap());
                 Some(event)
             }
         }

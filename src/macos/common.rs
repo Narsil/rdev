@@ -143,44 +143,44 @@ pub unsafe fn convert(
             let key = key_from_code(code);
 
             // Determine if this is a press or release based on flag changes
-            let global_flags = LAST_FLAGS.lock().unwrap();
+            let mut global_flags = LAST_FLAGS.lock().unwrap();
             if flags.contains(CGEventFlags::CGEventFlagShift)
                 && !global_flags.contains(CGEventFlags::CGEventFlagShift)
             {
                 *global_flags = flags;
                 Some(EventType::KeyPress(key))
             } else if !flags.contains(CGEventFlags::CGEventFlagShift)
-                && *global_flags.contains(CGEventFlags::CGEventFlagShift)
+                && global_flags.contains(CGEventFlags::CGEventFlagShift)
             {
                 *global_flags = flags;
                 Some(EventType::KeyRelease(key))
             } else if flags.contains(CGEventFlags::CGEventFlagControl)
-                && !*global_flags.contains(CGEventFlags::CGEventFlagControl)
+                && !global_flags.contains(CGEventFlags::CGEventFlagControl)
             {
                 *global_flags = flags;
                 Some(EventType::KeyPress(key))
             } else if !flags.contains(CGEventFlags::CGEventFlagControl)
-                && *global_flags.contains(CGEventFlags::CGEventFlagControl)
+                && global_flags.contains(CGEventFlags::CGEventFlagControl)
             {
                 *global_flags = flags;
                 Some(EventType::KeyRelease(key))
             } else if flags.contains(CGEventFlags::CGEventFlagAlternate)
-                && !*global_flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && !global_flags.contains(CGEventFlags::CGEventFlagAlternate)
             {
                 *global_flags = flags;
                 Some(EventType::KeyPress(key))
             } else if !flags.contains(CGEventFlags::CGEventFlagAlternate)
-                && *global_flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && global_flags.contains(CGEventFlags::CGEventFlagAlternate)
             {
                 *global_flags = flags;
                 Some(EventType::KeyRelease(key))
             } else if flags.contains(CGEventFlags::CGEventFlagCommand)
-                && !*global_flags.contains(CGEventFlags::CGEventFlagCommand)
+                && !global_flags.contains(CGEventFlags::CGEventFlagCommand)
             {
                 *global_flags = flags;
                 Some(EventType::KeyPress(key))
             } else if !flags.contains(CGEventFlags::CGEventFlagCommand)
-                && *global_flags.contains(CGEventFlags::CGEventFlagCommand)
+                && global_flags.contains(CGEventFlags::CGEventFlagCommand)
             {
                 *global_flags = flags;
                 Some(EventType::KeyRelease(key))
