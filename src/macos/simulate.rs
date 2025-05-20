@@ -11,9 +11,6 @@ use std::convert::TryInto;
 use crate::macos::common::LAST_FLAGS;
 use crate::macos::keycodes::code_from_key;
 
-// Track the current state of modifier keys
-static mut CURRENT_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
-
 unsafe fn convert_native_with_source(
     event_type: &EventType,
     source: CGEventSource,
