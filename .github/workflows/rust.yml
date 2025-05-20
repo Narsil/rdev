@@ -27,7 +27,7 @@ jobs:
           test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab
         - os: ubuntu-latest
           # TODO unstable_grab feature is not supported on Linux.
-          test: cargo test --verbose --features=serialize
+          test: cargo test --verbose --features=serialize,x11
         - os: windows-latest
           test: cargo test --verbose --all-features
 
