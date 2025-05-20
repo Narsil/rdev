@@ -375,7 +375,7 @@ where
                     let (_, event) = match device.next_event(evdev_rs::ReadFlag::NORMAL) {
                         Ok(event) => event,
                         Err(_) => {
-                            let device_fd = device.file().unwrap().into_raw_fd();
+                            let device_fd = device.as_raw_fd();
                             let empty_event = epoll::Event::new(epoll::Events::empty(), 0);
                             epoll::ctl(epoll_fd, EPOLL_CTL_DEL, device_fd, empty_event)?;
                             continue 'events;
