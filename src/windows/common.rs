@@ -1,4 +1,4 @@
-use crate::rdev::{Button, EventType};
+use crate::rdev::{Button, EventType, MouseScrollDelta};
 use crate::windows::keyboard::Keyboard;
 use crate::windows::keycodes::key_from_code;
 use lazy_static::lazy_static;
@@ -83,17 +83,17 @@ pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
         }
         Ok(WM_MOUSEWHEEL) => {
             let delta = get_delta(lpdata) as c_short;
-            Some(EventType::Wheel {
-                delta_x: 0,
-                delta_y: (delta / WHEEL_DELTA) as i64,
-            })
+            Some(EventType::Wheel(MouseScrollDelta::LineDelta(
+                0.0,
+                delta as f32 / WHEEL_DELTA as f32,
+            )))
         }
         Ok(WM_MOUSEHWHEEL) => {
             let delta = get_delta(lpdata) as c_short;
-            Some(EventType::Wheel {
-                delta_x: (delta / WHEEL_DELTA) as i64,
-                delta_y: 0,
-            })
+            Some(EventType::Wheel(MouseScrollDelta::LineDelta(
+                0.0,
+                delta as f32 / WHEEL_DELTA as f32,
+            )))
         }
         _ => None,
     }

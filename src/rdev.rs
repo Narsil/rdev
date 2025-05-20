@@ -256,10 +256,14 @@ pub enum EventType {
     /// `delta_y` represents vertical scroll and `delta_x` represents horizontal scroll.
     /// Positive values correspond to scrolling up or right and negative values
     /// correspond to scrolling down or left
-    Wheel {
-        delta_x: i64,
-        delta_y: i64,
-    },
+    Wheel(MouseScrollDelta),
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+pub enum MouseScrollDelta {
+    LineDelta(f32, f32),
+    // Not supported yet PixelDelta(PhysicalPosition<f64>),
 }
 
 /// When events arrive from the OS they get some additional information added from
