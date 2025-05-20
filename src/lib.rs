@@ -53,7 +53,7 @@
 //!             println!("We could not send {:?}", event_type);
 //!         }
 //!     }
-//!     // Let ths OS catchup (at least MacOS)
+//!     // Let the OS catchup (at least MacOS)
 //!     thread::sleep(delay);
 //! }
 //!
@@ -169,7 +169,7 @@
 //!
 //! Installing this library with the `unstable_grab` feature adds the `grab` function
 //! which hooks into the global input device event stream.
-//! by suppling this function with a callback, you can intercept
+//! by supplying this function with a callback, you can intercept
 //! all keyboard and mouse events before they are delivered to applications / window managers.
 //! In the callback, returning None ignores the event and returning the event let's it pass.
 //! There is no modification of the event possible here (yet).
@@ -208,7 +208,7 @@
 //!
 //! ### Linux
 //! The `grab` function use the `evdev` library to intercept events, so they will work with both X11 and Wayland
-//! In order for this to work, the process runnign the `listen` or `grab` loop needs to either run as root (not recommended),
+//! In order for this to work, the process running the `listen` or `grab` loop needs to either run as root (not recommended),
 //! or run as a user who's a member of the `input` group (recommended)
 //! Note: on some distros, the group name for evdev access is called `plugdev`, and on some systems, both groups can exist.
 //! When in doubt, add your user to both groups if they exist.
@@ -286,7 +286,7 @@ where
 ///             println!("We could not send {:?}", event_type);
 ///         }
 ///     }
-///     // Let ths OS catchup (at least MacOS)
+///     // Let the OS catchup (at least MacOS)
 ///     thread::sleep(delay);
 /// }
 ///
