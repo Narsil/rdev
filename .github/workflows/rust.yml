@@ -26,7 +26,7 @@ jobs:
         - variant: ubuntu-x11-latest
           os: ubuntu-latest
           headless: weston --no-config --socket=wl-test-env --backend=headless
-          dependencies: sudo apt-get install libxtst-dev libevdev-dev libudev-dev --assume-yes
+          dependencies: sudo apt-get install libxtst-dev libevdev-dev libudev-dev weston --assume-yes
           test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland
         - variant: macos-latest
           os: macos-latest
