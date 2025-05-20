@@ -4,10 +4,10 @@ mod x11;
 #[cfg(feature = "x11")]
 pub use x11::*;
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", not(feature = "x11")))]
 mod wayland;
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", not(feature = "x11")))]
 pub use wayland::*;
 
 #[cfg(not(any(feature = "wayland", feature = "x11")))]

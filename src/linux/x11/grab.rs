@@ -1,5 +1,5 @@
-use crate::linux::common::Display;
-use crate::linux::keyboard::Keyboard;
+use super::common::Display;
+use super::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{

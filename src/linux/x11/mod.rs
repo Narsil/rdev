@@ -10,9 +10,9 @@ mod keycodes;
 mod listen;
 mod simulate;
 
-pub use crate::linux::display::display_size;
+pub use display::display_size;
 #[cfg(feature = "unstable_grab")]
-pub use crate::linux::grab::grab;
-pub use crate::linux::keyboard::Keyboard;
-pub use crate::linux::listen::listen;
-pub use crate::linux::simulate::simulate;
+pub use grab::grab;
+pub use keyboard::Keyboard;
+pub use listen::listen;
+pub use simulate::simulate;
