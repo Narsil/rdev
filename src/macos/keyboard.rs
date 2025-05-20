@@ -31,6 +31,10 @@ static NSEventModifierFlagCommand: u64 = 1 << 20;
 
 const BUF_LEN: usize = 4;
 
+lazy_static::lazy_static! {
+    static ref QUEUE: dispatch::Queue = dispatch::Queue::main();
+}
+
 #[cfg(target_os = "macos")]
 #[allow(clippy::duplicated_attributes)]
 #[link(name = "Cocoa", kind = "framework")]
@@ -57,6 +61,7 @@ extern "C" {
 }
 
 pub struct Keyboard {
+    is_main_thread: bool,
     dead_state: u32,
     shift: bool,
     caps_lock: bool,
@@ -64,10 +69,15 @@ pub struct Keyboard {
 impl Keyboard {
     pub fn new() -> Option<Keyboard> {
         Some(Keyboard {
+            is_main_thread: true,
             dead_state: 0,
             shift: false,
             caps_lock: false,
         })
+    }
+
+    pub fn set_is_main_thread(&mut self, b: bool) {
+        self.is_main_thread = b;
     }
 
     fn modifier_state(&self) -> ModifierState {
@@ -84,7 +94,15 @@ impl Keyboard {
         flags: CGEventFlags,
     ) -> Option<String> {
         let modifier_state = flags_to_state(flags.bits());
-        self.string_from_code(code, modifier_state)
+
+        if self.is_main_thread {
+            self.string_from_code(code, modifier_state)
+        } else {
+            QUEUE.exec_sync(move || {
+                // ignore all modifiers for name
+                self.string_from_code(code, modifier_state)
+            })
+        }
     }
 
     pub(crate) unsafe fn string_from_code(

@@ -226,7 +226,7 @@ pub use crate::rdev::{
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
-pub use crate::macos::Keyboard;
+pub use crate::macos::{set_is_main_thread, Keyboard};
 #[cfg(target_os = "macos")]
 use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
