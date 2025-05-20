@@ -107,7 +107,7 @@ unsafe extern "C" fn record_callback(
     let y = xdatum.root_y as f64;
 
     let ptr = &raw mut KEYBOARD;
-    if let Some(event) = convert(&mut &ptr, code, type_, x, y) {
+    if let Some(event) = convert(&mut *ptr, code, type_, x, y) {
         let ptr = &raw mut GLOBAL_CALLBACK;
         if let Some(callback) = &mut *ptr {
             callback(event);
