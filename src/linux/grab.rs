@@ -13,7 +13,7 @@ use std::io;
 use std::os::unix::{
     ffi::OsStrExt,
     fs::FileTypeExt,
-    io::{AsRawFd, IntoRawFd, RawFd},
+    io::{AsRawFd, RawFd},
 };
 use std::path::Path;
 use std::time::SystemTime;
@@ -469,7 +469,7 @@ where
 }
 
 fn inotify_devices() -> io::Result<Inotify> {
-    let mut inotify = Inotify::init()?;
+    let inotify = Inotify::init()?;
     inotify.watches().add(DEV_PATH, WatchMask::CREATE)?;
     Ok(inotify)
 }
@@ -483,9 +483,7 @@ fn add_device_to_epoll_from_inotify_event(
     device_path.push(OsString::from("/"));
     device_path.push(event.name.unwrap());
     // new plug events
-    let file = File::open(device_path)?;
-    let fd = file.as_raw_fd();
-    let device = Device::new_from_file(file)?;
+    let device = Device::new_from_path(device_path)?;
     let event = epoll::Event::new(EPOLLIN, devices.len() as u64);
     devices.push(device);
     epoll::ctl(epoll_fd, EPOLL_CTL_ADD, fd, event)?;
