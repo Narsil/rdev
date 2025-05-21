@@ -17,21 +17,32 @@ pub struct Keyboard {
     alt_idx: u32,
     ctrl_idx: u32,
     meta_idx: u32,
+    current_layout: String,
+    current_variant: String,
+    current_model: String,
 }
 
 impl Keyboard {
     pub fn new() -> Result<Self, crate::rdev::SimulateError> {
         let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+        
+        // Get current keyboard layout information from environment
+        let layout = std::env::var("XKB_DEFAULT_LAYOUT").unwrap_or_else(|_| "us".to_string());
+        let variant = std::env::var("XKB_DEFAULT_VARIANT").unwrap_or_else(|_| "".to_string());
+        let model = std::env::var("XKB_DEFAULT_MODEL").unwrap_or_else(|_| "pc104".to_string());
+        let rules = std::env::var("XKB_DEFAULT_RULES").unwrap_or_else(|_| "evdev".to_string());
+        
         let keymap = xkb::Keymap::new_from_names(
             &context,
-            "",                                          // rules
-            "pc104",                                     // model
-            "us",                                        // layout
-            "intl",                                      // variant
-            Some("terminate:ctrl_alt_bksp".to_string()), // options
+            &rules,
+            &model,
+            &layout,
+            &variant,
+            Some("terminate:ctrl_alt_bksp".to_string()),
             xkb::KEYMAP_COMPILE_NO_FLAGS,
         )
         .ok_or(crate::rdev::SimulateError)?;
+        
         let state = xkb::State::new(&keymap);
         // Lookup modifier indices
         let shift_idx = keymap.mod_get_index("Shift");
@@ -39,6 +50,7 @@ impl Keyboard {
         let alt_idx = keymap.mod_get_index("Mod1");
         let ctrl_idx = keymap.mod_get_index("Control");
         let meta_idx = keymap.mod_get_index("Mod4");
+        
         Ok(Self {
             context,
             keymap,
@@ -53,6 +65,9 @@ impl Keyboard {
             alt_idx,
             ctrl_idx,
             meta_idx,
+            current_layout: layout,
+            current_variant: variant,
+            current_model: model,
         })
     }
 
