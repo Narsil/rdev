@@ -9,7 +9,7 @@ use std::os::raw::c_void;
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
 
 #[link(name = "Cocoa", kind = "framework")]
-extern "C" {}
+unsafe extern "C" {}
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
@@ -19,12 +19,14 @@ unsafe extern "C" fn raw_callback(
 ) -> CGEventRef {
     let opt = KEYBOARD_STATE.lock();
     if let Ok(mut keyboard) = opt {
-        if let Some(event) = convert(event_type, &cg_event, &mut keyboard) {
-            // Reborrowing the global callback pointer.
-            // Totally UB. but not sure there's a great alternative.
-            let ptr = &raw mut GLOBAL_CALLBACK;
-            if let Some(callback) = &mut *ptr {
-                callback(event);
+        unsafe {
+            if let Some(event) = convert(event_type, &cg_event, &mut keyboard) {
+                // Reborrowing the global callback pointer.
+                // Totally UB. but not sure there's a great alternative.
+                let ptr = &raw mut GLOBAL_CALLBACK;
+                if let Some(callback) = &mut *ptr {
+                    callback(event);
+                }
             }
         }
     }

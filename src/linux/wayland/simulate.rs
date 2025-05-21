@@ -1,11 +1,11 @@
+use crate::SimulateError;
 use crate::linux::wayland::keycodes::ukey_from_key;
 use crate::rdev::{Button, EventType};
-use crate::SimulateError;
 use input_linux::{
     EventKind, EventTime, InputEvent, InputId, Key as UKey, KeyEvent, KeyState, RelativeAxis,
     RelativeEvent, SynchronizeEvent, SynchronizeKind, UInputHandle,
 };
-use libc::{input_event, O_NONBLOCK};
+use libc::{O_NONBLOCK, input_event};
 use std::fs::{File, OpenOptions};
 use std::os::unix::fs::OpenOptionsExt;
 use std::sync::{LazyLock, Mutex};

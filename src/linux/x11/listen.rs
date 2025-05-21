@@ -1,10 +1,9 @@
 extern crate libc;
 extern crate x11;
-use super::common::{convert, FALSE, KEYBOARD};
+use super::common::{FALSE, KEYBOARD, convert};
 use super::keyboard::Keyboard;
 use crate::rdev::{Event, ListenError};
 use std::convert::TryInto;
-use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_uchar, c_uint, c_ulong};
 use std::ptr::null;
 use x11::xlib;
@@ -27,8 +26,7 @@ where
         if dpy_control.is_null() {
             return Err(ListenError::MissingDisplayError);
         }
-        let extension_name = CStr::from_bytes_with_nul(b"RECORD\0")
-            .map_err(|_| ListenError::XRecordExtensionError)?;
+        let extension_name = c"RECORD";
         let extension = xlib::XInitExtension(dpy_control, extension_name.as_ptr());
         if extension.is_null() {
             return Err(ListenError::XRecordExtensionError);
@@ -90,28 +88,30 @@ unsafe extern "C" fn record_callback(
     _null: *mut c_char,
     raw_data: *mut xrecord::XRecordInterceptData,
 ) {
-    let data = raw_data.as_ref().unwrap();
-    if data.category != xrecord::XRecordFromServer {
-        return;
-    }
-
-    debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
-    // Cast binary data
-    #[allow(clippy::cast_ptr_alignment)]
-    let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
-
-    let code: c_uint = xdatum.code.into();
-    let type_: c_int = xdatum.type_.into();
-
-    let x = xdatum.root_x as f64;
-    let y = xdatum.root_y as f64;
-
-    let ptr = &raw mut KEYBOARD;
-    if let Some(event) = convert(&mut *ptr, code, type_, x, y) {
-        let ptr = &raw mut GLOBAL_CALLBACK;
-        if let Some(callback) = &mut *ptr {
-            callback(event);
+    unsafe {
+        let data = raw_data.as_ref().unwrap();
+        if data.category != xrecord::XRecordFromServer {
+            return;
         }
+
+        debug_assert!(data.data_len * 4 >= std::mem::size_of::<XRecordDatum>().try_into().unwrap());
+        // Cast binary data
+        #[allow(clippy::cast_ptr_alignment)]
+        let xdatum = (data.data as *const XRecordDatum).as_ref().unwrap();
+
+        let code: c_uint = xdatum.code.into();
+        let type_: c_int = xdatum.type_.into();
+
+        let x = xdatum.root_x as f64;
+        let y = xdatum.root_y as f64;
+
+        let ptr = &raw mut KEYBOARD;
+        if let Some(event) = convert(&mut *ptr, code, type_, x, y) {
+            let ptr = &raw mut GLOBAL_CALLBACK;
+            if let Some(callback) = &mut *ptr {
+                callback(event);
+            }
+        }
+        xrecord::XRecordFreeData(raw_data);
     }
-    xrecord::XRecordFreeData(raw_data);
 }

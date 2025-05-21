@@ -3,12 +3,12 @@ use super::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
-    enums::{EventCode, EV_KEY, EV_REL},
     Device, InputEvent, UInputDevice,
+    enums::{EV_KEY, EV_REL, EventCode},
 };
 use inotify::{Inotify, WatchMask};
 use std::ffi::{OsStr, OsString};
-use std::fs::{read_dir, File};
+use std::fs::{File, read_dir};
 use std::io;
 use std::os::unix::{
     ffi::OsStrExt,
