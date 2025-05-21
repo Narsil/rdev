@@ -3,6 +3,9 @@ use super::xkb_keycodes::internal_to_xkb_keycode;
 use crate::rdev::{EventType, Key, KeyboardState};
 use xkbcommon::xkb;
 
+#[allow(dead_code)]
+// TODO this does not handle keyboard mapping change
+// which is handled by the compositor and depend on window to window
 pub struct Keyboard {
     context: xkb::Context,
     keymap: xkb::Keymap,

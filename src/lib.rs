@@ -230,11 +230,11 @@ use crate::macos::{display_size as _display_size, listen as _listen, simulate as
 #[cfg(target_os = "macos")]
 pub use crate::macos::{set_is_main_thread, Keyboard};
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
 mod linux;
-#[cfg(target_os = "linux")]
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
 pub use crate::linux::Keyboard;
-#[cfg(target_os = "linux")]
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
 use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
 
 #[cfg(target_os = "windows")]
@@ -323,7 +323,7 @@ pub fn display_size() -> Result<(u64, u64), DisplayError> {
 }
 
 #[cfg(feature = "unstable_grab")]
-#[cfg(target_os = "linux")]
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
 pub use crate::linux::grab as _grab;
 #[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "macos")]
