@@ -27,7 +27,7 @@ jobs:
           os: ubuntu-latest
           headless: weston --no-config --socket=wl-test-env --backend=headless &
           dependencies: |
-            sudo apt-get install libxtst-dev libevdev-dev libudev-dev libinput-dev weston --assume-yes
+            sudo apt-get install libxtst-dev libevdev-dev libudev-dev libinput-dev libxkbcommon-dev weston --assume-yes
             sudo chown root:input /dev/uinput
             sudo chmod g+rw /dev/uinput
             id -a
