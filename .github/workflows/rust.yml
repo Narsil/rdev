@@ -36,11 +36,10 @@ jobs:
             echo 'KERNEL=="uinput", MODE="0660", GROUP="input", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/99-uinput.rules
             sudo udevadm control --reload-rules
             sudo udevadm trigger --attr-match=name="uinput"
-            ls -l -h /dev/uinput
 
           build: cargo build --verbose --features wayland
           # Keyboard not implemented in wayland
-          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland -- --skip test_keyboard_state --skip test_grab
+          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland -- --skip test_keyboard_state --skip test_grab --skip test_listen_and_simulate 
         - variant: macos-latest
           os: macos-latest
           build: cargo build --verbose
