@@ -30,10 +30,15 @@ impl Handle {
             uinput.set_relbit(RelativeAxis::X).unwrap();
             uinput.set_relbit(RelativeAxis::Y).unwrap();
             uinput.set_relbit(RelativeAxis::Wheel).unwrap();
+            uinput.set_relbit(RelativeAxis::WheelHiRes).unwrap();
 
             // Enable all keys
             for key in UKey::iter() {
                 uinput.set_keybit(key).unwrap();
+            }
+            // Enable all keys
+            for rel in RelativeAxis::iter() {
+                uinput.set_relbit(rel).unwrap();
             }
 
             let input_id = InputId {
@@ -116,6 +121,13 @@ impl Handle {
                 }
                 EventType::MouseMove { x, y } => {
                     let time = Self::get_current_time();
+                    let reset_x = RelativeEvent::new(time, RelativeAxis::X, i32::MIN);
+                    let reset_x: input_event = InputEvent::from(reset_x).into();
+                    let reset_y = RelativeEvent::new(time, RelativeAxis::Y, i32::MIN);
+                    let reset_y: input_event = InputEvent::from(reset_y).into();
+                    let rsync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
+                    let rsync: input_event = InputEvent::from(rsync).into();
+
                     let event_x = RelativeEvent::new(time, RelativeAxis::X, *x as i32);
                     let event_x: input_event = InputEvent::from(event_x).into();
                     let event_y = RelativeEvent::new(time, RelativeAxis::Y, *y as i32);
@@ -123,14 +135,16 @@ impl Handle {
                     let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle
-                        .write(&[event_x, event_y, sync])
+                        .write(&[reset_x, reset_y, rsync, event_x, event_y, sync])
                         .map_err(|_| SimulateError)?;
                 }
                 EventType::Wheel { delta_x, delta_y } => {
                     let time = Self::get_current_time();
-                    let event_x = RelativeEvent::new(time, RelativeAxis::Wheel, *delta_x as i32);
+                    let event_x =
+                        RelativeEvent::new(time, RelativeAxis::WheelHiRes, (*delta_x * 120) as i32);
                     let event_x: input_event = InputEvent::from(event_x).into();
-                    let event_y = RelativeEvent::new(time, RelativeAxis::Wheel, *delta_y as i32);
+                    let event_y =
+                        RelativeEvent::new(time, RelativeAxis::WheelHiRes, (*delta_y * 120) as i32);
                     let event_y: input_event = InputEvent::from(event_y).into();
                     let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();

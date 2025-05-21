@@ -18,7 +18,7 @@ serde = {version = "1.0", features = ["derive"], optional=true}
 lazy_static = "1.4"
 
 [features]
-default = ["x11"]
+default = []
 serialize = ["serde"]
 unstable_grab = ["evdev-rs", "epoll", "inotify"]
 wayland = ["input", "input-linux"]

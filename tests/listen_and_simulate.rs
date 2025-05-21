@@ -35,8 +35,10 @@ fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Bo
     let recv = EVENT_CHANNEL.1.lock()?;
     for event in events {
         simulate(&event)?;
-        let recieved_event = recv.recv_timeout(second).expect("No events to recieve");
-        assert_eq!(recieved_event.event_type, event);
+        let received_event = recv
+            .recv_timeout(second)
+            .expect(&format!("No events to receive {event:?}"));
+        assert_eq!(received_event.event_type, event);
     }
     Ok(())
 }
@@ -47,10 +49,15 @@ fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
     // wait for user input from keyboard to stop
     // (i.e. the return/enter keypress to run test command)
     thread::sleep(Duration::from_millis(50));
+    // On wayland we need to open libuinput and the hooks take
+    // some time to install, this forces the handle to get installed
+    simulate(&EventType::MouseMove { x: 0.0, y: 0.0 })?;
+    thread::sleep(Duration::from_millis(50));
 
     let events = vec![
         //TODO: fix sending shift keypress events on linux
-        //EventType::KeyPress(Key::ShiftLeft),
+        EventType::KeyPress(Key::ShiftLeft),
+        EventType::KeyRelease(Key::ShiftLeft),
         EventType::KeyPress(Key::KeyS),
         EventType::KeyRelease(Key::KeyS),
         EventType::ButtonPress(Button::Right),

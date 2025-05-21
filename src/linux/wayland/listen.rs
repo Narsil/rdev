@@ -1,8 +1,10 @@
 extern crate libc;
 use super::keycodes::key_from_code;
 use crate::rdev::{Event, ListenError};
-use crate::EventType;
+use crate::{Button, EventType};
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
+use input::event::pointer::{Axis, ButtonState};
+use input::event::PointerEvent;
 use input::{Event as LibEvent, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use std::fs::{File, OpenOptions};
@@ -22,7 +24,40 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
                 KeyState::Released => Some(EventType::KeyRelease(k)),
             }
         }
-        _ => None,
+        LibEvent::Pointer(PointerEvent::Button(btn)) => {
+            let rdev_btn = match btn.button() {
+                272 => Some(Button::Left),
+                273 => Some(Button::Right),
+                274 => Some(Button::Middle),
+                _ => None,
+            };
+            if let Some(rdev_btn) = rdev_btn {
+                let state: ButtonState = btn.button_state();
+                match state {
+                    ButtonState::Pressed => Some(EventType::ButtonPress(rdev_btn)),
+                    ButtonState::Released => Some(EventType::ButtonRelease(rdev_btn)),
+                }
+            } else {
+                None
+            }
+        }
+        LibEvent::Pointer(PointerEvent::Motion(btn)) => Some(EventType::MouseMove {
+            // TODO Convert to absolute X, Y
+            x: btn.dx(),
+            y: btn.dy(),
+        }),
+        LibEvent::Pointer(PointerEvent::MotionAbsolute(btn)) => Some(EventType::MouseMove {
+            x: btn.absolute_x(),
+            y: btn.absolute_y(),
+        }),
+        LibEvent::Pointer(PointerEvent::ScrollWheel(btn)) => Some(EventType::Wheel {
+            delta_x: -(btn.scroll_value_v120(Axis::Horizontal) / 120.0) as i64,
+            delta_y: -(btn.scroll_value_v120(Axis::Vertical) / 120.0) as i64,
+        }),
+        lib => {
+            dbg!(format!("Received unhandlded event {lib:?}"));
+            None
+        }
     }
 }
 fn convert(libevent: LibEvent) -> Option<Event> {
