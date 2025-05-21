@@ -1,4 +1,4 @@
-use rdev::{listen, Event};
+use rdev::{Event, listen};
 
 fn main() {
     // This will block.

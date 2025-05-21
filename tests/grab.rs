@@ -1,9 +1,9 @@
 use lazy_static::lazy_static;
-use rdev::{grab, listen, simulate, Event, EventType, Key};
+use rdev::{Event, EventType, Key, grab, listen, simulate};
 use serial_test::serial;
 use std::error::Error;
-use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::sync::Mutex;
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::thread;
 use std::time::Duration;
 

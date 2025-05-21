@@ -265,7 +265,7 @@ decl_keycodes_uinput!(
 
 #[cfg(test)]
 mod test {
-    use super::{code_from_key, key_from_code, key_from_ukey, ukey_from_key, UKey};
+    use super::{UKey, code_from_key, key_from_code, key_from_ukey, ukey_from_key};
     #[test]
     fn test_reversible() {
         for code in 0..65636 {

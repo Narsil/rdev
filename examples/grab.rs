@@ -1,4 +1,4 @@
-use rdev::{grab, Event, EventType, Key};
+use rdev::{Event, EventType, Key, grab};
 
 fn main() {
     // This will block.

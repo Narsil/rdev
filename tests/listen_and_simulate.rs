@@ -1,4 +1,4 @@
-use rdev::{listen, simulate, Button, EventType, Key};
+use rdev::{Button, EventType, Key, listen, simulate};
 use serial_test::serial;
 use std::error::Error;
 use std::iter::Iterator;
