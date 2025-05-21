@@ -26,7 +26,10 @@ jobs:
         - variant: ubuntu-wayland-latest
           os: ubuntu-latest
           headless: weston --no-config --socket=wl-test-env --backend=headless &
-          dependencies: sudo apt-get install libxtst-dev libevdev-dev libudev-dev libinput-dev weston --assume-yes
+          dependencies: |
+            sudo apt-get install libxtst-dev libevdev-dev libudev-dev libinput-dev weston --assume-yes
+            ls -l -h /dev/uinput
+            x
 
           build: cargo build --verbose --features wayland
           # Keyboard not implemented in wayland
