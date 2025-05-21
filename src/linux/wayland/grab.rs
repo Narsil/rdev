@@ -305,6 +305,7 @@ pub fn grab<T>(callback: T) -> Result<(), GrabError>
 where
     T: Fn(Event) -> Option<Event> + 'static,
 {
+    compile_error!("Wayland doesn't support grab yet");
     let mut kb = Keyboard::new().ok_or(GrabError::KeyboardError)?;
     let display = Display::new().ok_or(GrabError::MissingDisplayError)?;
     let (width, height) = display.get_size().ok_or(GrabError::MissingDisplayError)?;
