@@ -44,7 +44,7 @@ jobs:
           os: macos-latest
           build: cargo build --verbose
           # TODO: We can't test this on github, we can't set accessibility yet.
-          test: cargo test --verbose --all-features -- --skip test_listen_and_simulate --skip test_grab
+          test: cargo test --verbose --all-features -- --skip test_grab
         - variant: windows-latest
           os: windows-latest
           build: cargo build --verbose
