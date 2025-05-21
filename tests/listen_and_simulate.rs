@@ -8,22 +8,6 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
-lazy_static! {
-    static ref EVENT_CHANNEL: (Mutex<Sender<Event>>, Mutex<Receiver<Event>>) = {
-        let (send, recv) = channel();
-        (Mutex::new(send), Mutex::new(recv))
-    };
-}
-
-fn send_event(event: Event) {
-    EVENT_CHANNEL
-        .0
-        .lock()
-        .expect("Failed to unlock Mutex")
-        .send(event)
-        .expect("Receiving end of EVENT_CHANNEL was closed");
-}
-
 fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Box<dyn Error>> {
     let (send, recv) = channel();
     // spawn new thread because listen blocks
