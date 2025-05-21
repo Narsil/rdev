@@ -2,7 +2,7 @@
 name = "rdev"
 version = "0.5.3"
 authors = ["Nicolas Patry <patry.nicolas@protonmail.com>"]
-edition = "2018"
+edition = "2024"
 
 description = "Listen and send keyboard and mouse events on Windows, Linux and MacOS."
 documentation = "https://docs.rs/rdev/"

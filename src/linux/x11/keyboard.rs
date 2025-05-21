@@ -3,7 +3,7 @@ use super::keycodes::code_from_key;
 use crate::rdev::{EventType, Key, KeyboardState};
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int, c_uint, c_ulong, c_void};
-use std::ptr::{null, null_mut, NonNull};
+use std::ptr::{NonNull, null, null_mut};
 use x11::xlib;
 
 #[derive(Debug)]
@@ -151,54 +151,56 @@ impl Keyboard {
         keycode: c_uint,
         state: c_uint,
     ) -> Option<String> {
-        if self.display.is_null() || self.xic.is_null() {
-            println!("We don't seem to have a display or a xic");
-            return None;
+        unsafe {
+            if self.display.is_null() || self.xic.is_null() {
+                println!("We don't seem to have a display or a xic");
+                return None;
+            }
+            const BUF_LEN: usize = 4;
+            let mut buf = [0_u8; BUF_LEN];
+            let key = xlib::XKeyEvent {
+                display: *self.display,
+                root: 0,
+                window: *self.window,
+                subwindow: 0,
+                x: 0,
+                y: 0,
+                x_root: 0,
+                y_root: 0,
+                state,
+                keycode,
+                same_screen: 0,
+                send_event: 0,
+                serial: self.serial,
+                type_: xlib::KeyPress,
+                time: xlib::CurrentTime,
+            };
+            self.serial += 1;
+
+            let mut event = xlib::XEvent { key };
+
+            // -----------------------------------------------------------------
+            // XXX: This is **OMEGA IMPORTANT** This is what enables us to receive
+            // the correct keyvalue from the utf8LookupString !!
+            // https://stackoverflow.com/questions/18246848/get-utf-8-input-with-x11-display#
+            // -----------------------------------------------------------------
+            xlib::XFilterEvent(&mut event, 0);
+
+            let ret = xlib::Xutf8LookupString(
+                *self.xic,
+                &mut event.key,
+                buf.as_mut_ptr() as *mut c_char,
+                BUF_LEN as c_int,
+                &mut *self.keysym,
+                &mut *self.status,
+            );
+            if ret == xlib::NoSymbol {
+                return None;
+            }
+
+            let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
+            String::from_utf8(buf[..len].to_vec()).ok()
         }
-        const BUF_LEN: usize = 4;
-        let mut buf = [0_u8; BUF_LEN];
-        let key = xlib::XKeyEvent {
-            display: *self.display,
-            root: 0,
-            window: *self.window,
-            subwindow: 0,
-            x: 0,
-            y: 0,
-            x_root: 0,
-            y_root: 0,
-            state,
-            keycode,
-            same_screen: 0,
-            send_event: 0,
-            serial: self.serial,
-            type_: xlib::KeyPress,
-            time: xlib::CurrentTime,
-        };
-        self.serial += 1;
-
-        let mut event = xlib::XEvent { key };
-
-        // -----------------------------------------------------------------
-        // XXX: This is **OMEGA IMPORTANT** This is what enables us to receive
-        // the correct keyvalue from the utf8LookupString !!
-        // https://stackoverflow.com/questions/18246848/get-utf-8-input-with-x11-display#
-        // -----------------------------------------------------------------
-        xlib::XFilterEvent(&mut event, 0);
-
-        let ret = xlib::Xutf8LookupString(
-            *self.xic,
-            &mut event.key,
-            buf.as_mut_ptr() as *mut c_char,
-            BUF_LEN as c_int,
-            &mut *self.keysym,
-            &mut *self.status,
-        );
-        if ret == xlib::NoSymbol {
-            return None;
-        }
-
-        let len = buf.iter().position(|ch| ch == &0).unwrap_or(BUF_LEN);
-        String::from_utf8(buf[..len].to_vec()).ok()
     }
 }
 
