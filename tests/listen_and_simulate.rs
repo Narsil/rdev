@@ -1,10 +1,8 @@
-use lazy_static::lazy_static;
-use rdev::{listen, simulate, Button, Event, EventType, Key};
+use rdev::{listen, simulate, Button, EventType, Key};
 use serial_test::serial;
 use std::error::Error;
 use std::iter::Iterator;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::Mutex;
+use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 
@@ -21,7 +19,7 @@ fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Bo
         simulate(&event)?;
         let received_event = recv
             .recv_timeout(second)
-            .expect(&format!("No events to receive {event:?}"));
+            .unwrap_or_else(|_| panic!("{}", "No events to receive {event:?}"));
         assert_eq!(received_event.event_type, event);
     }
     Ok(())
