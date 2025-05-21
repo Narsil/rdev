@@ -13,15 +13,13 @@ extern "C" {}
 
 unsafe extern "C" fn raw_callback(
     _proxy: CGEventTapProxy,
-    _type: CGEventType,
+    event_type: CGEventType,
     cg_event: CGEventRef,
     _user_info: *mut c_void,
 ) -> CGEventRef {
-    // println!("Event ref {:?}", cg_event_ptr);
-    // let cg_event: CGEvent = transmute_copy::<*mut c_void, CGEvent>(&cg_event_ptr);
     let opt = KEYBOARD_STATE.lock();
     if let Ok(mut keyboard) = opt {
-        if let Some(event) = convert(_type, &cg_event, &mut keyboard) {
+        if let Some(event) = convert(event_type, &cg_event, &mut keyboard) {
             // Reborrowing the global callback pointer.
             // Totally UB. but not sure there's a great alternative.
             let ptr = &raw mut GLOBAL_CALLBACK;
@@ -30,8 +28,6 @@ unsafe extern "C" fn raw_callback(
             }
         }
     }
-    // println!("Event ref END {:?}", cg_event_ptr);
-    // cg_event_ptr
     cg_event
 }
 

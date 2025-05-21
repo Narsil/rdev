@@ -1,5 +1,5 @@
-use crate::linux::common::Display;
-use crate::linux::keyboard::Keyboard;
+use super::common::Display;
+use super::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
@@ -367,7 +367,7 @@ where
                     add_device_to_epoll_from_inotify_event(epoll_fd, event, &mut devices)?;
                 }
             } else {
-                // Input device recieved event
+                // Input device received event
                 let device_idx = event.data as usize;
                 let device = devices.get(device_idx).unwrap();
                 while device.has_event_pending() {

@@ -34,8 +34,8 @@ pub enum CGEventTapOption {
     ListenOnly = 1,
 }
 
-pub static mut LAST_FLAGS: CGEventFlags = CGEventFlags::CGEventFlagNull;
 lazy_static! {
+    pub static ref LAST_FLAGS: Mutex<CGEventFlags> = Mutex::new(CGEventFlags::CGEventFlagNull);
     pub static ref KEYBOARD_STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
 }
 
@@ -128,22 +128,64 @@ pub unsafe fn convert(
         }
         CGEventType::KeyDown => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyPress(key_from_code(code.try_into().ok()?)))
+            let key = key_from_code(code.try_into().ok()?);
+            Some(EventType::KeyPress(key))
         }
         CGEventType::KeyUp => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-            Some(EventType::KeyRelease(key_from_code(code.try_into().ok()?)))
+            let key = key_from_code(code.try_into().ok()?);
+            Some(EventType::KeyRelease(key))
         }
         CGEventType::FlagsChanged => {
             let code = cg_event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
             let code = code.try_into().ok()?;
             let flags = cg_event.get_flags();
-            if flags < LAST_FLAGS {
-                LAST_FLAGS = flags;
-                Some(EventType::KeyRelease(key_from_code(code)))
+            let key = key_from_code(code);
+
+            // Determine if this is a press or release based on flag changes
+            let mut global_flags = LAST_FLAGS.lock().unwrap();
+            if flags.contains(CGEventFlags::CGEventFlagShift)
+                && !global_flags.contains(CGEventFlags::CGEventFlagShift)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagShift)
+                && global_flags.contains(CGEventFlags::CGEventFlagShift)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagControl)
+                && !global_flags.contains(CGEventFlags::CGEventFlagControl)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagControl)
+                && global_flags.contains(CGEventFlags::CGEventFlagControl)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && !global_flags.contains(CGEventFlags::CGEventFlagAlternate)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagAlternate)
+                && global_flags.contains(CGEventFlags::CGEventFlagAlternate)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyRelease(key))
+            } else if flags.contains(CGEventFlags::CGEventFlagCommand)
+                && !global_flags.contains(CGEventFlags::CGEventFlagCommand)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyPress(key))
+            } else if !flags.contains(CGEventFlags::CGEventFlagCommand)
+                && global_flags.contains(CGEventFlags::CGEventFlagCommand)
+            {
+                *global_flags = flags;
+                Some(EventType::KeyRelease(key))
             } else {
-                LAST_FLAGS = flags;
-                Some(EventType::KeyPress(key_from_code(code)))
+                None
             }
         }
         CGEventType::ScrollWheel => {
