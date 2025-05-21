@@ -43,8 +43,8 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
         }
         LibEvent::Pointer(PointerEvent::Motion(btn)) => Some(EventType::MouseMove {
             // TODO Convert to absolute X, Y
-            x: btn.dx(),
-            y: btn.dy(),
+            x: btn.dx_unaccelerated(),
+            y: btn.dy_unaccelerated(),
         }),
         LibEvent::Pointer(PointerEvent::MotionAbsolute(btn)) => Some(EventType::MouseMove {
             x: btn.absolute_x(),
@@ -54,8 +54,8 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
             delta_x: -(btn.scroll_value_v120(Axis::Horizontal) / 120.0) as i64,
             delta_y: -(btn.scroll_value_v120(Axis::Vertical) / 120.0) as i64,
         }),
-        lib => {
-            dbg!(format!("Received unhandlded event {lib:?}"));
+        _ => {
+            // dbg!(format!("Received unhandlded event {lib:?}"));
             None
         }
     }
@@ -97,6 +97,6 @@ where
                 callback(event);
             }
         }
-        std::thread::sleep(Duration::from_millis(20));
+        std::thread::sleep(Duration::from_millis(1));
     }
 }

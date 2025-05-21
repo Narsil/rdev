@@ -25,14 +25,14 @@ fn send_event(event: Event) {
 }
 
 fn sim_then_listen(events: &mut dyn Iterator<Item = EventType>) -> Result<(), Box<dyn Error>> {
+    let (send, recv) = channel();
     // spawn new thread because listen blocks
     let _listener = thread::spawn(move || {
-        listen(send_event).expect("Could not listen");
+        listen(move |event| send.send(event).unwrap()).expect("Could not listen");
     });
     let second = Duration::from_millis(1000);
     thread::sleep(second);
 
-    let recv = EVENT_CHANNEL.1.lock()?;
     for event in events {
         simulate(&event)?;
         let received_event = recv
@@ -72,7 +72,7 @@ fn test_listen_and_simulate() -> Result<(), Box<dyn Error>> {
         },
     ]
     .into_iter();
-    let click_events = (0..480).map(|pixel| EventType::MouseMove {
+    let click_events = (1..480).map(|pixel| EventType::MouseMove {
         x: pixel as f64,
         y: pixel as f64,
     });

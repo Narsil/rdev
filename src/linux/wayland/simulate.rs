@@ -121,12 +121,15 @@ impl Handle {
                 }
                 EventType::MouseMove { x, y } => {
                     let time = Self::get_current_time();
-                    let reset_x = RelativeEvent::new(time, RelativeAxis::X, i32::MIN);
-                    let reset_x: input_event = InputEvent::from(reset_x).into();
-                    let reset_y = RelativeEvent::new(time, RelativeAxis::Y, i32::MIN);
-                    let reset_y: input_event = InputEvent::from(reset_y).into();
-                    let rsync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
-                    let rsync: input_event = InputEvent::from(rsync).into();
+                    // let reset_x = RelativeEvent::new(time, RelativeAxis::X, i32::MIN);
+                    // let reset_x: input_event = InputEvent::from(reset_x).into();
+                    // let reset_y = RelativeEvent::new(time, RelativeAxis::Y, i32::MIN);
+                    // let reset_y: input_event = InputEvent::from(reset_y).into();
+                    // let rsync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
+                    // let rsync: input_event = InputEvent::from(rsync).into();
+                    // handle
+                    //     .write(&[reset_x, reset_y, rsync])
+                    //     .map_err(|_| SimulateError)?;
 
                     let event_x = RelativeEvent::new(time, RelativeAxis::X, *x as i32);
                     let event_x: input_event = InputEvent::from(event_x).into();
@@ -135,7 +138,7 @@ impl Handle {
                     let sync = SynchronizeEvent::new(time, SynchronizeKind::Report, 0);
                     let sync: input_event = InputEvent::from(sync).into();
                     handle
-                        .write(&[reset_x, reset_y, rsync, event_x, event_y, sync])
+                        .write(&[event_x, event_y, sync])
                         .map_err(|_| SimulateError)?;
                 }
                 EventType::Wheel { delta_x, delta_y } => {
