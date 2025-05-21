@@ -95,8 +95,9 @@ impl Keyboard {
     }
 
     fn get_key_utf8(&self, keycode: u32) -> Option<String> {
+        let keycode = xkb::Keycode::from(keycode);
         let keysym = self.state.key_get_one_sym(keycode);
-        if keysym == xkb::KEY_NoSymbol {
+        if keysym == xkb::keysyms::KEY_NoSymbol.into() {
             return None;
         }
         let utf8 = self.state.key_get_utf8(keycode);
