@@ -1,5 +1,5 @@
-use crate::linux::common::Display;
-use crate::linux::keyboard::Keyboard;
+use super::common::Display;
+use super::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
@@ -13,7 +13,7 @@ use std::io;
 use std::os::unix::{
     ffi::OsStrExt,
     fs::FileTypeExt,
-    io::{AsRawFd, IntoRawFd, RawFd},
+    io::{AsRawFd, RawFd},
 };
 use std::path::Path;
 use std::time::SystemTime;
@@ -301,12 +301,11 @@ fn evdev_event_to_rdev_event(
 //     }
 // }
 
-pub fn grab<T>(callback: T) -> Result<(), GrabError>
+pub fn grab<T>(mut callback: T) -> Result<(), GrabError>
 where
-    T: Fn(Event) -> Option<Event> + 'static,
+    T: FnMut(Event) -> Option<Event> + 'static,
 {
-    compile_error!("Wayland doesn't support grab yet");
-    let mut kb = Keyboard::new().ok_or(GrabError::KeyboardError)?;
+    let mut kb = Keyboard::new().map_err(|_| GrabError::KeyboardError)?;
     let display = Display::new().ok_or(GrabError::MissingDisplayError)?;
     let (width, height) = display.get_size().ok_or(GrabError::MissingDisplayError)?;
     let (current_x, current_y) = display
