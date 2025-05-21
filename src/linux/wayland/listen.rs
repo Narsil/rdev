@@ -1,6 +1,7 @@
 extern crate libc;
+use super::keyboard::Keyboard;
 use super::keycodes::key_from_code;
-use crate::rdev::{Event, ListenError};
+use crate::rdev::{Event, KeyboardState, ListenError};
 use crate::{Button, EventType};
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::event::pointer::{Axis, ButtonState};
@@ -60,11 +61,12 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
         }
     }
 }
-fn convert(libevent: LibEvent) -> Option<Event> {
+fn convert(keyboard: &mut Keyboard, libevent: LibEvent) -> Option<Event> {
     let event_type = convert_type(libevent)?;
+    let name = keyboard.add(&event_type);
     Some(Event {
         time: SystemTime::now(),
-        name: None,
+        name,
         event_type,
     })
 }
@@ -90,10 +92,11 @@ where
 {
     let mut input = Libinput::new_with_udev(Interface);
     input.udev_assign_seat("seat0").unwrap();
+    let mut keyboard = Keyboard::new().map_err(|_| ListenError::KeyboardError)?;
     loop {
         input.dispatch().unwrap();
         for libevent in &mut input {
-            if let Some(event) = convert(libevent) {
+            if let Some(event) = convert(&mut keyboard, libevent) {
                 callback(event);
             }
         }

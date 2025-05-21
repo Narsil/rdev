@@ -39,7 +39,7 @@ jobs:
 
           build: cargo build --verbose --features wayland
           # Keyboard not implemented in wayland
-          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland -- --skip test_keyboard_state --skip test_grab --skip test_listen_and_simulate 
+          test: WAYLAND_DISPLAY=wl-test-env cargo test --verbose --no-default-features --features=serialize,wayland -- --skip test_grab --skip test_listen_and_simulate 
         - variant: macos-latest
           os: macos-latest
           build: cargo build --verbose

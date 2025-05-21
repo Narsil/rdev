@@ -29,7 +29,6 @@
               ++ (
                 if stdenv.isLinux then
                   [
-                    xkbmon
                     xorg.libX11
                     xorg.libXcursor
                     xorg.libXrandr
@@ -38,6 +37,7 @@
                     libevdev
                     libnotify
                     libinput
+                    libxkbcommon
                     udev
                   ]
                 else

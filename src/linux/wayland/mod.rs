@@ -6,6 +6,7 @@ mod display;
 mod grab;
 mod keyboard;
 mod keycodes;
+mod xkb_keycodes;
 mod listen;
 mod simulate;
 

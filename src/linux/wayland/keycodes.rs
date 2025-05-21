@@ -4,7 +4,6 @@ use std::os::raw::c_uint;
 
 macro_rules! decl_keycodes {
     ($($key:ident, $code:literal),*) => {
-        #[cfg(test)]
         pub const fn code_from_key(key: Key) -> Option<c_uint> {
             match key {
                 $(
