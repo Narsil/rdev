@@ -25,13 +25,13 @@ pub struct Keyboard {
 impl Keyboard {
     pub fn new() -> Result<Self, crate::rdev::SimulateError> {
         let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-        
+
         // Get current keyboard layout information from environment
         let layout = std::env::var("XKB_DEFAULT_LAYOUT").unwrap_or_else(|_| "us".to_string());
         let variant = std::env::var("XKB_DEFAULT_VARIANT").unwrap_or_else(|_| "".to_string());
         let model = std::env::var("XKB_DEFAULT_MODEL").unwrap_or_else(|_| "pc104".to_string());
         let rules = std::env::var("XKB_DEFAULT_RULES").unwrap_or_else(|_| "evdev".to_string());
-        
+
         let keymap = xkb::Keymap::new_from_names(
             &context,
             &rules,
@@ -42,7 +42,7 @@ impl Keyboard {
             xkb::KEYMAP_COMPILE_NO_FLAGS,
         )
         .ok_or(crate::rdev::SimulateError)?;
-        
+
         let state = xkb::State::new(&keymap);
         // Lookup modifier indices
         let shift_idx = keymap.mod_get_index("Shift");
@@ -50,7 +50,7 @@ impl Keyboard {
         let alt_idx = keymap.mod_get_index("Mod1");
         let ctrl_idx = keymap.mod_get_index("Control");
         let meta_idx = keymap.mod_get_index("Mod4");
-        
+
         Ok(Self {
             context,
             keymap,
