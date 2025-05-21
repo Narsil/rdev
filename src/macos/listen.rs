@@ -64,3 +64,36 @@ where
     }
     Ok(())
 }
+
+
+#[link(name = "Cocoa", kind = "framework")]
+pub fn listen_non_blocking<T>(callback: T) -> Result<(), ListenError>
+where
+    T: FnMut(Event) + 'static,
+{
+    unsafe {
+        GLOBAL_CALLBACK = Some(Box::new(callback));
+        let _pool = NSAutoreleasePool::new(nil);
+        let tap = CGEventTapCreate(
+            CGEventTapLocation::HID, // HID, Session, AnnotatedSession,
+            kCGHeadInsertEventTap,
+            CGEventTapOption::ListenOnly,
+            kCGEventMaskForAllEvents,
+            raw_callback,
+            nil,
+        );
+        if tap.is_null() {
+            return Err(ListenError::EventTapError);
+        }
+        let _loop = CFMachPortCreateRunLoopSource(nil, tap, 0);
+        if _loop.is_null() {
+            return Err(ListenError::LoopSourceError);
+        }
+
+        let current_loop = CFRunLoopGetCurrent();
+        CFRunLoopAddSource(current_loop, _loop, kCFRunLoopCommonModes);
+
+        CGEventTapEnable(tap, true);
+    }
+    Ok(())
+}
