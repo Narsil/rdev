@@ -39,7 +39,7 @@ lazy_static::lazy_static! {
 #[allow(clippy::duplicated_attributes)]
 #[link(name = "Cocoa", kind = "framework")]
 #[link(name = "Carbon", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     fn TISCopyCurrentKeyboardLayoutInputSource() -> TISInputSourceRef;
     fn TISCopyCurrentKeyboardInputSource() -> TISInputSourceRef;
     fn TISGetInputSourceProperty(source: TISInputSourceRef, property: *mut c_void) -> CFDataRef;
@@ -81,11 +81,7 @@ impl Keyboard {
     }
 
     fn modifier_state(&self) -> ModifierState {
-        if self.caps_lock || self.shift {
-            2
-        } else {
-            0
-        }
+        if self.caps_lock || self.shift { 2 } else { 0 }
     }
 
     pub(crate) unsafe fn create_string_for_key(
@@ -93,15 +89,17 @@ impl Keyboard {
         code: u32,
         flags: CGEventFlags,
     ) -> Option<String> {
-        let modifier_state = flags_to_state(flags.bits());
+        unsafe {
+            let modifier_state = flags_to_state(flags.bits());
 
-        if self.is_main_thread {
-            self.string_from_code(code, modifier_state)
-        } else {
-            QUEUE.exec_sync(move || {
-                // ignore all modifiers for name
+            if self.is_main_thread {
                 self.string_from_code(code, modifier_state)
-            })
+            } else {
+                QUEUE.exec_sync(move || {
+                    // ignore all modifiers for name
+                    self.string_from_code(code, modifier_state)
+                })
+            }
         }
     }
 
@@ -110,38 +108,40 @@ impl Keyboard {
         code: u32,
         modifier_state: ModifierState,
     ) -> Option<String> {
-        let mut keyboard = TISCopyCurrentKeyboardInputSource();
-        let mut layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
+        unsafe {
+            let mut keyboard = TISCopyCurrentKeyboardInputSource();
+            let mut layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
 
-        if layout.is_null() {
-            // TISGetInputSourceProperty returns NULL when using CJK input methods,
-            // using TISCopyCurrentKeyboardLayoutInputSource to fix it.
-            keyboard = TISCopyCurrentKeyboardLayoutInputSource();
-            layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
             if layout.is_null() {
-                return None;
+                // TISGetInputSourceProperty returns NULL when using CJK input methods,
+                // using TISCopyCurrentKeyboardLayoutInputSource to fix it.
+                keyboard = TISCopyCurrentKeyboardLayoutInputSource();
+                layout = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData);
+                if layout.is_null() {
+                    return None;
+                }
             }
+            let layout_ptr = CFDataGetBytePtr(layout);
+
+            let mut buff = [0_u16; BUF_LEN];
+            let kb_type = LMGetKbdType();
+            let mut length = 0;
+            let _retval = UCKeyTranslate(
+                layout_ptr,
+                code.try_into().ok()?,
+                kUCKeyActionDown,
+                modifier_state,
+                kb_type,
+                kUCKeyTranslateDeadKeysBit,
+                &mut self.dead_state,                 // deadKeyState
+                BUF_LEN,                              // max string length
+                &mut length as *mut UniCharCount,     // actual string length
+                &mut buff as *mut [UniChar; BUF_LEN], // unicode string
+            );
+            CFRelease(keyboard);
+
+            String::from_utf16(&buff[..length]).ok()
         }
-        let layout_ptr = CFDataGetBytePtr(layout);
-
-        let mut buff = [0_u16; BUF_LEN];
-        let kb_type = LMGetKbdType();
-        let mut length = 0;
-        let _retval = UCKeyTranslate(
-            layout_ptr,
-            code.try_into().ok()?,
-            kUCKeyActionDown,
-            modifier_state,
-            kb_type,
-            kUCKeyTranslateDeadKeysBit,
-            &mut self.dead_state,                 // deadKeyState
-            BUF_LEN,                              // max string length
-            &mut length as *mut UniCharCount,     // actual string length
-            &mut buff as *mut [UniChar; BUF_LEN], // unicode string
-        );
-        CFRelease(keyboard);
-
-        String::from_utf16(&buff[..length]).ok()
     }
 }
 
