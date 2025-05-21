@@ -6,7 +6,7 @@ use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
 
-unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
+unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize { unsafe {
     if code == HC_ACTION {
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
@@ -35,7 +35,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
         }
     }
     CallNextHookEx(HOOK, code, param, lpdata)
-}
+}}
 impl From<HookError> for GrabError {
     fn from(error: HookError) -> Self {
         match error {

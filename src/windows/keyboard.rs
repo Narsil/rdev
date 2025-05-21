@@ -33,7 +33,7 @@ impl Keyboard {
         })
     }
 
-    pub(crate) unsafe fn get_name(&mut self, lpdata: LPARAM) -> Option<String> {
+    pub(crate) unsafe fn get_name(&mut self, lpdata: LPARAM) -> Option<String> { unsafe {
         // https://gist.github.com/akimsko/2011327
         // https://www.experts-exchange.com/questions/23453780/LowLevel-Keystroke-Hook-removes-Accents-on-French-Keyboard.html
         let code = get_code(lpdata);
@@ -41,9 +41,9 @@ impl Keyboard {
 
         self.set_global_state()?;
         self.get_code_name(code, scan_code)
-    }
+    }}
 
-    pub(crate) unsafe fn set_global_state(&mut self) -> Option<()> {
+    pub(crate) unsafe fn set_global_state(&mut self) -> Option<()> { unsafe {
         let mut state = [0_u8; 256];
         let state_ptr = state.as_mut_ptr();
 
@@ -68,9 +68,9 @@ impl Keyboard {
         }
         self.last_state = state;
         Some(())
-    }
+    }}
 
-    pub(crate) unsafe fn get_code_name(&mut self, code: UINT, scan_code: UINT) -> Option<String> {
+    pub(crate) unsafe fn get_code_name(&mut self, code: UINT, scan_code: UINT) -> Option<String> { unsafe {
         let current_window_thread_id = GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
         let state_ptr = self.last_state.as_mut_ptr();
         const BUF_LEN: i32 = 32;
@@ -111,9 +111,9 @@ impl Keyboard {
             self.last_is_dead = is_dead;
         }
         result
-    }
+    }}
 
-    unsafe fn clear_keyboard_buffer(&self, code: UINT, scan_code: UINT, layout: HKL) {
+    unsafe fn clear_keyboard_buffer(&self, code: UINT, scan_code: UINT, layout: HKL) { unsafe {
         const BUF_LEN: i32 = 32;
         let mut buff = [0_u16; BUF_LEN as usize];
         let buff_ptr = buff.as_mut_ptr();
@@ -124,7 +124,7 @@ impl Keyboard {
         while len < 0 {
             len = ToUnicodeEx(code, scan_code, state_ptr, buff_ptr, BUF_LEN, 0, layout);
         }
-    }
+    }}
 }
 
 impl KeyboardState for Keyboard {

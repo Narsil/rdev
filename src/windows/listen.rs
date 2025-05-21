@@ -17,7 +17,7 @@ impl From<HookError> for ListenError {
     }
 }
 
-unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT {
+unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT { unsafe {
     if code == HC_ACTION {
         let opt = convert(param, lpdata);
         if let Some(event_type) = opt {
@@ -40,7 +40,7 @@ unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARA
         }
     }
     CallNextHookEx(HOOK, code, param, lpdata)
-}
+}}
 
 pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where

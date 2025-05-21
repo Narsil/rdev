@@ -24,31 +24,31 @@ lazy_static! {
     pub(crate) static ref KEYBOARD: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
 }
 
-pub unsafe fn get_code(lpdata: LPARAM) -> DWORD {
+pub unsafe fn get_code(lpdata: LPARAM) -> DWORD { unsafe {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
     kb.vkCode
-}
-pub unsafe fn get_scan_code(lpdata: LPARAM) -> DWORD {
+}}
+pub unsafe fn get_scan_code(lpdata: LPARAM) -> DWORD { unsafe {
     let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
     kb.scanCode
-}
-pub unsafe fn get_point(lpdata: LPARAM) -> (LONG, LONG) {
+}}
+pub unsafe fn get_point(lpdata: LPARAM) -> (LONG, LONG) { unsafe {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
     (mouse.pt.x, mouse.pt.y)
-}
+}}
 // https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644986(v=vs.85)
 /// confusingly, this function returns a WORD (unsigned), but may be
 /// interpreted as either signed or unsigned depending on context
-pub unsafe fn get_delta(lpdata: LPARAM) -> WORD {
+pub unsafe fn get_delta(lpdata: LPARAM) -> WORD { unsafe {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
     HIWORD(mouse.mouseData)
-}
-pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
+}}
+pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD { unsafe {
     let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
     HIWORD(mouse.mouseData)
-}
+}}
 
-pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
+pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> { unsafe {
     match param.try_into() {
         Ok(WM_KEYDOWN) | Ok(WM_SYSKEYDOWN) => {
             let code = get_code(lpdata);
@@ -97,7 +97,7 @@ pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
         }
         _ => None,
     }
-}
+}}
 
 type RawCallback = unsafe extern "system" fn(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT;
 pub enum HookError {
@@ -105,7 +105,7 @@ pub enum HookError {
     Key(DWORD),
 }
 
-pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), HookError> {
+pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), HookError> { unsafe {
     let hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(callback), null_mut(), 0);
 
     if hook.is_null() {
@@ -114,9 +114,9 @@ pub unsafe fn set_key_hook(callback: RawCallback) -> Result<(), HookError> {
     }
     HOOK = hook;
     Ok(())
-}
+}}
 
-pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), HookError> {
+pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), HookError> { unsafe {
     let hook = SetWindowsHookExA(WH_MOUSE_LL, Some(callback), null_mut(), 0);
     if hook.is_null() {
         let error = GetLastError();
@@ -124,4 +124,4 @@ pub unsafe fn set_mouse_hook(callback: RawCallback) -> Result<(), HookError> {
     }
     HOOK = hook;
     Ok(())
-}
+}}
