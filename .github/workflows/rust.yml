@@ -34,7 +34,6 @@ jobs:
             whoami
             sudo usermod -aG input `whoami`
             ls -l -h /dev/uinput
-            x
 
           build: cargo build --verbose --features wayland
           # Keyboard not implemented in wayland
