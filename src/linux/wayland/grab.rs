@@ -1,5 +1,5 @@
-use crate::linux::common::Display;
-use crate::linux::keyboard::Keyboard;
+use super::common::Display;
+use super::keyboard::Keyboard;
 use crate::rdev::{Button, Event, EventType, GrabError, Key, KeyboardState};
 use epoll::ControlOptions::{EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use evdev_rs::{
@@ -13,13 +13,78 @@ use std::io;
 use std::os::unix::{
     ffi::OsStrExt,
     fs::FileTypeExt,
-    io::{AsRawFd, IntoRawFd, RawFd},
+    io::{AsRawFd, RawFd},
 };
 use std::path::Path;
 use std::time::SystemTime;
 
 // TODO The x, y coordinates are currently wrong !! Is there mouse acceleration
 // to take into account ??
+use serde::Deserialize;
+use std::process::Command;
+
+pub struct Display {}
+
+#[derive(Debug, Deserialize)]
+struct SwayDisplay {
+    rect: Rect,
+}
+
+#[derive(Debug, Deserialize)]
+struct HyprDisplay {
+    #[serde(rename = "activeWorkspace")]
+    active_workspace: Rect,
+}
+
+#[derive(Debug, Deserialize)]
+struct Rect {
+    width: usize,
+    height: usize,
+}
+
+fn get_sway_size() -> Option<(usize, usize)> {
+    let output = Command::new("swaymsg")
+        .args(["-t", "get_outputs", "-r"])
+        .output()
+        .ok()?
+        .stdout;
+
+    let displays: Vec<SwayDisplay> = serde_json::from_slice(&output).ok()?;
+    let rect = &displays.get(0)?.rect;
+    Some((rect.width, rect.height))
+}
+
+fn get_hyprland_size() -> Option<(usize, usize)> {
+    let output = Command::new("hyprctl")
+        .args(["monitors", "-j"])
+        .output()
+        .ok()?
+        .stdout;
+
+    let displays: Vec<HyprDisplay> = serde_json::from_slice(&output).ok()?;
+    let rect = &displays.get(0)?.active_workspace;
+    Some((rect.width, rect.height))
+}
+
+impl Display {
+    pub fn new() -> Option<Self> {
+        Some(Self {})
+    }
+
+    pub fn get_size(&self) -> Option<(usize, usize)> {
+        if let Some(sway) = get_sway_size() {
+            Some(sway)
+        } else if let Some(hyprland) = get_hyprland_size() {
+            Some(hyprland)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_mouse_pos(&self) -> Option<(usize, usize)> {
+        Some((0, 0))
+    }
+}
 
 macro_rules! convert_keys {
     ($($ev_key:ident, $rdev_key:ident),*) => {
@@ -301,12 +366,11 @@ fn evdev_event_to_rdev_event(
 //     }
 // }
 
-pub fn grab<T>(callback: T) -> Result<(), GrabError>
+pub fn grab<T>(mut callback: T) -> Result<(), GrabError>
 where
-    T: Fn(Event) -> Option<Event> + 'static,
+    T: FnMut(Event) -> Option<Event> + 'static,
 {
-    compile_error!("Wayland doesn't support grab yet");
-    let mut kb = Keyboard::new().ok_or(GrabError::KeyboardError)?;
+    let mut kb = Keyboard::new().map_err(|_| GrabError::KeyboardError)?;
     let display = Display::new().ok_or(GrabError::MissingDisplayError)?;
     let (width, height) = display.get_size().ok_or(GrabError::MissingDisplayError)?;
     let (current_x, current_y) = display

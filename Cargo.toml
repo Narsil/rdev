@@ -16,11 +16,12 @@ license = "MIT"
 [dependencies]
 serde = {version = "1.0", features = ["derive"], optional=true}
 lazy_static = "1.4"
+serde_json = { version = "1.0", optional = true }
 
 [features]
 default = []
 serialize = ["serde"]
-unstable_grab = ["evdev-rs", "epoll", "inotify"]
+unstable_grab = ["evdev-rs", "epoll", "inotify", "dep:serde_json", "serialize"]
 wayland = ["input", "input-linux", "xkbcommon"]
 x11 = ["dep:x11"]
 
