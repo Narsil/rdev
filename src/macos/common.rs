@@ -55,7 +55,7 @@ pub unsafe fn convert(
                 })
             }
             CGEventType::KeyDown => {
-                println!("Received {cg_event:?}");
+                // println!("Received {cg_event:?}");
                 let code = CGEvent::integer_value_field(
                     Some(cg_event.as_ref()),
                     CGEventField::KeyboardEventKeycode,
@@ -155,7 +155,7 @@ pub unsafe fn convert(
                     return None;
                 }
 
-                println!("Received {key_code:?}");
+                // println!("Received {key_code:?}");
                 if let Some(code) = key_from_special_key(key_code.try_into().ok()?) {
                     if key_pressed {
                         Some(EventType::KeyPress(code))
@@ -168,7 +168,7 @@ pub unsafe fn convert(
                 }
             }
             _ev => {
-                println!("Received {_ev:?}");
+                // println!("Received {_ev:?}");
                 None
             }
         };
