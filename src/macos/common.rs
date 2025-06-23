@@ -10,6 +10,8 @@ use std::time::SystemTime;
 
 use crate::macos::keycodes::key_from_code;
 
+use super::keycodes::key_from_special_key;
+
 lazy_static! {
     pub static ref LAST_FLAGS: Mutex<CGEventFlags> = Mutex::new(CGEventFlags(0));
     pub static ref KEYBOARD_STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
@@ -53,6 +55,7 @@ pub unsafe fn convert(
                 })
             }
             CGEventType::KeyDown => {
+                println!("Received {cg_event:?}");
                 let code = CGEvent::integer_value_field(
                     Some(cg_event.as_ref()),
                     CGEventField::KeyboardEventKeycode,
@@ -134,7 +137,40 @@ pub unsafe fn convert(
                 );
                 Some(EventType::Wheel { delta_x, delta_y })
             }
-            _ => None,
+            CGEventType(14) => {
+                // Core graphics doesnt support NX_SYSDEFINED yet
+
+                let subtype =
+                    CGEvent::integer_value_field(Some(cg_event.as_ref()), CGEventField(99));
+                let data1 =
+                    CGEvent::integer_value_field(Some(cg_event.as_ref()), CGEventField(149));
+                let key_flags = data1 & 0x0000ffff;
+                let key_pressed = ((key_flags & 0xff00) >> 8) == 0xa;
+                let _key_repeat = (key_flags & 0x1) == 0x1;
+                let key_code = (data1 & 0xffff0000) >> 16;
+
+                // Mouse buttons like middle click/back/forward are subtype 7
+                // Subtype 8 means keyboard event
+                if subtype != 8 {
+                    return None;
+                }
+
+                println!("Received {key_code:?}");
+                if let Some(code) = key_from_special_key(key_code.try_into().ok()?) {
+                    if key_pressed {
+                        Some(EventType::KeyPress(code))
+                    } else {
+                        Some(EventType::KeyRelease(code))
+                    }
+                } else {
+                    // If we don't handle the key avoid creating an event since it can create duplicates with other keys
+                    None
+                }
+            }
+            _ev => {
+                println!("Received {_ev:?}");
+                None
+            }
         };
         if let Some(event_type) = option_type {
             let name = match event_type {
