@@ -581,10 +581,7 @@ fn setup_inotify(epoll_fd: RawFd, devices: &[Device]) -> io::Result<Inotify> {
     //Ensure there is space for inotify at last epoll index.
     if devices.len() as u64 >= INOTIFY_DATA {
         eprintln!("number of devices: {}", devices.len());
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "too many device files!",
-        ));
+        return Err(io::Error::other("too many device files!"));
     }
     // Set up inotify to listen for new devices being plugged in
     let inotify = inotify_devices()?;
