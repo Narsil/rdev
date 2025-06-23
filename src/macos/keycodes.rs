@@ -1,5 +1,6 @@
+use objc2_core_graphics::CGKeyCode;
+
 use crate::rdev::Key;
-use core_graphics::event::CGKeyCode;
 use std::convert::TryInto;
 
 /// Option

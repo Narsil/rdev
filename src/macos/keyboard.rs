@@ -4,7 +4,7 @@ use crate::rdev::{EventType, Key, KeyboardState};
 use core_foundation::base::{CFRelease, OSStatus};
 use core_foundation::string::UniChar;
 use core_foundation_sys::data::{CFDataGetBytePtr, CFDataRef};
-use core_graphics::event::CGEventFlags;
+use objc2_core_graphics::CGEventFlags;
 use std::convert::TryInto;
 use std::ffi::c_void;
 use std::os::raw::c_uint;
@@ -86,7 +86,7 @@ impl Keyboard {
 
     pub(crate) unsafe fn create_string_for_key(
         &mut self,
-        code: u32,
+        code: i64,
         flags: CGEventFlags,
     ) -> Option<String> {
         unsafe {
@@ -105,7 +105,7 @@ impl Keyboard {
 
     pub(crate) unsafe fn string_from_code(
         &mut self,
-        code: u32,
+        code: i64,
         modifier_state: ModifierState,
     ) -> Option<String> {
         unsafe {
