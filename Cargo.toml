@@ -26,11 +26,15 @@ wayland = ["input", "input-linux", "xkbcommon"]
 x11 = ["dep:x11"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
-cocoa = "0.26"
-core-graphics = {version = "0.24.0", features = ["highsierra"]}
+# cocoa = "0.26"
+# core-graphics = {version = "0.24.0", features = ["highsierra"]}
 core-foundation = {version = "0.10"}
 core-foundation-sys = {version = "0.8"}
 dispatch = "0.2"
+objc2-foundation = "0.3.1"
+objc2-core-graphics = "0.3.1"
+objc2-core-foundation = "0.3.1"
+objc2 = "0.6.1"
 
 
 [target.'cfg(all(target_family = "unix", not(target_os = "macos")))'.dependencies]

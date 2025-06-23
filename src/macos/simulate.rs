@@ -1,11 +1,11 @@
+use objc2_core_foundation::{CFRetained, CGPoint};
+use objc2_core_graphics::{
+    CGEvent, CGEventField, CGEventFlags, CGEventSource, CGEventSourceStateID, CGEventTapLocation,
+    CGEventType, CGMouseButton, CGScrollEventUnit,
+};
+
 use crate::Key;
 use crate::rdev::{Button, EventType, SimulateError};
-use core_graphics::event::{
-    CGEvent, CGEventFlags, CGEventTapLocation, CGEventType, CGMouseButton, EventField,
-    ScrollEventUnit,
-};
-use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
-use core_graphics::geometry::CGPoint;
 use std::convert::TryInto;
 
 use crate::macos::common::LAST_FLAGS;
@@ -13,41 +13,46 @@ use crate::macos::keycodes::code_from_key;
 
 unsafe fn convert_native_with_source(
     event_type: &EventType,
-    source: CGEventSource,
-) -> Option<CGEvent> {
+    source: CFRetained<CGEventSource>,
+) -> Option<CFRetained<CGEvent>> {
     unsafe {
         match event_type {
             EventType::KeyPress(key) => {
                 let code = code_from_key(*key)?;
                 // For modifier keys, we need to use FlagsChanged event type
                 if is_modifier_key(*key) {
-                    let event = CGEvent::new(source).ok()?;
-                    event.set_type(CGEventType::FlagsChanged);
-                    event.set_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE, code as i64);
+                    let event = CGEvent::new(Some(&source))?;
+                    CGEvent::set_type(Some(&event), CGEventType::FlagsChanged);
+                    CGEvent::set_integer_value_field(
+                        Some(&event),
+                        CGEventField::KeyboardEventKeycode,
+                        code as i64,
+                    );
 
                     // Get current flags and update them
                     let mut new_flags = LAST_FLAGS.lock().unwrap();
                     match key {
                         Key::ShiftLeft | Key::ShiftRight => {
-                            new_flags.insert(CGEventFlags::CGEventFlagShift);
+                            new_flags.insert(CGEventFlags::MaskShift);
                         }
                         Key::ControlLeft | Key::ControlRight => {
-                            new_flags.insert(CGEventFlags::CGEventFlagControl);
+                            new_flags.insert(CGEventFlags::MaskControl);
                         }
                         Key::AltGr | Key::Alt => {
-                            new_flags.insert(CGEventFlags::CGEventFlagAlternate);
+                            new_flags.insert(CGEventFlags::MaskAlternate);
                         }
                         Key::MetaLeft | Key::MetaRight => {
-                            new_flags.insert(CGEventFlags::CGEventFlagCommand);
+                            new_flags.insert(CGEventFlags::MaskCommand);
                         }
                         _ => {}
                     }
-                    event.set_flags(*new_flags);
+                    CGEvent::set_flags(Some(&event), *new_flags);
+                    // event.set_flags(*new_flags);
                     Some(event)
                 } else {
                     // For non-modifier keys, use regular key events
-                    let event = CGEvent::new_keyboard_event(source, code, true).ok()?;
-                    event.set_flags(*LAST_FLAGS.lock().unwrap());
+                    let event = CGEvent::new_keyboard_event(Some(&source), code, true)?;
+                    CGEvent::set_flags(Some(&event), *LAST_FLAGS.lock().unwrap());
                     Some(event)
                 }
             }
@@ -55,33 +60,37 @@ unsafe fn convert_native_with_source(
                 let code = code_from_key(*key)?;
                 // For modifier keys, we need to use FlagsChanged event type
                 if is_modifier_key(*key) {
-                    let event = CGEvent::new(source).ok()?;
-                    event.set_type(CGEventType::FlagsChanged);
-                    event.set_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE, code as i64);
+                    let event = CGEvent::new(Some(&source))?;
+                    CGEvent::set_type(Some(&event), CGEventType::FlagsChanged);
+                    CGEvent::set_integer_value_field(
+                        Some(&event),
+                        CGEventField::KeyboardEventKeycode,
+                        code as i64,
+                    );
 
                     // Get current flags and update them
                     let mut new_flags = LAST_FLAGS.lock().unwrap();
                     match key {
                         Key::ShiftLeft | Key::ShiftRight => {
-                            new_flags.remove(CGEventFlags::CGEventFlagShift);
+                            new_flags.remove(CGEventFlags::MaskShift);
                         }
                         Key::ControlLeft | Key::ControlRight => {
-                            new_flags.remove(CGEventFlags::CGEventFlagControl);
+                            new_flags.remove(CGEventFlags::MaskControl);
                         }
                         Key::AltGr | Key::Alt => {
-                            new_flags.remove(CGEventFlags::CGEventFlagAlternate);
+                            new_flags.remove(CGEventFlags::MaskAlternate);
                         }
                         Key::MetaLeft | Key::MetaRight => {
-                            new_flags.remove(CGEventFlags::CGEventFlagCommand);
+                            new_flags.remove(CGEventFlags::MaskCommand);
                         }
                         _ => {}
                     }
-                    event.set_flags(*new_flags);
+                    CGEvent::set_flags(Some(&event), *new_flags);
                     Some(event)
                 } else {
                     // For non-modifier keys, use regular key events
-                    let event = CGEvent::new_keyboard_event(source, code, false).ok()?;
-                    event.set_flags(*LAST_FLAGS.lock().unwrap());
+                    let event = CGEvent::new_keyboard_event(Some(&source), code, false)?;
+                    CGEvent::set_flags(Some(&event), *LAST_FLAGS.lock().unwrap());
                     Some(event)
                 }
             }
@@ -93,12 +102,11 @@ unsafe fn convert_native_with_source(
                     _ => return None,
                 };
                 CGEvent::new_mouse_event(
-                    source,
+                    Some(&source),
                     event,
                     point,
                     CGMouseButton::Left, // ignored because we don't use OtherMouse EventType
                 )
-                .ok()
             }
             EventType::ButtonRelease(button) => {
                 let point = get_current_mouse_location()?;
@@ -108,48 +116,49 @@ unsafe fn convert_native_with_source(
                     _ => return None,
                 };
                 CGEvent::new_mouse_event(
-                    source,
+                    Some(&source),
                     event,
                     point,
                     CGMouseButton::Left, // ignored because we don't use OtherMouse EventType
                 )
-                .ok()
             }
             EventType::MouseMove { x, y } => {
                 let point = CGPoint { x: (*x), y: (*y) };
                 CGEvent::new_mouse_event(
-                    source,
+                    Some(&source),
                     CGEventType::MouseMoved,
                     point,
                     CGMouseButton::Left,
                 )
-                .ok()
             }
             EventType::Wheel { delta_x, delta_y } => {
                 let wheel_count = 2;
-                CGEvent::new_scroll_event(
-                    source,
-                    ScrollEventUnit::PIXEL,
+                CGEvent::new_scroll_wheel_event2(
+                    Some(&source),
+                    CGScrollEventUnit::Pixel,
                     wheel_count,
                     (*delta_y).try_into().ok()?,
                     (*delta_x).try_into().ok()?,
                     0,
                 )
-                .ok()
             }
         }
     }
 }
 
-unsafe fn convert_native(event_type: &EventType) -> Option<CGEvent> {
-    let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState).ok()?;
-    unsafe { convert_native_with_source(event_type, source) }
+unsafe fn convert_native(event_type: &EventType) -> Option<CFRetained<CGEvent>> {
+    unsafe {
+        let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState)?;
+        convert_native_with_source(event_type, source)
+    }
 }
 
 unsafe fn get_current_mouse_location() -> Option<CGPoint> {
-    let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState).ok()?;
-    let event = CGEvent::new(source).ok()?;
-    Some(event.location())
+    unsafe {
+        let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState)?;
+        let event = CGEvent::new(Some(&source))?;
+        Some(CGEvent::location(Some(&event)))
+    }
 }
 
 fn is_modifier_key(key: Key) -> bool {
@@ -172,7 +181,7 @@ unsafe extern "C" {}
 pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
     unsafe {
         if let Some(cg_event) = convert_native(event_type) {
-            cg_event.post(CGEventTapLocation::HID);
+            CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&cg_event));
             Ok(())
         } else {
             Err(SimulateError)
