@@ -153,7 +153,15 @@ decl_keycodes!(
     Kp7, 71,
     Kp8, 72,
     Kp9, 73,
-    KpDelete, 83
+    KpDelete, 83,
+    VolumeMute, 113,
+    VolumeDown, 114,
+    VolumeUp, 115,
+    NextTrack, 163,
+    PlayPause, 164,
+    PreviousTrack, 165,
+    PlayCd, 200,
+    Function, 464
 );
 
 #[rustfmt::skip]
@@ -259,7 +267,14 @@ decl_keycodes_uinput!(
     Key::Delete , UKey::Delete,
     Key::Pause , UKey::Pause,
     Key::MetaLeft , UKey::LeftMeta,
-    Key::PrintScreen , UKey::Print
+    Key::PrintScreen , UKey::Print,
+    Key::PlayPause, UKey::PlayPause,
+    Key::PlayCd, UKey::PlayCD,
+    Key::VolumeMute, UKey::Mute,
+    Key::VolumeDown, UKey::VolumeDown,
+    Key::VolumeUp, UKey::VolumeUp,
+    Key::NextTrack, UKey::NextSong,
+    Key::PreviousTrack, UKey::PreviousSong
     //Key::IntlBackslash , UKey::Backslash
 );
 

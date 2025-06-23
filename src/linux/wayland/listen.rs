@@ -73,6 +73,7 @@ fn convert(keyboard: &mut Keyboard, libevent: LibEvent) -> Option<Event> {
 
 impl LibinputInterface for Interface {
     fn open_restricted(&mut self, path: &Path, flags: i32) -> Result<OwnedFd, i32> {
+        #[allow(clippy::bad_bit_mask)]
         OpenOptions::new()
             .custom_flags(flags)
             .read((flags & O_RDONLY != 0) | (flags & O_RDWR != 0))
