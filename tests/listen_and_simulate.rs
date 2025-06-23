@@ -1,10 +1,10 @@
 use lazy_static::lazy_static;
-use rdev::{listen, simulate, Button, Event, EventType, Key};
+use rdev::{Button, Event, EventType, Key, listen, simulate};
 use serial_test::serial;
 use std::error::Error;
 use std::iter::Iterator;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::time::Duration;
 
