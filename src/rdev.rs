@@ -229,6 +229,10 @@ pub enum Key {
     PlayPause,
     PlayCd,
     NextTrack,
+    LaunchMail,
+    LaunchMediaSelect,
+    LaunchApp1,
+    LaunchApp2,
     Unknown(u32),
 }
 
