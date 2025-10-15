@@ -1,10 +1,11 @@
 use lazy_static::lazy_static;
-use rdev::{Event, EventType, Key, grab, listen, simulate};
+use rdev::{Event, EventType, Key, grab, listen, simulate, stop_grab};
 use serial_test::serial;
 use std::error::Error;
 use std::sync::Mutex;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::thread;
+use std::thread::sleep;
 use std::time::Duration;
 
 lazy_static! {
@@ -69,4 +70,17 @@ fn test_grab() -> Result<(), Box<dyn Error>> {
         Err(err) => assert_eq!(err, RecvTimeoutError::Timeout),
     };
     Ok(())
+}
+
+#[test]
+fn test_stop_grab() {
+    let grab = thread::spawn(move || {
+        grab(grab_tab).expect("Could not grab");
+    });
+
+    sleep(Duration::from_millis(100));
+
+    stop_grab();
+
+    grab.join().expect("Could not stop grab");
 }

@@ -242,7 +242,10 @@ mod windows;
 #[cfg(target_os = "windows")]
 pub use crate::windows::Keyboard;
 #[cfg(target_os = "windows")]
-use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
+use crate::windows::{
+    display_size as _display_size, listen as _listen, simulate as _simulate,
+    stop_listen as _stop_listen,
+};
 
 /// Listening to global events. Caveat: On MacOS, you require the listen
 /// loop needs to be the primary app (no fork before) and need to have accessibility
@@ -270,6 +273,12 @@ where
     T: FnMut(Event) + 'static,
 {
     _listen(callback)
+}
+
+#[cfg(target_os = "windows")]
+/// Stops the current listen
+pub fn stop_listen() {
+    _stop_listen();
 }
 
 /// Sending some events
@@ -330,7 +339,7 @@ pub use crate::linux::grab as _grab;
 pub use crate::macos::grab as _grab;
 #[cfg(feature = "unstable_grab")]
 #[cfg(target_os = "windows")]
-pub use crate::windows::grab as _grab;
+pub use crate::windows::{grab as _grab, stop_grab as _stop_grab};
 #[cfg(feature = "unstable_grab")]
 /// Grabbing global events. In the callback, returning None ignores the event
 /// and returning the event let's it pass. There is no modification of the event
@@ -362,6 +371,13 @@ where
     T: FnMut(Event) -> Option<Event> + 'static,
 {
     _grab(callback)
+}
+
+#[cfg(feature = "unstable_grab")]
+#[cfg(target_os = "windows")]
+/// Stops the current grab
+pub fn stop_grab() {
+    _stop_grab();
 }
 
 #[cfg(test)]
