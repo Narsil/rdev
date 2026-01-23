@@ -3,7 +3,7 @@ use crate::windows::keyboard::Keyboard;
 use crate::windows::keycodes::key_from_code;
 use lazy_static::lazy_static;
 use std::convert::TryInto;
-use std::mem::size_of;
+use std::mem::{size_of, MaybeUninit};
 use std::os::raw::{c_int, c_short};
 use std::ptr::null_mut;
 use std::sync::Mutex;
@@ -40,8 +40,6 @@ pub const RI_MOUSE_HWHEEL: WORD = 0x0800;
 pub static mut HOOK: HHOOK = null_mut();
 lazy_static! {
     pub(crate) static ref KEYBOARD: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
-    /// Track absolute mouse position (accumulated from relative deltas)
-    pub(crate) static ref MOUSE_POS: Mutex<(f64, f64)> = Mutex::new((0.0, 0.0));
 }
 
 pub unsafe fn get_code(lpdata: LPARAM) -> DWORD {
@@ -115,45 +113,45 @@ pub unsafe fn convert_raw_input(lparam: LPARAM) -> Vec<EventType> {
             return events;
         }
 
-        // Allocate buffer and get the data
-        let mut buffer = vec![0u8; size as usize];
+        // Use a properly aligned RAWINPUT buffer to avoid undefined behavior
+        // RAWINPUT is variable-size, but for mouse input it fits in the struct
+        let mut raw: MaybeUninit<RAWINPUT> = MaybeUninit::uninit();
+        let mut actual_size = size_of::<RAWINPUT>() as UINT;
+        
         if GetRawInputData(
             lparam as _,
             RID_INPUT,
-            buffer.as_mut_ptr() as _,
-            &mut size,
+            raw.as_mut_ptr() as _,
+            &mut actual_size,
             size_of::<RAWINPUTHEADER>() as UINT,
-        ) != size
+        ) == UINT::MAX
         {
             return events;
         }
 
-        let raw = &*(buffer.as_ptr() as *const RAWINPUT);
+        let raw = raw.assume_init();
 
         // Only process mouse input
         if raw.header.dwType != RIM_TYPEMOUSE {
             return events;
         }
 
-        let mouse = &raw.data.mouse();
+        let mouse = raw.data.mouse();
         let button_flags = mouse.usButtonFlags;
 
-        // Handle mouse movement (relative)
+        // Handle mouse movement (relative only - no absolute position tracking)
         let delta_x = mouse.lLastX as f64;
         let delta_y = mouse.lLastY as f64;
 
         if delta_x != 0.0 || delta_y != 0.0 {
-            // Update tracked position
-            if let Ok(mut pos) = MOUSE_POS.lock() {
-                pos.0 += delta_x;
-                pos.1 += delta_y;
-                events.push(EventType::MouseMove {
-                    x: pos.0,
-                    y: pos.1,
-                    delta_x,
-                    delta_y,
-                });
-            }
+            // Report only relative deltas; x/y are set to 0 since Raw Input
+            // only provides relative motion and we don't track absolute position
+            events.push(EventType::MouseMove {
+                x: 0.0,
+                y: 0.0,
+                delta_x,
+                delta_y,
+            });
         }
 
         // Handle mouse buttons

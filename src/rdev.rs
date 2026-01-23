@@ -256,8 +256,9 @@ pub enum EventType {
     /// Mouse Button
     ButtonPress(Button),
     ButtonRelease(Button),
-    /// Mouse movement event with both absolute position and relative delta.
-    /// `x` and `y` are absolute screen coordinates (top-left is origin).
+    /// Mouse movement event with relative delta; absolute position is backend-dependent.
+    /// `x` and `y` are absolute screen coordinates when available.
+    /// On Windows Raw Input (listen/grab) and Wayland relative motion, `x` and `y` are 0.0.
     /// `delta_x` and `delta_y` are relative movement since last event.
     /// On platforms that support it (macOS, Windows Raw Input), deltas are
     /// true device motion. On others, they may be computed from position changes.

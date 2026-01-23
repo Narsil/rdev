@@ -121,8 +121,10 @@
 //!     /// give different Unknown code.
 //!     ButtonPress(Button),
 //!     ButtonRelease(Button),
-//!     /// Mouse movement with both absolute position and relative delta.
-//!     /// On platforms that support it (macOS, Linux Wayland), delta values
+//!     /// Mouse movement with relative delta; absolute position is backend-dependent.
+//!     /// `x` and `y` are absolute when available. On Windows Raw Input (listen/grab)
+//!     /// and Wayland relative motion, `x` and `y` are 0.0.
+//!     /// On platforms that support it (macOS, Windows Raw Input), delta values
 //!     /// are true device motion. On others, they may be 0 or computed.
 //!     MouseMove {
 //!         x: f64,
@@ -314,7 +316,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
 }
 
 /// Returns the size in pixels of the main screen.
-/// This is useful to use with x, y from MouseMove Event.
+/// This is useful to use with x, y from MouseMove Event when absolute
+/// coordinates are available.
 ///
 /// ```no_run
 /// use rdev::{display_size};

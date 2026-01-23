@@ -123,10 +123,14 @@ pub enum EventType {
     /// give different Unknown code.
     ButtonPress(Button),
     ButtonRelease(Button),
-    /// Values in pixels
+    /// Mouse movement with relative delta; absolute position is backend-dependent.
+    /// `x` and `y` are absolute when available. On Windows Raw Input (listen/grab)
+    /// and Wayland relative motion, `x` and `y` are 0.0.
     MouseMove {
         x: f64,
         y: f64,
+        delta_x: f64,
+        delta_y: f64,
     },
     /// Note: On Linux, there is no actual delta the actual values are ignored for delta_x
     /// and we only look at the sign of delta_y to simulate wheelup or wheeldown.
