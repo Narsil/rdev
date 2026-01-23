@@ -122,7 +122,7 @@ unsafe fn convert_native_with_source(
                     CGMouseButton::Left, // ignored because we don't use OtherMouse EventType
                 )
             }
-            EventType::MouseMove { x, y } => {
+            EventType::MouseMove { x, y, .. } => {
                 let point = CGPoint { x: (*x), y: (*y) };
                 CGEvent::new_mouse_event(
                     Some(&source),

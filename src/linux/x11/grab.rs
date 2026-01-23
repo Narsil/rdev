@@ -224,7 +224,12 @@ fn evdev_event_to_rdev_event(
                 if *x > w {
                     *x = w;
                 }
-                Some(EventType::MouseMove { x: *x, y: *y })
+                Some(EventType::MouseMove {
+                    x: *x,
+                    y: *y,
+                    delta_x: dx,
+                    delta_y: 0.0,
+                })
             }
             EV_REL::REL_Y => {
                 let dy = event.value as f64;
@@ -235,7 +240,12 @@ fn evdev_event_to_rdev_event(
                 if *y > h {
                     *y = h;
                 }
-                Some(EventType::MouseMove { x: *x, y: *y })
+                Some(EventType::MouseMove {
+                    x: *x,
+                    y: *y,
+                    delta_x: 0.0,
+                    delta_y: dy,
+                })
             }
             EV_REL::REL_HWHEEL => Some(EventType::Wheel {
                 delta_x: event.value.into(),

@@ -34,24 +34,54 @@ pub unsafe fn convert(
             CGEventType::RightMouseUp => Some(EventType::ButtonRelease(Button::Right)),
             CGEventType::MouseMoved => {
                 let point = CGEvent::location(Some(cg_event.as_ref()));
-                // let point = cg_event.location();
+                // kCGMouseEventDeltaX = 3, kCGMouseEventDeltaY = 4
+                let delta_x = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(3),
+                ) as f64;
+                let delta_y = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(4),
+                ) as f64;
                 Some(EventType::MouseMove {
                     x: point.x,
                     y: point.y,
+                    delta_x,
+                    delta_y,
                 })
             }
             CGEventType::LeftMouseDragged => {
                 let point = CGEvent::location(Some(cg_event.as_ref()));
+                let delta_x = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(3),
+                ) as f64;
+                let delta_y = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(4),
+                ) as f64;
                 Some(EventType::MouseMove {
                     x: point.x,
                     y: point.y,
+                    delta_x,
+                    delta_y,
                 })
             }
             CGEventType::RightMouseDragged => {
                 let point = CGEvent::location(Some(cg_event.as_ref()));
+                let delta_x = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(3),
+                ) as f64;
+                let delta_y = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField(4),
+                ) as f64;
                 Some(EventType::MouseMove {
                     x: point.x,
                     y: point.y,
+                    delta_x,
+                    delta_y,
                 })
             }
             CGEventType::KeyDown => {

@@ -43,6 +43,7 @@ impl From<HookError> for GrabError {
         match error {
             HookError::Mouse(code) => GrabError::MouseHookError(code),
             HookError::Key(code) => GrabError::KeyHookError(code),
+            HookError::RawInput(code) => GrabError::MouseHookError(code),
         }
     }
 }

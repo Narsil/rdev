@@ -43,13 +43,18 @@ fn convert_type(libevent: LibEvent) -> Option<EventType> {
             }
         }
         LibEvent::Pointer(PointerEvent::Motion(btn)) => Some(EventType::MouseMove {
-            // TODO Convert to absolute X, Y
-            x: btn.dx_unaccelerated(),
-            y: btn.dy_unaccelerated(),
+            // For relative motion, x/y are set to 0 as we don't track absolute position.
+            // Use delta_x/delta_y for the actual movement (unaccelerated).
+            x: 0.0,
+            y: 0.0,
+            delta_x: btn.dx_unaccelerated(),
+            delta_y: btn.dy_unaccelerated(),
         }),
         LibEvent::Pointer(PointerEvent::MotionAbsolute(btn)) => Some(EventType::MouseMove {
             x: btn.absolute_x(),
             y: btn.absolute_y(),
+            delta_x: 0.0,
+            delta_y: 0.0,
         }),
         LibEvent::Pointer(PointerEvent::ScrollWheel(btn)) => Some(EventType::Wheel {
             delta_x: -(btn.scroll_value_v120(Axis::Horizontal) / 120.0) as i64,

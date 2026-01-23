@@ -17,7 +17,7 @@ fn send(event_type: &EventType) {
 }
 
 fn main() {
-    send(&EventType::MouseMove { x: 0.0, y: 0.0 });
+    send(&EventType::MouseMove { x: 0.0, y: 0.0, delta_x: 0.0, delta_y: 0.0 });
     thread::sleep(Duration::from_millis(1000));
     send(&EventType::KeyPress(Key::KeyS));
     send(&EventType::KeyRelease(Key::KeyS));
@@ -26,8 +26,8 @@ fn main() {
     send(&EventType::KeyPress(Key::KeyB));
     send(&EventType::KeyRelease(Key::KeyB));
 
-    send(&EventType::MouseMove { x: 0.0, y: 0.0 });
-    send(&EventType::MouseMove { x: 400.0, y: 400.0 });
+    send(&EventType::MouseMove { x: 0.0, y: 0.0, delta_x: 0.0, delta_y: 0.0 });
+    send(&EventType::MouseMove { x: 400.0, y: 400.0, delta_x: 400.0, delta_y: 400.0 });
     send(&EventType::ButtonPress(Button::Left));
     send(&EventType::ButtonRelease(Button::Right));
     send(&EventType::Wheel {

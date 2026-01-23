@@ -119,7 +119,7 @@ impl Handle {
                     let sync: input_event = InputEvent::from(sync).into();
                     handle.write(&[event, sync]).map_err(|_| SimulateError)?;
                 }
-                EventType::MouseMove { x, y } => {
+                EventType::MouseMove { x, y, .. } => {
                     let time = Self::get_current_time();
                     // let reset_x = RelativeEvent::new(time, RelativeAxis::X, i32::MIN);
                     // let reset_x: input_event = InputEvent::from(reset_x).into();

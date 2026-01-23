@@ -60,8 +60,8 @@
 //! send(&EventType::KeyPress(Key::KeyS));
 //! send(&EventType::KeyRelease(Key::KeyS));
 //!
-//! send(&EventType::MouseMove { x: 0.0, y: 0.0 });
-//! send(&EventType::MouseMove { x: 400.0, y: 400.0 });
+//! send(&EventType::MouseMove { x: 0.0, y: 0.0, delta_x: 0.0, delta_y: 0.0 });
+//! send(&EventType::MouseMove { x: 400.0, y: 400.0, delta_x: 400.0, delta_y: 400.0 });
 //! send(&EventType::ButtonPress(Button::Left));
 //! send(&EventType::ButtonRelease(Button::Right));
 //! send(&EventType::Wheel {
@@ -121,10 +121,14 @@
 //!     /// give different Unknown code.
 //!     ButtonPress(Button),
 //!     ButtonRelease(Button),
-//!     /// Values in pixels
+//!     /// Mouse movement with both absolute position and relative delta.
+//!     /// On platforms that support it (macOS, Linux Wayland), delta values
+//!     /// are true device motion. On others, they may be 0 or computed.
 //!     MouseMove {
 //!         x: f64,
 //!         y: f64,
+//!         delta_x: f64,
+//!         delta_y: f64,
 //!     },
 //!     /// Note: On Linux, there is no actual delta the actual values are ignored for delta_x
 //!     /// and we only look at the sign of delta_y to simulate wheelup or wheeldown.
@@ -294,8 +298,8 @@ where
 ///     send(&EventType::KeyPress(Key::KeyS));
 ///     send(&EventType::KeyRelease(Key::KeyS));
 ///
-///     send(&EventType::MouseMove { x: 0.0, y: 0.0 });
-///     send(&EventType::MouseMove { x: 400.0, y: 400.0 });
+///     send(&EventType::MouseMove { x: 0.0, y: 0.0, delta_x: 0.0, delta_y: 0.0 });
+///     send(&EventType::MouseMove { x: 400.0, y: 400.0, delta_x: 400.0, delta_y: 400.0 });
 ///     send(&EventType::ButtonPress(Button::Left));
 ///     send(&EventType::ButtonRelease(Button::Right));
 ///     send(&EventType::Wheel {

@@ -256,11 +256,16 @@ pub enum EventType {
     /// Mouse Button
     ButtonPress(Button),
     ButtonRelease(Button),
-    /// Values in pixels. `EventType::MouseMove{x: 0, y: 0}` corresponds to the
-    /// top left corner, with x increasing downward and y increasing rightward
+    /// Mouse movement event with both absolute position and relative delta.
+    /// `x` and `y` are absolute screen coordinates (top-left is origin).
+    /// `delta_x` and `delta_y` are relative movement since last event.
+    /// On platforms that support it (macOS, Windows Raw Input), deltas are
+    /// true device motion. On others, they may be computed from position changes.
     MouseMove {
         x: f64,
         y: f64,
+        delta_x: f64,
+        delta_y: f64,
     },
     /// `delta_y` represents vertical scroll and `delta_x` represents horizontal scroll.
     /// Positive values correspond to scrolling up or right and negative values

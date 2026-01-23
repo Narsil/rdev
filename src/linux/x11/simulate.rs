@@ -33,7 +33,7 @@ unsafe fn send_native(event_type: &EventType, display: *mut xlib::Display) -> Op
                     xtest::XTestFakeButtonEvent(display, (*code).into(), FALSE, 0)
                 }
             },
-            EventType::MouseMove { x, y } => {
+            EventType::MouseMove { x, y, .. } => {
                 //TODO: replace with clamp if it is stabalized
                 let x = if x.is_finite() {
                     x.min(c_int::MAX.into()).max(c_int::MIN.into()).round() as c_int

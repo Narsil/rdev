@@ -52,7 +52,14 @@ pub fn convert_event(code: c_uchar, type_: c_int, x: f64, y: f64) -> Option<Even
             4 | 5 => None,
             _ => Some(EventType::ButtonRelease(Button::Unknown(code))),
         },
-        xlib::MotionNotify => Some(EventType::MouseMove { x, y }),
+        // X11 only provides absolute coordinates, not true deltas.
+        // TODO: Track previous position to compute deltas if needed.
+        xlib::MotionNotify => Some(EventType::MouseMove {
+            x,
+            y,
+            delta_x: 0.0,
+            delta_y: 0.0,
+        }),
         _ => None,
     }
 }
