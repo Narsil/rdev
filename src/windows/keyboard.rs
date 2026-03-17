@@ -61,12 +61,17 @@ impl Keyboard {
             let current_window_thread_id =
                 GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
             let thread_id = GetCurrentThreadId();
+            // Attach to active thread so we can get that keyboard state
             let status =
                 if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
+                    // Current state of the modifiers in keyboard
                     let status = GetKeyboardState(state_ptr);
+
+                    // Detach
                     winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
                     status
                 } else {
+                    // Could not attach, perhaps it is this process?
                     GetKeyboardState(state_ptr)
                 };
 
