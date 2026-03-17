@@ -16,6 +16,9 @@ use winapi::um::winuser::{
     WM_MOUSEHWHEEL, WM_MOUSEMOVE, WM_MOUSEWHEEL, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_SYSKEYDOWN,
     WM_SYSKEYUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
+pub const TRUE: i32 = 1;
+pub const FALSE: i32 = 0;
+
 pub static mut HOOK: HHOOK = null_mut();
 lazy_static! {
     pub(crate) static ref KEYBOARD: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());

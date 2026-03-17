@@ -1,12 +1,13 @@
 use crate::rdev::{EventType, Key, KeyboardState};
-use crate::windows::common::{get_code, get_scan_code};
+use crate::windows::common::{FALSE, TRUE, get_code, get_scan_code};
 use crate::windows::keycodes::code_from_key;
 use std::ptr::null_mut;
 use winapi::shared::minwindef::{BYTE, HKL, LPARAM, UINT};
+use winapi::um::processthreadsapi::GetCurrentThreadId;
+use winapi::um::winuser;
 use winapi::um::winuser::{
-    GetAsyncKeyState, GetForegroundWindow, GetKeyState, GetKeyboardLayout,
-    GetWindowThreadProcessId, ToUnicodeEx, VK_CAPITAL, VK_CONTROL, VK_LCONTROL, VK_LMENU,
-    VK_LSHIFT, VK_MENU, VK_RCONTROL, VK_RMENU, VK_RSHIFT, VK_SHIFT,
+    GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
+    GetWindowThreadProcessId, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT, VK_RSHIFT, VK_SHIFT,
 };
 
 // Windows 10, version 1607+:
@@ -14,12 +15,6 @@ use winapi::um::winuser::{
 const TO_UNICODE_NO_STATE_CHANGE: UINT = 0x0004;
 const VK_SHIFT_: usize = VK_SHIFT as usize;
 const VK_CAPITAL_: usize = VK_CAPITAL as usize;
-const VK_CONTROL_: usize = VK_CONTROL as usize;
-const VK_MENU_: usize = VK_MENU as usize;
-const VK_LCONTROL_: usize = VK_LCONTROL as usize;
-const VK_RCONTROL_: usize = VK_RCONTROL as usize;
-const VK_LMENU_: usize = VK_LMENU as usize;
-const VK_RMENU_: usize = VK_RMENU as usize;
 const VK_LSHIFT_: usize = VK_LSHIFT as usize;
 const VK_RSHIFT_: usize = VK_RSHIFT as usize;
 const HIGHBIT: u8 = 0x80;
@@ -53,42 +48,33 @@ impl Keyboard {
             }
 
             self.set_global_state()?;
-            self.apply_hook_state(code);
             self.get_code_name(code, scan_code)
         }
     }
 
     pub(crate) unsafe fn set_global_state(&mut self) -> Option<()> {
-        let mut state = [0_u8; 256];
-        state[VK_SHIFT_] = pressed_state(VK_SHIFT as i32);
-        state[VK_LSHIFT_] = pressed_state(VK_LSHIFT as i32);
-        state[VK_RSHIFT_] = pressed_state(VK_RSHIFT as i32);
-        state[VK_CONTROL_] = pressed_state(VK_CONTROL as i32);
-        state[VK_LCONTROL_] = pressed_state(VK_LCONTROL as i32);
-        state[VK_RCONTROL_] = pressed_state(VK_RCONTROL as i32);
-        state[VK_MENU_] = pressed_state(VK_MENU as i32);
-        state[VK_LMENU_] = pressed_state(VK_LMENU as i32);
-        state[VK_RMENU_] = pressed_state(VK_RMENU as i32);
-        state[VK_CAPITAL_] = toggled_state(VK_CAPITAL as i32);
+        unsafe {
+            let mut state = [0_u8; 256];
+            let state_ptr = state.as_mut_ptr();
 
-        self.last_state = state;
-        Some(())
-    }
+            let _shift = GetKeyState(VK_SHIFT);
+            let current_window_thread_id =
+                GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
+            let thread_id = GetCurrentThreadId();
+            let status =
+                if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
+                    let status = GetKeyboardState(state_ptr);
+                    winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
+                    status
+                } else {
+                    GetKeyboardState(state_ptr)
+                };
 
-    fn apply_hook_state(&mut self, code: UINT) {
-        if let Some(state) = self.last_state.get_mut(code as usize) {
-            *state |= HIGHBIT;
-        }
-
-        match code as usize {
-            VK_LSHIFT_ => self.last_state[VK_SHIFT_] |= HIGHBIT,
-            VK_RSHIFT_ => self.last_state[VK_SHIFT_] |= HIGHBIT,
-            VK_LCONTROL_ => self.last_state[VK_CONTROL_] |= HIGHBIT,
-            VK_RCONTROL_ => self.last_state[VK_CONTROL_] |= HIGHBIT,
-            VK_LMENU_ => self.last_state[VK_MENU_] |= HIGHBIT,
-            VK_RMENU_ => self.last_state[VK_MENU_] |= HIGHBIT,
-            VK_CAPITAL_ => self.last_state[VK_CAPITAL_] ^= 1,
-            _ => {}
+            if status != 1 {
+                return None;
+            }
+            self.last_state = state;
+            Some(())
         }
     }
 
@@ -168,18 +154,6 @@ impl Keyboard {
             }
         }
     }
-}
-
-fn pressed_state(vk: i32) -> BYTE {
-    if unsafe { GetAsyncKeyState(vk) } < 0 {
-        HIGHBIT
-    } else {
-        0
-    }
-}
-
-fn toggled_state(vk: i32) -> BYTE {
-    (unsafe { GetKeyState(vk) } & 1) as BYTE
 }
 
 fn key_can_produce_text(code: UINT) -> bool {
