@@ -1,5 +1,3 @@
-extern crate winapi;
-
 mod common;
 mod display;
 #[cfg(feature = "unstable_grab")]

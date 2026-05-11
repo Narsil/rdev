@@ -1,11 +1,10 @@
 use crate::rdev::Key;
 use std::convert::TryInto;
-use winapi::shared::minwindef::WORD;
 
 macro_rules! decl_keycodes {
     ($($key:ident, $code:literal),*) => {
         //TODO: make const when rust lang issue #49146 is fixed
-        pub fn code_from_key(key: Key) -> Option<WORD> {
+        pub fn code_from_key(key: Key) -> Option<u16> {
             match key {
                 $(
                     Key::$key => Some($code),
@@ -16,7 +15,7 @@ macro_rules! decl_keycodes {
         }
 
         //TODO: make const when rust lang issue #49146 is fixed
-        pub fn key_from_code(code: WORD) -> Key {
+        pub fn key_from_code(code: u16) -> Key {
             match code {
                 $(
                     $code => Key::$key,
@@ -28,7 +27,7 @@ macro_rules! decl_keycodes {
 }
 
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-// We redefined here for Letter and number keys which are not in winapi crate (and don't have a name either in win32)
+// We redefined here for letter and number keys which do not have named Win32 constants.
 decl_keycodes! {
     Alt, 164,
     AltGr, 165,

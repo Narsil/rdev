@@ -2,13 +2,13 @@ use crate::rdev::{Event, EventType, GrabError};
 use crate::windows::common::{HOOK, HookError, KEYBOARD, convert, set_key_hook, set_mouse_hook};
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
+use windows_sys::Win32::UI::WindowsAndMessaging::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
     unsafe {
-        if code == HC_ACTION {
+        if code == HC_ACTION as i32 {
             let opt = convert(param, lpdata);
             if let Some(event_type) = opt {
                 let name = match &event_type {
@@ -24,14 +24,14 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                     name,
                 };
                 let ptr = &raw mut GLOBAL_CALLBACK;
-                if let Some(callback) = &mut *ptr {
-                    if callback(event).is_none() {
-                        // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
-                        // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
-                        // https://cboard.cprogramming.com/windows-programming/99678-setwindowshookex-wm_keyboard_ll.html
-                        // let _result = CallNextHookEx(HOOK, code, param, lpdata);
-                        return 1;
-                    }
+                if let Some(callback) = &mut *ptr
+                    && callback(event).is_none()
+                {
+                    // https://stackoverflow.com/questions/42756284/blocking-windows-mouse-click-using-setwindowshookex
+                    // https://android.developreference.com/article/14560004/Blocking+windows+mouse+click+using+SetWindowsHookEx()
+                    // https://cboard.cprogramming.com/windows-programming/99678-setwindowshookex-wm_keyboard_ll.html
+                    // let _result = CallNextHookEx(HOOK, code, param, lpdata);
+                    return 1;
                 }
             }
         }
