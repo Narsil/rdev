@@ -8,7 +8,7 @@ use std::convert::TryInto;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
-use crate::macos::keycodes::key_from_code;
+use crate::macos::keycodes::key_from_code_or_name;
 
 use super::keycodes::key_from_special_key;
 
@@ -60,7 +60,9 @@ pub unsafe fn convert(
                     Some(cg_event.as_ref()),
                     CGEventField::KeyboardEventKeycode,
                 );
-                let key = key_from_code(code.try_into().ok()?);
+                let flags = CGEvent::flags(Some(cg_event.as_ref()));
+                let name = keyboard_state.create_string_for_key(code, flags);
+                let key = key_from_code_or_name(code.try_into().ok()?, name.as_deref());
                 Some(EventType::KeyPress(key))
             }
             CGEventType::KeyUp => {
@@ -68,7 +70,9 @@ pub unsafe fn convert(
                     Some(cg_event.as_ref()),
                     CGEventField::KeyboardEventKeycode,
                 );
-                let key = key_from_code(code.try_into().ok()?);
+                let flags = CGEvent::flags(Some(cg_event.as_ref()));
+                let name = keyboard_state.create_string_for_key(code, flags);
+                let key = key_from_code_or_name(code.try_into().ok()?, name.as_deref());
                 Some(EventType::KeyRelease(key))
             }
             CGEventType::FlagsChanged => {
@@ -78,7 +82,7 @@ pub unsafe fn convert(
                 );
                 let code = code.try_into().ok()?;
                 let flags = CGEvent::flags(Some(cg_event.as_ref()));
-                let key = key_from_code(code);
+                let key = key_from_code_or_name(code, None);
 
                 // Determine if this is a press or release based on flag changes
                 let mut global_flags = LAST_FLAGS.lock().unwrap();

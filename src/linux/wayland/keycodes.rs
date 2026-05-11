@@ -73,6 +73,18 @@ decl_keycodes!(
     F10, 68,
     F11, 87,
     F12, 88,
+    F13, 183,
+    F14, 184,
+    F15, 185,
+    F16, 186,
+    F17, 187,
+    F18, 188,
+    F19, 189,
+    F20, 190,
+    F21, 191,
+    F22, 192,
+    F23, 193,
+    F24, 194,
     Home, 102,
     LeftArrow, 105,
     MetaLeft, 125,
@@ -234,6 +246,18 @@ decl_keycodes_uinput!(
     Key::F8 , UKey::F8,
     Key::F9 , UKey::F9,
     Key::F10 , UKey::F10,
+    Key::F13 , UKey::F13,
+    Key::F14 , UKey::F14,
+    Key::F15 , UKey::F15,
+    Key::F16 , UKey::F16,
+    Key::F17 , UKey::F17,
+    Key::F18 , UKey::F18,
+    Key::F19 , UKey::F19,
+    Key::F20 , UKey::F20,
+    Key::F21 , UKey::F21,
+    Key::F22 , UKey::F22,
+    Key::F23 , UKey::F23,
+    Key::F24 , UKey::F24,
     Key::NumLock , UKey::NumLock,
     Key::ScrollLock , UKey::ScrollLock,
     Key::Kp7 , UKey::Kp7,
@@ -281,6 +305,8 @@ decl_keycodes_uinput!(
 #[cfg(test)]
 mod test {
     use super::{UKey, code_from_key, key_from_code, key_from_ukey, ukey_from_key};
+    use crate::Key;
+
     #[test]
     fn test_reversible() {
         for code in 0..65636 {
@@ -289,6 +315,31 @@ mod test {
                 Some(code2) => assert_eq!(code, code2),
                 None => panic!("Could not convert back code: {:?}", code),
             }
+        }
+    }
+
+    #[test]
+    fn test_extended_function_key_mappings() {
+        let mappings = [
+            (Key::F13, 183, UKey::F13),
+            (Key::F14, 184, UKey::F14),
+            (Key::F15, 185, UKey::F15),
+            (Key::F16, 186, UKey::F16),
+            (Key::F17, 187, UKey::F17),
+            (Key::F18, 188, UKey::F18),
+            (Key::F19, 189, UKey::F19),
+            (Key::F20, 190, UKey::F20),
+            (Key::F21, 191, UKey::F21),
+            (Key::F22, 192, UKey::F22),
+            (Key::F23, 193, UKey::F23),
+            (Key::F24, 194, UKey::F24),
+        ];
+
+        for (key, code, ukey) in mappings {
+            assert_eq!(code_from_key(key), Some(code));
+            assert_eq!(key_from_code(code), key);
+            assert_eq!(ukey_from_key(key), Some(ukey));
+            assert_eq!(key_from_ukey(ukey), key);
         }
     }
 

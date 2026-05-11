@@ -17,6 +17,14 @@ const F1: CGKeyCode = 122;
 const F10: CGKeyCode = 109;
 const F11: CGKeyCode = 103;
 const F12: CGKeyCode = 111;
+const F13: CGKeyCode = 105;
+const F14: CGKeyCode = 107;
+const F15: CGKeyCode = 113;
+const F16: CGKeyCode = 106;
+const F17: CGKeyCode = 64;
+const F18: CGKeyCode = 79;
+const F19: CGKeyCode = 80;
+const F20: CGKeyCode = 90;
 const F2: CGKeyCode = 120;
 const F3: CGKeyCode = 99;
 const F4: CGKeyCode = 118;
@@ -98,6 +106,14 @@ pub fn code_from_key(key: Key) -> Option<CGKeyCode> {
         Key::F10 => Some(F10),
         Key::F11 => Some(F11),
         Key::F12 => Some(F12),
+        Key::F13 => Some(F13),
+        Key::F14 => Some(F14),
+        Key::F15 => Some(F15),
+        Key::F16 => Some(F16),
+        Key::F17 => Some(F17),
+        Key::F18 => Some(F18),
+        Key::F19 => Some(F19),
+        Key::F20 => Some(F20),
         Key::F2 => Some(F2),
         Key::F3 => Some(F3),
         Key::F4 => Some(F4),
@@ -182,6 +198,14 @@ pub fn key_from_code(code: CGKeyCode) -> Key {
         F10 => Key::F10,
         F11 => Key::F11,
         F12 => Key::F12,
+        F13 => Key::F13,
+        F14 => Key::F14,
+        F15 => Key::F15,
+        F16 => Key::F16,
+        F17 => Key::F17,
+        F18 => Key::F18,
+        F19 => Key::F19,
+        F20 => Key::F20,
         F2 => Key::F2,
         F3 => Key::F3,
         F4 => Key::F4,
@@ -249,6 +273,28 @@ pub fn key_from_code(code: CGKeyCode) -> Key {
         SLASH => Key::Slash,
         FUNCTION => Key::Function,
         code => Key::Unknown(code.into()),
+    }
+}
+
+pub fn key_from_code_or_name(code: CGKeyCode, name: Option<&str>) -> Key {
+    let key = key_from_code(code);
+    if !matches!(key, Key::Unknown(_)) {
+        return key;
+    }
+
+    match name.and_then(extra_function_key_from_name) {
+        Some(key) => key,
+        None => key,
+    }
+}
+
+fn extra_function_key_from_name(name: &str) -> Option<Key> {
+    match name.encode_utf16().next() {
+        Some(0xf718) => Some(Key::F21),
+        Some(0xf719) => Some(Key::F22),
+        Some(0xf71a) => Some(Key::F23),
+        Some(0xf71b) => Some(Key::F24),
+        _ => None,
     }
 }
 
@@ -330,7 +376,9 @@ pub fn key_from_special_key(code: u32) -> Option<Key> {
 
 #[cfg(test)]
 mod test {
-    use super::{code_from_key, key_from_code};
+    use super::{code_from_key, key_from_code, key_from_code_or_name};
+    use crate::Key;
+
     #[test]
     fn test_reversible() {
         for code in 0..=65535 {
@@ -340,5 +388,37 @@ mod test {
                 None => panic!("Could not convert back code: {:?}", code),
             }
         }
+    }
+
+    #[test]
+    fn test_extended_function_key_mappings() {
+        let mappings = [
+            (Key::F13, 105),
+            (Key::F14, 107),
+            (Key::F15, 113),
+            (Key::F16, 106),
+            (Key::F17, 64),
+            (Key::F18, 79),
+            (Key::F19, 80),
+            (Key::F20, 90),
+        ];
+
+        for (key, code) in mappings {
+            assert_eq!(code_from_key(key), Some(code));
+            assert_eq!(key_from_code(code), key);
+        }
+
+        assert_eq!(code_from_key(Key::F21), None);
+        assert_eq!(code_from_key(Key::F22), None);
+        assert_eq!(code_from_key(Key::F23), None);
+        assert_eq!(code_from_key(Key::F24), None);
+    }
+
+    #[test]
+    fn test_extended_function_key_name_fallback() {
+        assert_eq!(key_from_code_or_name(0x6c, Some("\u{f718}")), Key::F21);
+        assert_eq!(key_from_code_or_name(0x6e, Some("\u{f719}")), Key::F22);
+        assert_eq!(key_from_code_or_name(0x70, Some("\u{f71a}")), Key::F23);
+        assert_eq!(key_from_code_or_name(0x5e, Some("\u{f71b}")), Key::F24);
     }
 }

@@ -42,6 +42,18 @@ decl_keycodes!(
     F10, 76,
     F11, 95,
     F12, 96,
+    F13, 191,
+    F14, 192,
+    F15, 193,
+    F16, 194,
+    F17, 195,
+    F18, 196,
+    F19, 197,
+    F20, 198,
+    F21, 199,
+    F22, 200,
+    F23, 201,
+    F24, 202,
     F2, 68,
     F3, 69,
     F4, 70,
@@ -136,6 +148,8 @@ decl_keycodes!(
 #[cfg(test)]
 mod test {
     use super::{code_from_key, key_from_code};
+    use crate::Key;
+
     #[test]
     fn test_reversible() {
         for code in 0..65636 {
@@ -144,6 +158,29 @@ mod test {
                 Some(code2) => assert_eq!(code, code2),
                 None => panic!("Could not convert back code: {:?}", code),
             }
+        }
+    }
+
+    #[test]
+    fn test_extended_function_key_mappings() {
+        let mappings = [
+            (Key::F13, 191),
+            (Key::F14, 192),
+            (Key::F15, 193),
+            (Key::F16, 194),
+            (Key::F17, 195),
+            (Key::F18, 196),
+            (Key::F19, 197),
+            (Key::F20, 198),
+            (Key::F21, 199),
+            (Key::F22, 200),
+            (Key::F23, 201),
+            (Key::F24, 202),
+        ];
+
+        for (key, code) in mappings {
+            assert_eq!(code_from_key(key), Some(code));
+            assert_eq!(key_from_code(code), key);
         }
     }
 }
