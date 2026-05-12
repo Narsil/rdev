@@ -3,8 +3,8 @@ use crate::windows::common::{HOOK, HookError, KEYBOARD, convert, set_key_hook, s
 use std::os::raw::c_int;
 use std::ptr::null_mut;
 use std::time::SystemTime;
-use winapi::shared::minwindef::{LPARAM, LRESULT, WPARAM};
-use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
+use windows_sys::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
+use windows_sys::Win32::UI::WindowsAndMessaging::{CallNextHookEx, GetMessageA, HC_ACTION};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
 
@@ -19,7 +19,7 @@ impl From<HookError> for ListenError {
 
 unsafe extern "system" fn raw_callback(code: c_int, param: WPARAM, lpdata: LPARAM) -> LRESULT {
     unsafe {
-        if code == HC_ACTION {
+        if code == HC_ACTION as c_int {
             let opt = convert(param, lpdata);
             if let Some(event_type) = opt {
                 let name = match &event_type {

@@ -2,13 +2,13 @@ use crate::rdev::{EventType, Key, KeyboardState};
 use crate::windows::common::{FALSE, TRUE, get_code, get_scan_code};
 use crate::windows::keycodes::code_from_key;
 use std::ptr::null_mut;
-use winapi::shared::minwindef::{BYTE, HKL, LPARAM, UINT};
-use winapi::um::processthreadsapi::GetCurrentThreadId;
-use winapi::um::winuser;
-use winapi::um::winuser::{
-    GetForegroundWindow, GetKeyState, GetKeyboardLayout, GetKeyboardState,
-    GetWindowThreadProcessId, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT, VK_RSHIFT, VK_SHIFT,
+use windows_sys::Win32::Foundation::LPARAM;
+use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    GetKeyState, GetKeyboardLayout, GetKeyboardState, HKL, ToUnicodeEx, VK_CAPITAL, VK_LSHIFT,
+    VK_RSHIFT, VK_SHIFT,
 };
+use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
 const VK_SHIFT_: usize = VK_SHIFT as usize;
 const VK_CAPITAL_: usize = VK_CAPITAL as usize;
@@ -17,9 +17,9 @@ const VK_RSHIFT_: usize = VK_RSHIFT as usize;
 const HIGHBIT: u8 = 0x80;
 
 pub struct Keyboard {
-    last_code: UINT,
-    last_scan_code: UINT,
-    last_state: [BYTE; 256],
+    last_code: u32,
+    last_scan_code: u32,
+    last_state: [u8; 256],
     last_is_dead: bool,
 }
 
@@ -50,23 +50,22 @@ impl Keyboard {
             let mut state = [0_u8; 256];
             let state_ptr = state.as_mut_ptr();
 
-            let _shift = GetKeyState(VK_SHIFT);
+            let _shift = GetKeyState(VK_SHIFT as i32);
             let current_window_thread_id =
                 GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
             let thread_id = GetCurrentThreadId();
             // Attach to active thread so we can get that keyboard state
-            let status =
-                if winuser::AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
-                    // Current state of the modifiers in keyboard
-                    let status = GetKeyboardState(state_ptr);
+            let status = if AttachThreadInput(thread_id, current_window_thread_id, TRUE) == 1 {
+                // Current state of the modifiers in keyboard
+                let status = GetKeyboardState(state_ptr);
 
-                    // Detach
-                    winuser::AttachThreadInput(thread_id, current_window_thread_id, FALSE);
-                    status
-                } else {
-                    // Could not attach, perhaps it is this process?
-                    GetKeyboardState(state_ptr)
-                };
+                // Detach
+                AttachThreadInput(thread_id, current_window_thread_id, FALSE);
+                status
+            } else {
+                // Could not attach, perhaps it is this process?
+                GetKeyboardState(state_ptr)
+            };
 
             if status != 1 {
                 return None;
@@ -76,7 +75,7 @@ impl Keyboard {
         }
     }
 
-    pub(crate) unsafe fn get_code_name(&mut self, code: UINT, scan_code: UINT) -> Option<String> {
+    pub(crate) unsafe fn get_code_name(&mut self, code: u32, scan_code: u32) -> Option<String> {
         unsafe {
             let current_window_thread_id =
                 GetWindowThreadProcessId(GetForegroundWindow(), null_mut());
@@ -122,7 +121,7 @@ impl Keyboard {
         }
     }
 
-    unsafe fn clear_keyboard_buffer(&self, code: UINT, scan_code: UINT, layout: HKL) {
+    unsafe fn clear_keyboard_buffer(&self, code: u32, scan_code: u32, layout: HKL) {
         unsafe {
             const BUF_LEN: i32 = 32;
             let mut buff = [0_u16; BUF_LEN as usize];

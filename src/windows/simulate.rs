@@ -2,38 +2,39 @@ use crate::rdev::{Button, EventType, SimulateError};
 use crate::windows::keycodes::code_from_key;
 use std::convert::TryFrom;
 use std::mem::size_of;
-use winapi::ctypes::{c_int, c_short};
-use winapi::shared::minwindef::{DWORD, UINT, WORD};
-use winapi::shared::ntdef::LONG;
-use winapi::um::winuser::{
-    GetSystemMetrics, INPUT, INPUT_KEYBOARD, INPUT_MOUSE, INPUT_u, KEYBDINPUT, KEYEVENTF_KEYUP,
-    MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP,
-    MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
-    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL, MOUSEEVENTF_XDOWN,
-    MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SendInput, WHEEL_DELTA,
+use std::os::raw::{c_int, c_short};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP, MOUSEEVENTF_ABSOLUTE,
+    MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN,
+    MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
+    MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL, MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSEINPUT,
+    SendInput,
 };
-/// Not defined in win32 but define here for clarity
-static KEYEVENTF_KEYDOWN: DWORD = 0;
+use windows_sys::Win32::UI::WindowsAndMessaging::{
+    GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, WHEEL_DELTA,
+};
 
-fn sim_mouse_event(flags: DWORD, data: DWORD, dx: LONG, dy: LONG) -> Result<(), SimulateError> {
-    let mut union: INPUT_u = unsafe { std::mem::zeroed() };
-    let inner_union = unsafe { union.mi_mut() };
-    *inner_union = MOUSEINPUT {
-        dx,
-        dy,
-        mouseData: data,
-        dwFlags: flags,
-        time: 0,
-        dwExtraInfo: 0,
-    };
-    let mut input = [INPUT {
-        type_: INPUT_MOUSE,
-        u: union,
+/// Not defined in win32 but define here for clarity
+static KEYEVENTF_KEYDOWN: u32 = 0;
+
+fn sim_mouse_event(flags: u32, data: u32, dx: i32, dy: i32) -> Result<(), SimulateError> {
+    let input = [INPUT {
+        r#type: INPUT_MOUSE,
+        Anonymous: INPUT_0 {
+            mi: MOUSEINPUT {
+                dx,
+                dy,
+                mouseData: data,
+                dwFlags: flags,
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
     }; 1];
     let value = unsafe {
         SendInput(
-            input.len() as UINT,
-            input.as_mut_ptr(),
+            input.len() as u32,
+            input.as_ptr(),
             size_of::<INPUT>() as c_int,
         )
     };
@@ -44,24 +45,23 @@ fn sim_mouse_event(flags: DWORD, data: DWORD, dx: LONG, dy: LONG) -> Result<(), 
     }
 }
 
-fn sim_keyboard_event(flags: DWORD, vk: WORD, scan: WORD) -> Result<(), SimulateError> {
-    let mut union: INPUT_u = unsafe { std::mem::zeroed() };
-    let inner_union = unsafe { union.ki_mut() };
-    *inner_union = KEYBDINPUT {
-        wVk: vk,
-        wScan: scan,
-        dwFlags: flags,
-        time: 0,
-        dwExtraInfo: 0,
-    };
-    let mut input = [INPUT {
-        type_: INPUT_KEYBOARD,
-        u: union,
+fn sim_keyboard_event(flags: u32, vk: u16, scan: u16) -> Result<(), SimulateError> {
+    let input = [INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: vk,
+                wScan: scan,
+                dwFlags: flags,
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
     }; 1];
     let value = unsafe {
         SendInput(
-            input.len() as UINT,
-            input.as_mut_ptr(),
+            input.len() as u32,
+            input.as_ptr(),
             size_of::<INPUT>() as c_int,
         )
     };
@@ -98,7 +98,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             if *delta_x != 0 {
                 sim_mouse_event(
                     MOUSEEVENTF_HWHEEL,
-                    (c_short::try_from(*delta_x).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (c_short::try_from(*delta_x).map_err(|_| SimulateError)?
+                        * WHEEL_DELTA as c_short) as u32,
                     0,
                     0,
                 )?;
@@ -107,7 +108,8 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
             if *delta_y != 0 {
                 sim_mouse_event(
                     MOUSEEVENTF_WHEEL,
-                    (c_short::try_from(*delta_y).map_err(|_| SimulateError)? * WHEEL_DELTA) as u32,
+                    (c_short::try_from(*delta_y).map_err(|_| SimulateError)?
+                        * WHEEL_DELTA as c_short) as u32,
                     0,
                     0,
                 )?;
