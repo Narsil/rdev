@@ -26,6 +26,13 @@ macro_rules! decl_keycodes {
     };
 }
 
+// According to https://unix.stackexchange.com/a/797881, X11 keycodes are Linux
+// kernel keycodes offset by 8. Most keycodes here seem to follow this pattern,
+// but there are some exceptions, for example AltGr and Delete. It is unknown
+// whether these are correct.
+//
+// Linux kernel keycodes are listed at:
+// https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
 #[rustfmt::skip]
 decl_keycodes!(
     Alt, 64,
@@ -142,7 +149,19 @@ decl_keycodes!(
     Kp7, 79,
     Kp8, 80,
     Kp9, 81,
-    KpDelete, 91
+    KpDelete, 91,
+    F13, 191,
+    F14, 192,
+    F15, 193,
+    F16, 194,
+    F17, 195,
+    F18, 196,
+    F19, 197,
+    F20, 198,
+    F21, 199,
+    F22, 200,
+    F23, 201,
+    F24, 202
 );
 
 #[cfg(test)]

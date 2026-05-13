@@ -49,6 +49,7 @@ macro_rules! decl_keycodes_uinput {
     };
 }
 
+// https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
 #[rustfmt::skip]
 decl_keycodes!(
     Alt, 56,
@@ -173,7 +174,19 @@ decl_keycodes!(
     PlayPause, 164,
     PreviousTrack, 165,
     PlayCd, 200,
-    Function, 464
+    Function, 464,
+    F13, 183,
+    F14, 184,
+    F15, 185,
+    F16, 186,
+    F17, 187,
+    F18, 188,
+    F19, 189,
+    F20, 190,
+    F21, 191,
+    F22, 192,
+    F23, 193,
+    F24, 194
 );
 
 #[rustfmt::skip]
@@ -298,8 +311,20 @@ decl_keycodes_uinput!(
     Key::VolumeDown, UKey::VolumeDown,
     Key::VolumeUp, UKey::VolumeUp,
     Key::NextTrack, UKey::NextSong,
-    Key::PreviousTrack, UKey::PreviousSong
-    //Key::IntlBackslash , UKey::Backslash
+    Key::PreviousTrack, UKey::PreviousSong,
+    //Key::IntlBackslash , UKey::Backslash,
+    Key::F13 , UKey::F13,
+    Key::F14 , UKey::F14,
+    Key::F15 , UKey::F15,
+    Key::F16 , UKey::F16,
+    Key::F17 , UKey::F17,
+    Key::F18 , UKey::F18,
+    Key::F19 , UKey::F19,
+    Key::F20 , UKey::F20,
+    Key::F21 , UKey::F21,
+    Key::F22 , UKey::F22,
+    Key::F23 , UKey::F23,
+    Key::F24 , UKey::F24
 );
 
 #[cfg(test)]
