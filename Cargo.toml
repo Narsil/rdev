@@ -19,7 +19,7 @@ lazy_static = "1.4"
 serde_json = { version = "1.0", optional = true }
 
 [features]
-default = []
+default = ["x11", "wayland"]
 serialize = ["serde"]
 unstable_grab = ["evdev-rs", "epoll", "inotify", "dep:serde_json", "serialize"]
 wayland = ["input", "input-linux", "xkbcommon"]
