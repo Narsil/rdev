@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use winapi::shared::minwindef::WORD;
 
 macro_rules! decl_keycodes {
-    ($($key:ident, $code:literal),*) => {
+    ($($key:ident, $code:literal),* $(,)?) => {
         //TODO: make const when rust lang issue #49146 is fixed
         pub fn code_from_key(key: Key) -> Option<WORD> {
             match key {
@@ -151,7 +151,11 @@ decl_keycodes! {
     VolumeUp, 175,
     NextTrack, 176,
     PreviousTrack, 177,
-    PlayPause, 179
+    PlayPause, 179,
+    LaunchMail , 180,
+    LaunchMediaSelect , 181,
+    LaunchApp1 , 182,
+    LaunchApp2 , 183,
 }
 
 #[cfg(test)]
