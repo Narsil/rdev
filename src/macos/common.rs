@@ -21,6 +21,15 @@ pub fn set_is_main_thread(b: bool) {
     KEYBOARD_STATE.lock().unwrap().set_is_main_thread(b);
 }
 
+fn button_from_macos_button_number(code: u8) -> Button {
+    match code {
+        0 => Button::Left,
+        1 => Button::Right,
+        2 => Button::Middle,
+        code => Button::Unknown(code),
+    }
+}
+
 pub unsafe fn convert(
     _type: CGEventType,
     cg_event: NonNull<CGEvent>,
@@ -32,6 +41,24 @@ pub unsafe fn convert(
             CGEventType::LeftMouseUp => Some(EventType::ButtonRelease(Button::Left)),
             CGEventType::RightMouseDown => Some(EventType::ButtonPress(Button::Right)),
             CGEventType::RightMouseUp => Some(EventType::ButtonRelease(Button::Right)),
+            CGEventType::OtherMouseDown => {
+                let code = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField::MouseEventButtonNumber,
+                );
+                Some(EventType::ButtonPress(button_from_macos_button_number(
+                    code.try_into().ok()?,
+                )))
+            }
+            CGEventType::OtherMouseUp => {
+                let code = CGEvent::integer_value_field(
+                    Some(cg_event.as_ref()),
+                    CGEventField::MouseEventButtonNumber,
+                );
+                Some(EventType::ButtonRelease(button_from_macos_button_number(
+                    code.try_into().ok()?,
+                )))
+            }
             CGEventType::MouseMoved => {
                 let point = CGEvent::location(Some(cg_event.as_ref()));
                 // let point = cg_event.location();
@@ -48,6 +75,13 @@ pub unsafe fn convert(
                 })
             }
             CGEventType::RightMouseDragged => {
+                let point = CGEvent::location(Some(cg_event.as_ref()));
+                Some(EventType::MouseMove {
+                    x: point.x,
+                    y: point.y,
+                })
+            }
+            CGEventType::OtherMouseDragged => {
                 let point = CGEvent::location(Some(cg_event.as_ref()));
                 Some(EventType::MouseMove {
                     x: point.x,
