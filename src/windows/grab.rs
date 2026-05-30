@@ -1,10 +1,16 @@
 use crate::rdev::{Event, EventType, GrabError};
 use crate::windows::common::{HOOK, HookError, KEYBOARD, convert, set_key_hook, set_mouse_hook};
-use std::ptr::null_mut;
+use std::mem::zeroed;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::SystemTime;
-use winapi::um::winuser::{CallNextHookEx, GetMessageA, HC_ACTION};
+use winapi::um::processthreadsapi::GetCurrentThreadId;
+use winapi::um::winuser::{
+    CallNextHookEx, DispatchMessageA, GetMessageA, HC_ACTION, MSG, PostThreadMessageA,
+    TranslateMessage, WM_QUIT,
+};
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event) -> Option<Event>>> = None;
+static HOOK_THREAD_ID: AtomicU32 = AtomicU32::new(0);
 
 unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -> isize {
     unsafe {
@@ -56,7 +62,23 @@ where
         set_key_hook(raw_callback)?;
         set_mouse_hook(raw_callback)?;
 
-        GetMessageA(null_mut(), null_mut(), 0, 0);
+        let tid = GetCurrentThreadId();
+        HOOK_THREAD_ID.store(tid, Ordering::SeqCst);
+
+        let mut msg: MSG = zeroed();
+        while GetMessageA(&mut msg, Default::default(), 0, 0) == 1 {
+            TranslateMessage(&msg);
+            DispatchMessageA(&msg);
+        }
     }
     Ok(())
+}
+
+pub fn stop_grab() {
+    let tid = HOOK_THREAD_ID.load(Ordering::SeqCst);
+    if tid != 0 {
+        unsafe {
+            PostThreadMessageA(tid, WM_QUIT, 0, 0);
+        }
+    }
 }
