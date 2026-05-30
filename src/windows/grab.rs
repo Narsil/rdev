@@ -10,7 +10,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
     unsafe {
         if code == HC_ACTION {
             let opt = convert(param, lpdata);
-            if let Some(event_type) = opt {
+            if let Some((event_type, extra_info)) = opt {
                 let name = match &event_type {
                     EventType::KeyPress(_key) => match (*KEYBOARD).lock() {
                         Ok(mut keyboard) => keyboard.get_name(lpdata),
@@ -22,6 +22,7 @@ unsafe extern "system" fn raw_callback(code: i32, param: usize, lpdata: isize) -
                     event_type,
                     time: SystemTime::now(),
                     name,
+                    extra_info,
                 };
                 let ptr = &raw mut GLOBAL_CALLBACK;
                 if let Some(callback) = &mut *ptr {

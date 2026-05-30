@@ -283,6 +283,8 @@ pub struct Event {
     pub time: SystemTime,
     pub name: Option<String>,
     pub event_type: EventType,
+    #[cfg(target_os = "windows")]
+    pub extra_info: u32,
 }
 
 /// We can define a dummy Keyboard, that we will use to detect

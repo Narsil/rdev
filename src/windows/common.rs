@@ -36,6 +36,18 @@ pub unsafe fn get_scan_code(lpdata: LPARAM) -> DWORD {
         kb.scanCode
     }
 }
+pub unsafe fn get_key_extra_info(lpdata: LPARAM) -> DWORD {
+    unsafe {
+        let kb = *(lpdata as *const KBDLLHOOKSTRUCT);
+        kb.dwExtraInfo as u32
+    }
+}
+pub unsafe fn get_mouse_extra_info(lpdata: LPARAM) -> DWORD {
+    unsafe {
+        let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
+        mouse.dwExtraInfo as u32
+    }
+}
 pub unsafe fn get_point(lpdata: LPARAM) -> (LONG, LONG) {
     unsafe {
         let mouse = *(lpdata as *const MSLLHOOKSTRUCT);
@@ -58,54 +70,93 @@ pub unsafe fn get_button_code(lpdata: LPARAM) -> WORD {
     }
 }
 
-pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<EventType> {
+pub unsafe fn convert(param: WPARAM, lpdata: LPARAM) -> Option<(EventType, u32)> {
     unsafe {
         match param.try_into() {
             Ok(WM_KEYDOWN) | Ok(WM_SYSKEYDOWN) => {
                 let code = get_code(lpdata);
                 let key = key_from_code(code as u16);
-                Some(EventType::KeyPress(key))
+                let extra = get_key_extra_info(lpdata);
+                Some((EventType::KeyPress(key), extra))
             }
             Ok(WM_KEYUP) | Ok(WM_SYSKEYUP) => {
                 let code = get_code(lpdata);
                 let key = key_from_code(code as u16);
-                Some(EventType::KeyRelease(key))
+                let extra = get_key_extra_info(lpdata);
+                Some((EventType::KeyRelease(key), extra))
             }
-            Ok(WM_LBUTTONDOWN) => Some(EventType::ButtonPress(Button::Left)),
-            Ok(WM_LBUTTONUP) => Some(EventType::ButtonRelease(Button::Left)),
-            Ok(WM_MBUTTONDOWN) => Some(EventType::ButtonPress(Button::Middle)),
-            Ok(WM_MBUTTONUP) => Some(EventType::ButtonRelease(Button::Middle)),
-            Ok(WM_RBUTTONDOWN) => Some(EventType::ButtonPress(Button::Right)),
-            Ok(WM_RBUTTONUP) => Some(EventType::ButtonRelease(Button::Right)),
+
+            Ok(WM_LBUTTONDOWN) => Some((
+                EventType::ButtonPress(Button::Left),
+                get_mouse_extra_info(lpdata),
+            )),
+            Ok(WM_LBUTTONUP) => Some((
+                EventType::ButtonRelease(Button::Left),
+                get_mouse_extra_info(lpdata),
+            )),
+            Ok(WM_MBUTTONDOWN) => Some((
+                EventType::ButtonPress(Button::Middle),
+                get_mouse_extra_info(lpdata),
+            )),
+            Ok(WM_MBUTTONUP) => Some((
+                EventType::ButtonRelease(Button::Middle),
+                get_mouse_extra_info(lpdata),
+            )),
+            Ok(WM_RBUTTONDOWN) => Some((
+                EventType::ButtonPress(Button::Right),
+                get_mouse_extra_info(lpdata),
+            )),
+            Ok(WM_RBUTTONUP) => Some((
+                EventType::ButtonRelease(Button::Right),
+                get_mouse_extra_info(lpdata),
+            )),
+
             Ok(WM_XBUTTONDOWN) => {
                 let code = get_button_code(lpdata) as u8;
-                Some(EventType::ButtonPress(Button::Unknown(code)))
+                Some((
+                    EventType::ButtonPress(Button::Unknown(code)),
+                    get_mouse_extra_info(lpdata),
+                ))
             }
             Ok(WM_XBUTTONUP) => {
                 let code = get_button_code(lpdata) as u8;
-                Some(EventType::ButtonRelease(Button::Unknown(code)))
+                Some((
+                    EventType::ButtonRelease(Button::Unknown(code)),
+                    get_mouse_extra_info(lpdata),
+                ))
             }
+
             Ok(WM_MOUSEMOVE) => {
                 let (x, y) = get_point(lpdata);
-                Some(EventType::MouseMove {
-                    x: x as f64,
-                    y: y as f64,
-                })
+                Some((
+                    EventType::MouseMove {
+                        x: x as f64,
+                        y: y as f64,
+                    },
+                    get_mouse_extra_info(lpdata),
+                ))
             }
             Ok(WM_MOUSEWHEEL) => {
                 let delta = get_delta(lpdata) as c_short;
-                Some(EventType::Wheel {
-                    delta_x: 0,
-                    delta_y: (delta / WHEEL_DELTA) as i64,
-                })
+                Some((
+                    EventType::Wheel {
+                        delta_x: 0,
+                        delta_y: (delta / WHEEL_DELTA) as i64,
+                    },
+                    get_mouse_extra_info(lpdata),
+                ))
             }
             Ok(WM_MOUSEHWHEEL) => {
                 let delta = get_delta(lpdata) as c_short;
-                Some(EventType::Wheel {
-                    delta_x: (delta / WHEEL_DELTA) as i64,
-                    delta_y: 0,
-                })
+                Some((
+                    EventType::Wheel {
+                        delta_x: (delta / WHEEL_DELTA) as i64,
+                        delta_y: 0,
+                    },
+                    get_mouse_extra_info(lpdata),
+                ))
             }
+
             _ => None,
         }
     }
