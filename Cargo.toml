@@ -24,6 +24,7 @@ serialize = ["serde"]
 unstable_grab = ["evdev-rs", "epoll", "inotify", "dep:serde_json", "serialize"]
 wayland = ["input", "input-linux", "xkbcommon"]
 x11 = ["dep:x11"]
+macos_keyboard_only = []
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # cocoa = "0.26"
