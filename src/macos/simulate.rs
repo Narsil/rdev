@@ -7,9 +7,12 @@ use objc2_core_graphics::{
 use crate::Key;
 use crate::rdev::{Button, EventType, SimulateError};
 use std::convert::TryInto;
+use std::sync::Mutex;
 
-use crate::macos::common::LAST_FLAGS;
+use crate::macos::common::modifier_mask_for_keycode;
 use crate::macos::keycodes::code_from_key;
+
+static SIMULATED_FLAGS: Mutex<CGEventFlags> = Mutex::new(CGEventFlags::empty());
 
 unsafe fn convert_native_with_source(
     event_type: &EventType,
@@ -30,7 +33,7 @@ unsafe fn convert_native_with_source(
                     );
 
                     // Get current flags and update them
-                    let mut new_flags = LAST_FLAGS.lock().unwrap();
+                    let mut new_flags = SIMULATED_FLAGS.lock().unwrap();
                     match key {
                         Key::ShiftLeft | Key::ShiftRight => {
                             new_flags.insert(CGEventFlags::MaskShift);
@@ -46,13 +49,16 @@ unsafe fn convert_native_with_source(
                         }
                         _ => {}
                     }
+                    if let Some(mask) = modifier_mask_for_keycode(code) {
+                        new_flags.insert(mask);
+                    }
                     CGEvent::set_flags(Some(&event), *new_flags);
                     // event.set_flags(*new_flags);
                     Some(event)
                 } else {
                     // For non-modifier keys, use regular key events
                     let event = CGEvent::new_keyboard_event(Some(&source), code, true)?;
-                    CGEvent::set_flags(Some(&event), *LAST_FLAGS.lock().unwrap());
+                    CGEvent::set_flags(Some(&event), *SIMULATED_FLAGS.lock().unwrap());
                     Some(event)
                 }
             }
@@ -69,7 +75,7 @@ unsafe fn convert_native_with_source(
                     );
 
                     // Get current flags and update them
-                    let mut new_flags = LAST_FLAGS.lock().unwrap();
+                    let mut new_flags = SIMULATED_FLAGS.lock().unwrap();
                     match key {
                         Key::ShiftLeft | Key::ShiftRight => {
                             new_flags.remove(CGEventFlags::MaskShift);
@@ -85,12 +91,15 @@ unsafe fn convert_native_with_source(
                         }
                         _ => {}
                     }
+                    if let Some(mask) = modifier_mask_for_keycode(code) {
+                        new_flags.remove(mask);
+                    }
                     CGEvent::set_flags(Some(&event), *new_flags);
                     Some(event)
                 } else {
                     // For non-modifier keys, use regular key events
                     let event = CGEvent::new_keyboard_event(Some(&source), code, false)?;
-                    CGEvent::set_flags(Some(&event), *LAST_FLAGS.lock().unwrap());
+                    CGEvent::set_flags(Some(&event), *SIMULATED_FLAGS.lock().unwrap());
                     Some(event)
                 }
             }
