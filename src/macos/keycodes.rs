@@ -192,6 +192,7 @@ pub fn key_from_code(code: CGKeyCode) -> Key {
         BACKSPACE => Key::Backspace,
         CAPS_LOCK => Key::CapsLock,
         CONTROL_LEFT => Key::ControlLeft,
+        CONTROL_RIGHT => Key::ControlRight,
         DOWN_ARROW => Key::DownArrow,
         ESCAPE => Key::Escape,
         F1 => Key::F1,

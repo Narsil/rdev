@@ -13,8 +13,56 @@ use crate::macos::keycodes::key_from_code_or_name;
 use super::keycodes::key_from_special_key;
 
 lazy_static! {
-    pub static ref LAST_FLAGS: Mutex<CGEventFlags> = Mutex::new(CGEventFlags(0));
     pub static ref KEYBOARD_STATE: Mutex<Keyboard> = Mutex::new(Keyboard::new().unwrap());
+}
+
+const CONTROL_LEFT: u16 = 59;
+const CONTROL_RIGHT: u16 = 62;
+const SHIFT_LEFT: u16 = 56;
+const SHIFT_RIGHT: u16 = 60;
+const ALT_LEFT: u16 = 58;
+const ALT_RIGHT: u16 = 61;
+const META_LEFT: u16 = 55;
+const META_RIGHT: u16 = 54;
+const CAPS_LOCK: u16 = 57;
+const FUNCTION: u16 = 63;
+
+// Device-dependent modifier masks from IOKit/hidsystem/ev_keymap.h. Unlike
+// CGEventFlags' aggregate masks, these identify the physical left/right key.
+const NX_DEVICELCTLKEYMASK: u64 = 0x0000_0001;
+const NX_DEVICELSHIFTKEYMASK: u64 = 0x0000_0002;
+const NX_DEVICERSHIFTKEYMASK: u64 = 0x0000_0004;
+const NX_DEVICELCMDKEYMASK: u64 = 0x0000_0008;
+const NX_DEVICERCMDKEYMASK: u64 = 0x0000_0010;
+const NX_DEVICELALTKEYMASK: u64 = 0x0000_0020;
+const NX_DEVICERALTKEYMASK: u64 = 0x0000_0040;
+const NX_DEVICERCTLKEYMASK: u64 = 0x0000_2000;
+
+pub(super) fn modifier_mask_for_keycode(code: u16) -> Option<CGEventFlags> {
+    let mask = match code {
+        CONTROL_LEFT => NX_DEVICELCTLKEYMASK,
+        CONTROL_RIGHT => NX_DEVICERCTLKEYMASK,
+        SHIFT_LEFT => NX_DEVICELSHIFTKEYMASK,
+        SHIFT_RIGHT => NX_DEVICERSHIFTKEYMASK,
+        ALT_LEFT => NX_DEVICELALTKEYMASK,
+        ALT_RIGHT => NX_DEVICERALTKEYMASK,
+        META_LEFT => NX_DEVICELCMDKEYMASK,
+        META_RIGHT => NX_DEVICERCMDKEYMASK,
+        CAPS_LOCK => CGEventFlags::MaskAlphaShift.bits(),
+        FUNCTION => CGEventFlags::MaskSecondaryFn.bits(),
+        _ => return None,
+    };
+    Some(CGEventFlags::from_bits_retain(mask))
+}
+
+fn modifier_event_type(code: u16, flags: CGEventFlags) -> Option<EventType> {
+    let mask = modifier_mask_for_keycode(code)?;
+    let key = key_from_code_or_name(code, None);
+    if flags.contains(mask) {
+        Some(EventType::KeyPress(key))
+    } else {
+        Some(EventType::KeyRelease(key))
+    }
 }
 
 pub fn set_is_main_thread(b: bool) {
@@ -82,53 +130,7 @@ pub unsafe fn convert(
                 );
                 let code = code.try_into().ok()?;
                 let flags = CGEvent::flags(Some(cg_event.as_ref()));
-                let key = key_from_code_or_name(code, None);
-
-                // Determine if this is a press or release based on flag changes
-                let mut global_flags = LAST_FLAGS.lock().unwrap();
-                if flags.contains(CGEventFlags::MaskShift)
-                    && !global_flags.contains(CGEventFlags::MaskShift)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyPress(key))
-                } else if !flags.contains(CGEventFlags::MaskShift)
-                    && global_flags.contains(CGEventFlags::MaskShift)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyRelease(key))
-                } else if flags.contains(CGEventFlags::MaskControl)
-                    && !global_flags.contains(CGEventFlags::MaskControl)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyPress(key))
-                } else if !flags.contains(CGEventFlags::MaskControl)
-                    && global_flags.contains(CGEventFlags::MaskControl)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyRelease(key))
-                } else if flags.contains(CGEventFlags::MaskAlternate)
-                    && !global_flags.contains(CGEventFlags::MaskAlternate)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyPress(key))
-                } else if !flags.contains(CGEventFlags::MaskAlternate)
-                    && global_flags.contains(CGEventFlags::MaskAlternate)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyRelease(key))
-                } else if flags.contains(CGEventFlags::MaskCommand)
-                    && !global_flags.contains(CGEventFlags::MaskCommand)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyPress(key))
-                } else if !flags.contains(CGEventFlags::MaskCommand)
-                    && global_flags.contains(CGEventFlags::MaskCommand)
-                {
-                    *global_flags = flags;
-                    Some(EventType::KeyRelease(key))
-                } else {
-                    None
-                }
+                modifier_event_type(code, flags)
             }
             CGEventType::ScrollWheel => {
                 let delta_y = CGEvent::integer_value_field(
@@ -196,4 +198,42 @@ pub unsafe fn convert(
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        NX_DEVICELSHIFTKEYMASK, NX_DEVICERSHIFTKEYMASK, SHIFT_LEFT, SHIFT_RIGHT,
+        modifier_event_type,
+    };
+    use crate::{EventType, Key};
+    use objc2_core_graphics::CGEventFlags;
+
+    fn flags(bits: u64) -> CGEventFlags {
+        CGEventFlags::from_bits_retain(bits)
+    }
+
+    #[test]
+    fn classifies_modifier_from_keycode_without_cached_state() {
+        let left_down = flags(CGEventFlags::MaskShift.bits() | NX_DEVICELSHIFTKEYMASK);
+        assert!(matches!(
+            modifier_event_type(SHIFT_LEFT, left_down),
+            Some(EventType::KeyPress(Key::ShiftLeft))
+        ));
+
+        let right_down = flags(CGEventFlags::MaskShift.bits() | NX_DEVICERSHIFTKEYMASK);
+        assert!(matches!(
+            modifier_event_type(SHIFT_LEFT, right_down),
+            Some(EventType::KeyRelease(Key::ShiftLeft))
+        ));
+        assert!(matches!(
+            modifier_event_type(SHIFT_RIGHT, right_down),
+            Some(EventType::KeyPress(Key::ShiftRight))
+        ));
+    }
+
+    #[test]
+    fn ignores_flags_changed_for_unknown_keycode() {
+        assert!(modifier_event_type(0, CGEventFlags::empty()).is_none());
+    }
 }
