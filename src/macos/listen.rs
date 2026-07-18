@@ -3,15 +3,25 @@ use crate::macos::common::*;
 use crate::rdev::{Event, ListenError};
 use core::ptr::NonNull;
 use objc2_core_foundation::{CFMachPort, CFRunLoop, kCFRunLoopCommonModes};
+#[cfg(not(feature = "macos_keyboard_only"))]
+use objc2_core_graphics::kCGEventMaskForAllEvents;
 use objc2_core_graphics::{
     CGEvent, CGEventTapCallBack, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement,
-    CGEventTapProxy, CGEventType, kCGEventMaskForAllEvents,
+    CGEventTapProxy, CGEventType,
 };
 use objc2_foundation::NSAutoreleasePool;
 use std::ffi::c_void;
 use std::ptr::null_mut;
 
 static mut GLOBAL_CALLBACK: Option<Box<dyn FnMut(Event)>> = None;
+
+#[cfg(feature = "macos_keyboard_only")]
+const LISTEN_EVENT_MASK: u64 = (1 << CGEventType::KeyDown.0)
+    | (1 << CGEventType::KeyUp.0)
+    | (1 << CGEventType::FlagsChanged.0);
+
+#[cfg(not(feature = "macos_keyboard_only"))]
+const LISTEN_EVENT_MASK: u64 = kCGEventMaskForAllEvents as u64;
 
 #[link(name = "Cocoa", kind = "framework")]
 unsafe extern "C" {}
@@ -50,7 +60,7 @@ where
             CGEventTapLocation::HIDEventTap, // HID, Session, AnnotatedSession,
             CGEventTapPlacement::HeadInsertEventTap,
             CGEventTapOptions::ListenOnly,
-            kCGEventMaskForAllEvents.into(),
+            LISTEN_EVENT_MASK,
             callback,
             null_mut(),
         )
@@ -65,4 +75,23 @@ where
         CFRunLoop::run();
     }
     Ok(())
+}
+
+#[cfg(all(test, feature = "macos_keyboard_only"))]
+mod tests {
+    use super::LISTEN_EVENT_MASK;
+    use objc2_core_graphics::CGEventType;
+
+    fn contains(event_type: CGEventType) -> bool {
+        LISTEN_EVENT_MASK & (1 << event_type.0) != 0
+    }
+
+    #[test]
+    fn keyboard_only_mask_excludes_mouse_events() {
+        assert!(contains(CGEventType::KeyDown));
+        assert!(contains(CGEventType::KeyUp));
+        assert!(contains(CGEventType::FlagsChanged));
+        assert!(!contains(CGEventType::MouseMoved));
+        assert!(!contains(CGEventType::LeftMouseDown));
+    }
 }
