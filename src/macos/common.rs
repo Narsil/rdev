@@ -8,6 +8,8 @@ use std::convert::TryInto;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
+use crate::macos::keycodes::key_from_code;
+#[cfg(not(feature = "macos_physical_key_events"))]
 use crate::macos::keycodes::key_from_code_or_name;
 
 use super::keycodes::key_from_special_key;
@@ -19,6 +21,26 @@ lazy_static! {
 
 pub fn set_is_main_thread(b: bool) {
     KEYBOARD_STATE.lock().unwrap().set_is_main_thread(b);
+}
+
+unsafe fn key_from_event(
+    code: i64,
+    flags: CGEventFlags,
+    keyboard_state: &mut Keyboard,
+) -> Option<crate::rdev::Key> {
+    let physical_code = code.try_into().ok()?;
+
+    #[cfg(feature = "macos_physical_key_events")]
+    {
+        let _ = (flags, keyboard_state);
+        Some(key_from_code(physical_code))
+    }
+
+    #[cfg(not(feature = "macos_physical_key_events"))]
+    {
+        let name = unsafe { keyboard_state.create_string_for_key(code, flags) };
+        Some(key_from_code_or_name(physical_code, name.as_deref()))
+    }
 }
 
 pub unsafe fn convert(
@@ -61,8 +83,7 @@ pub unsafe fn convert(
                     CGEventField::KeyboardEventKeycode,
                 );
                 let flags = CGEvent::flags(Some(cg_event.as_ref()));
-                let name = keyboard_state.create_string_for_key(code, flags);
-                let key = key_from_code_or_name(code.try_into().ok()?, name.as_deref());
+                let key = key_from_event(code, flags, keyboard_state)?;
                 Some(EventType::KeyPress(key))
             }
             CGEventType::KeyUp => {
@@ -71,8 +92,7 @@ pub unsafe fn convert(
                     CGEventField::KeyboardEventKeycode,
                 );
                 let flags = CGEvent::flags(Some(cg_event.as_ref()));
-                let name = keyboard_state.create_string_for_key(code, flags);
-                let key = key_from_code_or_name(code.try_into().ok()?, name.as_deref());
+                let key = key_from_event(code, flags, keyboard_state)?;
                 Some(EventType::KeyRelease(key))
             }
             CGEventType::FlagsChanged => {
@@ -82,7 +102,7 @@ pub unsafe fn convert(
                 );
                 let code = code.try_into().ok()?;
                 let flags = CGEvent::flags(Some(cg_event.as_ref()));
-                let key = key_from_code_or_name(code, None);
+                let key = key_from_code(code);
 
                 // Determine if this is a press or release based on flag changes
                 let mut global_flags = LAST_FLAGS.lock().unwrap();
@@ -177,6 +197,10 @@ pub unsafe fn convert(
             }
         };
         if let Some(event_type) = option_type {
+            #[cfg(feature = "macos_physical_key_events")]
+            let name = None;
+
+            #[cfg(not(feature = "macos_physical_key_events"))]
             let name = match event_type {
                 EventType::KeyPress(_) => {
                     let code = CGEvent::integer_value_field(
