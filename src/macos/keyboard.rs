@@ -19,14 +19,19 @@ static kUCKeyTranslateDeadKeysBit: OptionBits = 1 << 31;
 #[allow(non_upper_case_globals)]
 static kUCKeyActionDown: u16 = 0;
 #[allow(non_upper_case_globals)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 static NSEventModifierFlagCapsLock: u64 = 1 << 16;
 #[allow(non_upper_case_globals)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 static NSEventModifierFlagShift: u64 = 1 << 17;
 #[allow(non_upper_case_globals)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 static NSEventModifierFlagControl: u64 = 1 << 18;
 #[allow(non_upper_case_globals)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 static NSEventModifierFlagOption: u64 = 1 << 19;
 #[allow(non_upper_case_globals)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 static NSEventModifierFlagCommand: u64 = 1 << 20;
 
 const BUF_LEN: usize = 4;
@@ -84,6 +89,7 @@ impl Keyboard {
         if self.caps_lock || self.shift { 2 } else { 0 }
     }
 
+    #[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
     pub(crate) unsafe fn create_string_for_key(
         &mut self,
         code: i64,
@@ -178,6 +184,7 @@ impl KeyboardState for Keyboard {
 }
 
 #[allow(clippy::identity_op)]
+#[cfg_attr(feature = "macos_physical_key_events", allow(dead_code))]
 pub unsafe fn flags_to_state(flags: u64) -> ModifierState {
     let has_alt = flags & NSEventModifierFlagOption;
     let has_caps_lock = flags & NSEventModifierFlagCapsLock;
